@@ -1,0 +1,142 @@
+---
+title: 'Homework #2'
+author: "Dustin Leatherman"
+date: "January 19, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Sleuth3)
+library(ggplot2)
+library(kableExtra)
+library(dplyr)
+library(grid)
+library(gridExtra)
+```
+
+## Meadowfoam and Time
+$\mu${Flowers|light,time} = $\gamma_0$ + $\gamma_1$light + $\gamma_2$time
+
+#### a 
+
+$\mu${Flowers|light, time=0} = $\gamma_0$ + $\gamma_1$light
+$\mu${Flowers|light, time=24} = $\gamma_0$ + $\gamma_1$light + 24$\gamma_2$ $\to$ ($\gamma_0$ + 24$\gamma_2$) + $\gamma_1$light
+
+When time is changed to a continuous variable, it affects the Intercept. The intercept will be increased by 24$\gamma_2$ for flowers who started light treatment 24 days before prior to PFI.
+
+#### b
+
+$\mu${Flowers|light, early=0} = $\beta_0$ + $\beta_1$light
+$\mu${Flowers|light, early=1} = ($\beta_0$ + $\beta_2$) + $\beta_1$light
+
+When early=0 is substituted for time=0, the intercepts are $\beta_1$ = $\gamma_1$. When early=1 is substituted for time=24, $\beta_2$ = 24$\gamma_2$.
+
+#### c
+
+```{r 1, echo=T}
+case0901$early <- ifelse(case0901$Time==2,1,0)
+case0901$time.cont <- ifelse(case0901$Time==2,24,0)
+
+model.ind <- lm(Flowers ~ Intensity + early, data=case0901)
+summary(model.ind)
+
+model.time <- lm(Flowers ~ Intensity + time.cont, data=case0901)
+summary(model.time)
+```
+
+The estimated effect on mean Flower count for early=1 is 12.158 additional flowers for the indicator variable model while the estimated effect on mean Flower count for each day before PFI is 0.507. When time=24 and early=1, the same Flower count is achieved. For both models, the estimated mean flower count based on Intensity are equivalent which indicates that the slope is consistent between the two. By using a continuous variable instead of an indicator variable, the results end up being the same but it makes analysis easier to draw estimated Flower counts for values between 0 and 24 days prior to PFI. This can be verified by comparing the slopes and intercepts in the graphs of each model.
+
+```{r 1graphs, echo=T, fig.width=12}
+
+early.plot <- ggplot(case0901, aes(color = factor(early), x = Intensity, y = Flowers)) + 
+  geom_point() + 
+  geom_smooth(method="lm", se=F) +
+  xlab(expression(paste("Light Intensity (", mu, "mol/",m^2, "/sec)"))) +
+  ylab("Flower Count") +
+  labs(color=guide_legend("Early")) +
+  ggtitle("Meadowfoam Flowers by Early Indicator") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+time.plot <- ggplot(case0901, aes(color = factor(time.cont), x = Intensity, y = Flowers)) + 
+  geom_point() + 
+  geom_smooth(method="lm", se=F) +
+  xlab(expression(paste("Light Intensity (", mu, "mol/",m^2, "/sec)"))) +
+  ylab("Flower Count") +
+  labs(color=guide_legend("Days Before PFI")) +
+  ggtitle("Meadowfoam Flowers by Time") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(early.plot, time.plot,
+               widths = c(1,1),
+               ncol = 2)
+```
+
+## Intensity By Indicator Variables
+
+$\mu${Flowers|light,early} = $\beta_0$ + $\beta_1$L300 + $\beta_2$L450 + $\beta_3$L600 + $\beta_4$L750 + $\beta_5$L900 + $\beta_6$early
+
+#### a
+
+$\mu${Flowers|light,L300 = L450 = L600 = L750 = L900 = 0, early = 1} = $\beta_0$ + $\beta_6$
+
+$\mu${Flowers|light,early = L300 = L450 = L600 = L750 = L900 = 0} = $\beta_0$
+
+$\mu${Flowers|light,L300 = L600 = L750 = L900 = 0, early = L450 = 1} = $\beta_0$ + $\beta_2$ + $\beta_6$
+
+$\mu${Flowers|light,early = L300 = L600 = L750 = L900 = 0, L450 = 1} = $\beta_0$ + $\beta_2$
+
+#### b
+
+$\mu${Flowers|light,early} = $\beta_0$ + $\beta_1$L300 + $\beta_2$L450 + $\beta_3$L600 + $\beta_4$L750 + $\beta_5$L900 + $\beta_6$early + $\beta_7$(L300 $\times$ early) + $\beta_8$(L450 $\times$ early) + $\beta_9$(L600 $\times$ early) + $\beta_10$(L750 $\times$ early) + $\beta_11$(L900 $\times$ early)
+
+$\mu${Flowers|light, L300 = L450 = L600 = L750 = L900 = 0, early = 1} = $\beta_0$ + $\beta_6$
+
+$\mu${Flowers|light,early = L300 = L450 = L600 = L750 = L900 = 0} = $\beta_0$
+
+$\mu${Flowers|light,L300 = L600 = L750 = L900 = 0, early = L450 = 1} = $\beta_0$ + $\beta_2$ + $\beta_6$ + $\beta_8$
+
+$\mu${Flowers|light,early = L300 = L600 = L750 = L900 = 0, L450 = 1} = $\beta_0$ + $\beta_2$
+
+
+#### c
+
+For the model where there are no interaction terms, early affects the mean number of flowers by $\beta_6$. For the model with interaction terms, early affects the mean number of flowers by $\beta_6$ when light intensity is 150 $\mu$mol/$m^2$/sec. When early and the light intensity exceeds 150 $\mu$mol/$m^2$/sec, the mean number of flowers increases by $\beta_6$ + $\beta_x$ associated with the interaction term. For example, the mean number of flowers increases by $\beta_6$ + $\beta_8$ when a 450 $\mu$mol/$m^2$/sec light treatment is used.
+
+Graph A is associated with the model with no interactions because the distance between early and late is consistent between each of the intensities. Graph B is associated with the model with interactions since the distance between early and late varies between intensities.
+
+# Depression
+
+#### a
+
+The following indicator variables represent the education categories described in the survey: SOMECOLLEGE, COLLEGE. The baseline indicator is the Highschool category.
+
+$\mu${Score|age, SOMECOLLEGE, COLLEGE} = $\beta_0$ + $\beta_1$age + $\beta_2$SOMECOLLEGE + $\beta_3$COLLEGE + $\beta_4$(SOMECOLLEGE $\times$ age) + $\beta_5$(COLLEGE $\times$ age)
+
+$\mu${Score|age, SOMECOLLEGE = 0, COLLEGE = 1} = $\beta_0$ + $\beta_1$age + $\beta_3$ + $\beta_5$age
+
+$\mu${Score|age, COLLEGE = SOMECOLLEGE = 0} = $\beta_0$ + $\beta_1$age
+
+  $\to$ $\beta_0$ + $\beta_1$age + $\beta_3$ + $\beta_5$age - ($\beta_0$ + $\beta_1$age)
+  
+  $\to$ $\beta_3$ + $\beta_5$age
+
+The interaction terms may cause unequal slopes and intercepts while having age as a parameter alone will ensure that the score changes linearly. In this case, $\beta_5$ measures the diverging gap between those with a Highschool degree and those with a college degree.
+
+#### b
+
+$\mu${Score|age, SOMECOLLEGE, COLLEGE} = $\beta_0$ + $\beta_1$age + $\beta_2$SOMECOLLEGE + $\beta_2$COLLEGE + $\beta_3$(SOMECOLLEGE $\times$ age) + $\beta_3$(COLLEGE $\times$ age)
+
+$\mu${Score|age, SOMECOLLEGE = 0, COLLEGE = 1} = $\beta_0$ + $\beta_1$age + $\beta_2$ + $\beta_3$age
+
+$\mu${Score|age, COLLEGE = SOMECOLLEGE = 0} = $\beta_0$ + $\beta_1$age
+
+  $\to$ $\beta_0$ + $\beta_1$age + $\beta_2$ + $\beta_3$age - ($\beta_0$ + $\beta_1$age)
+  
+  $\to$ $\beta_2$ + $\beta_3$age
+
+
+By using the same coefficients for SOMECOLLEGE and COLLEGE, the model will have the same slopes and intercepts for both categories. $\beta_3$ measures the divergence between the two categories in this model.
+

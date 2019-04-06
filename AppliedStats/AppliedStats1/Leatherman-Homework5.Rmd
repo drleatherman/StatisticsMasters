@@ -1,0 +1,177 @@
+---
+title: 'Homework #5'
+author: "Dustin Leatherman"
+date: "October 20, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(reshape2)
+library(coin)
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(grid)
+library(gridExtra)
+library(knitr)
+
+tips$percent <- (tips$tip / tips$total_bill) * 100
+attach(tips)
+
+# hardcoding this because the problem states that there are two outliers and there are technically more.
+tips_sans_outliers <- subset(tips, percent < 40)
+```
+
+# 1. Tip Percentage and Gender
+
+#### Student t-test
+
+``` {r summary, echo = TRUE, fig.width=10}
+
+hist_full <- ggplot(tips, aes(x = percent, fill = sex)) + 
+  geom_histogram(bins = 30) + 
+  facet_wrap(~sex, ncol = 1)
+
+bplot_full <- ggplot(tips, aes(x = sex, y = percent , fill = sex)) + 
+  geom_boxplot(show.legend = FALSE)
+
+grid.arrange(bplot_full, hist_full,
+             ncol = 2, 
+             widths = c(1, 2), 
+             top = textGrob("Tip Percentage by Gender",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+full_test <- t.test(percent ~ sex, data = tips)
+
+hist_sans <- ggplot(tips_sans_outliers, aes(x = percent, fill = sex)) + 
+  geom_histogram(bins = 30) + 
+  facet_wrap(~sex, ncol = 1)
+
+bplot_sans <- ggplot(tips_sans_outliers, aes(x = sex, y = percent , fill = sex)) + 
+  geom_boxplot(show.legend = FALSE)
+
+grid.arrange(bplot_sans, hist_sans,
+             ncol = 2, 
+             widths = c(1, 2), 
+             top = textGrob("Tip Percentage by Gender (Outliers excluded)",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+
+sans_test <- t.test(percent ~ sex, data = tips_sans_outliers)
+
+# Put both tests in the same graph
+knitr::kable(
+  bind_rows(tidy(full_test) %>% 
+              mutate(desc="With Outliers"), 
+            tidy(sans_test) %>% 
+              mutate(desc="Without Outliers")
+            ) %>% 
+    select(desc,estimate1, estimate2, p.value, conf.low, conf.high) %>% 
+    mutate(estimate=estimate1 - estimate2), 
+  digits = 4, 
+  col.names = c("","Mean Female %", "Mean Male %", "P-Value", "C.I - Lower", "C.I - Upper", "Estimate"), 
+  align = 'l')
+
+```
+
+The p-values produced by the full and sans outliers datasets are 0.2542 and 0.1336 respectively. The difference between these p-values is 0.1206.
+
+#### Wilcoxon Rank Sum
+
+``` {r rankSum, echo = TRUE, fig.width=10}
+wilcox_test(percent~sex, data=tips, distribution="exact")
+wilcox_test(percent~sex, data=tips_sans_outliers, distribution="exact")
+
+```
+
+The p-values produced by the full and sans outliers datasets are 0.1332 and 0.1479 respectively. The difference between these p-values is 0.0147.
+
+The p-value difference produced by the Wilcoxon Rank Sum Test are significantly smaller than the p-value difference produced by the t-test. This suggests that the Wilcoxon Rank Sum Test is more robust to outliers than the t-test.
+
+# 2. Plant Growth
+
+``` {r plantGrowth, echo = TRUE, fig.width=10}
+plant_bplot <- ggplot(PlantGrowth, aes(x = group, y = weight, fill = group)) + 
+  geom_boxplot(show.legend = FALSE)
+
+plant_hist <- ggplot(PlantGrowth, aes(x = weight, fill = group)) + 
+  geom_histogram() +
+  facet_wrap(~group, ncol = 1)
+
+
+grid.arrange(plant_bplot, plant_hist,
+             ncol = 2,
+             widths = c(1, 2), 
+             top = textGrob("Dried Plant Weights by Treatment (kg)",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+
+knitr::kable(
+  PlantGrowth %>%
+    group_by(group) %>%
+    summarise_all(funs(mean, sd, length, min, "25%"=quantile(weight, 0.25), median, "75%"=quantile(weight, 0.75), max)),
+  digits = 4,
+  col.names = c("Treatment Group","Mean","Std. Dev","Sample Size", "Min", "Q1", "Median", "Q3", "Max"), 
+  align = 'l'
+)
+```
+
+
+``` {r pooledInfo, echo = TRUE}
+
+# Calculate pooled standard deviation, and RSS for full and reduced models
+sums <- PlantGrowth %>% 
+  group_by(group) %>% 
+  summarise_all(funs(
+    avg=mean, 
+    stdev=sd, 
+    n=n(), 
+    ss.full = (weight - avg)^2 %>% sum, 
+    ss.reduced = (weight - mean(PlantGrowth$weight))^2 %>% 
+      sum)
+    ) %>% 
+  mutate(
+    pool.stdev = sqrt(sum((n - 1) * stdev^2) / sum(n - 1)), 
+    rss.full = sum(ss.full), 
+    rss.reduced = sum(ss.reduced)
+    )
+
+kable(sums,
+      digits = 4)
+
+# Confirm that RSS for full and reduced models were calculate correctly
+kable(sums %>% 
+  select(rss.full, pool.stdev, rss.reduced, n) %>% 
+  distinct %>% 
+  mutate(
+    rss.full.conf = (n*3 - 3) * pool.stdev^2,
+    rss.reduced.conf = (n*3 - 1) * sd(PlantGrowth$weight)^2,
+    rss.full.equal = assertthat::are_equal(rss.full, rss.full.conf),
+    rss.reduced.equal = assertthat::are_equal(rss.reduced, rss.reduced.conf)),
+  digits = 4
+)
+```
+
+## ANOVA Table
+
+|| Sum of Squares | df | MSS | F-value | p-value |
+| -------- | -------- | ---------- | --------- | -------- | -------- |
+| **Full** | 3.7663   | 2          | 1.8832    | 4.8461   | 0.0159   |
+| **Reduced** | 10.4921 | 27       | 0.3886    |          |          |
+| **Total** | 14.2584 | 29         |           |          |          |
+
+There is moderate evidence that the average weight between each group in the study is different (extra sum of squares F-test on 27 and 2 degrees of freedom. p-value = 0.0159)
+
+```{r tTest, echo = TRUE}
+results <- t.test(weight~group, data = PlantGrowth[PlantGrowth$group != "trt2",])
+
+kable(
+  tidy(results) %>%
+    select(estimate1, estimate2, p.value, conf.low, conf.high) %>% 
+    mutate(estimate=estimate1 - estimate2),
+    digits = 4, 
+  col.names = c("Mean Weight Control", "Mean Weight Treatment 1", "P-Value", "C.I - Lower", "C.I - Upper", "Estimate"), 
+  align = 'l')
+```
+
+With 95% confidence, the average weight difference between the control group and treatment group 1 is between -0.288 and 1.03 kg; thus there is no evidence to suggest that the average weights differ between the control and treatment group 1 (two-tail t-test. p-value = 0.2504).

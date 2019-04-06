@@ -1,0 +1,39 @@
+---
+title: 'Homework #3'
+author: "Dustin Leatherman"
+date: "September 27, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+cdc <- read.csv("~/Downloads/cdc-small.csv")
+
+```
+
+## 1. Two-sample t-test
+
+Question of Interest: Do people who have exercised in the past month want to lose more weight than those who did not exercise in the past month? 
+
+In this case, the null hypothesis is that people who have exercised in the past month do not wish to lose weight anymore than those who have not exercised in the past month. The alternative hypothesis is that these two groups have differing desires to lose weight.
+
+This can be represented by
+
+H naught = mu1 = mu2 <br/>
+H alt = mu1 != mu2
+
+```{r weightLoss}
+cdc$wt_diff <- cdc$weight - cdc$wtdesire
+
+t.test(wt_diff~exerany, data=cdc, var.equals=TRUE)
+```
+
+There is convincing evidence that the difference between actual and desired weight loss for those who have worked out and those who have not worked out in the past month is greater than zero. (two-tailed t-test, p-value=0.007)
+
+It is estimated that those who have not worked out in the past month wish to lose approximately 5.5035 more pounds than those who have worked out in the past month.
+
+With 95% confidence, the average difference between actual and desired weightloss for individuals who have not worked out in the past month is between 1.516 and 9.491 pounds greater than those who have worked out in the past month. 
+
+Based on these results, we can say that there is statistical evidence which shows that people who have worked out in the past month tend to want to lose less weight more than those who have not. 

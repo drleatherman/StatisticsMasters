@@ -1,0 +1,370 @@
+---
+title: 'Homework #4'
+author: "Dustin Leatherman"
+date: "February 16, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10, message = FALSE, warning = FALSE)
+
+# import libraries
+library(ggplot2)
+library(Sleuth3)
+library(dplyr)
+library(tidyr)
+library(knitr)
+library(broom)
+library(kableExtra)
+library(GGally)
+library(grid)
+library(gridExtra)
+library(stringr)
+```
+
+## 1 
+
+*Create a plot of the logarithm of the ratio of brain to liver antibodies against the sacrifice time, using different colors to code the treatment categories. Comment on the relationship between the response and the design variables.*
+
+```{r q1}
+case1102$ratio <- with(case1102, Brain / Liver)
+
+qplot(Time, log(ratio), color = Treatment, data = case1102) +
+  xlab("Time (hours)") +
+  ylab("Log Ratio of Brain-Liver Antibodies") +
+  ggtitle("Effects of Time on Brain-Liver Antibodies by Treatment Group") +
+    theme(plot.title = element_text(hjust = 0.5))
+
+qplot(log(Time), log(ratio), color = Treatment, data = case1102) +
+  xlab("Log Time (hours)") +
+  ylab("Log Ratio of Brain-Liver Antibodies") +
+  ggtitle("Effects of Time on Brain-Liver Antibodies by Treatment Group") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+As time increases, there is a non-linear increase in the log ratio of Brain-Liver antibodies. By using Log(Time) as a design variable, there is a more noticeable linear increase in antibodies than using Time without any transformation.
+
+## 2 
+
+*For each covariate (sex, weight, loss, and tumor) create a plot to examine the relationship with the response (ratio of brain to liver antibodies). Do there seem to be any relationships?*
+
+```{r q2, fig.width=10}
+
+case1102 %>%
+  select(
+    `Initial` = Weight,
+    Loss,
+    Tumor,
+    Ratio = ratio
+    ) %>% 
+  gather(-c(Ratio), key = "variable", value = "value") %>% 
+  ggplot(aes(x = value, y = Ratio)) + 
+    geom_point(alpha = 0.6) + 
+    facet_wrap(~ variable , ncol = 2, scales = "free") +
+      labs(subtitle = "Measurements compared against Ratio of Brain-Liver Antibodies") +
+      xlab("Weight (g)") +
+      ylab("Ratio") +
+      ggtitle("Comparing Antibodies and Weight") +
+        theme(plot.title = element_text(hjust = 0.5))
+
+case1102 %>%
+  select(
+    Sex,
+    Ratio = ratio
+    ) %>% 
+  ggplot(aes(x = Sex, y = Ratio)) + 
+    geom_boxplot() +
+      labs(subtitle = "Measurements compared against Ratio of Brain-Liver Antibodies") +
+      xlab("Sex") +
+      ylab("Ratio") +
+      ggtitle("Comparing Antibodies and Sex") +
+        theme(plot.title = element_text(hjust = 0.5))
+```
+
+Females tend to have a lower Ratio of Brain-Liver Antibodies but there are 3 female values that appear to be outliers.  Males have a lower variance but are less concentrated around low Ratio values. There doesn't appear to be any relationship that particularly stands out. There are a number of responses that have Ratios around 0 which are interesting. It is worth seeing if that is the control Treatment.
+
+## 3
+
+*For each covariate use plots or summary statistics to explore if thereare relationships between the covariate and treatment assignment.*
+
+```{r q3, fig.width=10}
+# Plots except for the dotplot of gender
+case1102 %>%
+  select(
+    `Initial` = Weight,
+    Loss,
+    Tumor,
+    Treatment,
+    Ratio = ratio
+    ) %>% 
+  gather(-c(Ratio, Treatment), key = "variable", value = "value") %>% 
+  ggplot(aes(x = value, y = Ratio, color = Treatment)) + 
+    geom_point(alpha = 0.6) + 
+    facet_wrap(~ variable , ncol = 2, scales = "free") + 
+      labs(subtitle = "Measurements compared against Ratio of Brain-Liver Antibodies, broken down by Treatment") +
+      xlab("Weight (g)") +
+      ylab("Ratio") +
+      ggtitle("Comparing Antibodies and Weight") +
+        theme(plot.title = element_text(hjust = 0.5))
+
+# Boxplot of Treatment and Gender breakdown for antibodies
+case1102 %>%
+  select(
+    Sex,
+    Ratio = ratio,
+    Treatment
+    ) %>% 
+  ggplot(aes(x = Sex, y = Ratio, color = Treatment)) + 
+    geom_boxplot() +
+      labs(subtitle = "Measurements compared against Ratio of Brain-Liver Antibodies, broken down by Treatment") +
+      xlab("Sex") +
+      ylab("Ratio") +
+      ggtitle("Comparing Antibodies and Sex") +
+        theme(plot.title = element_text(hjust = 0.5))
+```
+
+There does not appear to be a clear relationship between Initial, Tumor, or Loss in Weight and Brain-Liver Antibody Ratio. There appears to be a relationship between Sex and Brain-Liver Antibody Ratio though. Males have a higher Antibody count overall than females for both Treatment groups but the Blood Barrier Treatment noticeably increases the Antibody count for males whereas it minorly increases it for females.
+
+## 4
+
+*Fit the tentative model:*
+$\mu${log(antibody ratio)| TIME, TREAT, DAYS, FEM, weight, loss, tumor} = $\beta_0$ + $\beta_1$weight + $\beta_2$loss + $\beta_3$tumor + $\beta_4$TIME + $\beta_5$TREAT + $\beta_6$(TIME $\times$ TREAT)
+
+```{r q4}
+# relevel gender so we can get Female as the variable of interest
+case1102$SexRelevel <- relevel(case1102$Sex, ref = "Male")
+
+model.full <- lm(log(ratio) ~ Weight + Loss + Tumor + factor(Days) + factor(Time) + Treatment + SexRelevel + factor(Time):Treatment, data = case1102)
+
+# Hack to replace and surround ':'  with a space so multiple lines work when generating pdf and it doesnt stomp the next column
+tidy(model.full) %>% 
+  mutate(term = gsub(":", " X ", term)) %>%
+  kable(
+    align = c('l'),
+    digits = 4,
+    #col.names = c("Waist Girth (cm)","Gender","Fit", "Lower", "Upper", "Fit", "Lower", "Upper"),
+    caption = "Full Model for log(antibody ratio)"
+  ) %>% 
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+    row_spec(0, bold = T) %>%
+    row_spec(which(summary(model.full)$coefficients[,4] < 0.05), color = "black", bold = T) %>%
+    column_spec(1, width = "5em")
+```
+
+## 5
+
+*Examine the residuals versus fitted values plot for evidence of violations of the assumptions/conditions, and identify two unusual observations.*
+
+```{r q5}
+ggnostic(model.full, title = "Log Antibody Ratio by Weight, Loss, Tumor, Time, Treatment, and Sex")
+```
+
+The top row contains residual plots for this model. The residual plot for Tumor Weight violates of the linearity assumption as seen by its trailing upwards. The other assumptions: constant spread,  normality, and independence are met. There are two observations which the magnitude of the residuals are greater than 1. One observation has a largest tumor weight, largest loss weight, and towards the upper end of initial weight. The other observation has values that are more central to the other data points. It is intersting to note that both of these values are a part of the control group.
+
+## 6
+
+```{r q6}
+augment(model.full) %>%
+  select(Weight, Loss, Tumor, Treatment, Fit = .fitted, Residual = .resid, CooksD = .cooksd, Hat = .hat) %>%
+  filter(abs(Residual) > 1) %>%
+  kable(
+    align = c('l'),
+    digits = 4,
+    caption = "Unusual Observations based on high residual magnitude"
+  ) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+    row_spec(0, bold = T)
+```
+
+The both observations appear to be influential. Both observations have a large Cook's Distance. The Leverage plots look alright. The Studentized Residuals stand out but they are within a magnitude of 2 so it is questionable. The Residual plots show the best-fit line being pulled in the direction of these observations which further indicates its influentiality.
+
+## 7
+
+```{r q7}
+# get partial residuals and append to augmented model column
+resids <- model.full %>% 
+  residuals(type = "partial") %>% 
+  as_tibble %>% 
+  select(pres.Treatment = Treatment, pres.Time = `factor(Time)`, pres.Sex = SexRelevel, pres.Days = `factor(Days)`) %>%
+  bind_cols(augment(model.full)) %>%
+  select(Time = `factor.Time.`, Treatment, Sex = SexRelevel, Days = `factor.Days.`, pres.Treatment, pres.Sex, pres.Days, pres.Time, LogRatio = `log.ratio.`) 
+
+time.part <- 
+  qplot(Time, pres.Time, color = Treatment, data = resids) +
+    xlab("Sacrifice Time (hours)") +
+    ylab("Partial Residuals")
+
+time.raw <- 
+  qplot(Time, LogRatio, color = Treatment, data = resids) +
+    xlab("Sacrifice Time (hours)") +
+    ylab("Log Ratio of Brain-Liver Antibodies")
+
+days.part <- 
+  qplot(Days, pres.Days, color = Treatment, data = resids) +
+    xlab("Post Inoculation (Days)") +
+    ylab("Partial Residuals")
+
+days.raw <- 
+  qplot(Days, LogRatio, color = Treatment, data = resids) +
+    xlab("Post Inoculation (Days)") +
+    ylab("Log Ratio of Brain-Liver Antibodies")
+
+sex.part <-
+  qplot(Sex, pres.Sex, color = Treatment, data = resids) +
+    xlab("Sex") +
+    ylab("Partial Residuals")
+
+sex.raw <- 
+  qplot(Sex, LogRatio, color = Treatment, data = resids) +
+    xlab("Sex") +
+    ylab("Log Ratio of Brain-Liver Antibodies")
+
+
+grid.arrange(time.part, time.raw,
+             ncol = 2, 
+             widths = c(1, 1), 
+             top = textGrob("Sacrifice Time Partial Residuals vs Raw",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+
+grid.arrange(days.part, days.raw,
+             ncol = 2, 
+             widths = c(1, 1), 
+             top = textGrob("Post Inoculation Partial Residuals vs Raw",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+
+grid.arrange(sex.part, sex.raw,
+             ncol = 2, 
+             widths = c(1, 1), 
+             top = textGrob("Sex Partial Residuals vs Raw",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+
+
+```
+
+#### Sacrifice Time
+
+Sacrifice Times doesn't look much different than the raw plot though the spread has been reduced. This is saying that depending on the Sacrifice Time in hours, the coefficient representing Sacrifice Time can be fairly large and affect the overall model. The p-value for all Time factors are considered significant and thus affect the relationship between covariates and the response after accounting for treatment.
+
+#### Days
+
+The relationship with Post Inoculation Days becomes less linear after taking into account the other variables. There is not a clear line between the three factors so I would imagine this coefficient to be less impactful. The p-values for all Day factors are not considered significant so this shows on here. This does not appear to affect the response much after accounting for treatment.
+
+#### Sex
+
+The relationship with Sex is less linear after taking into account other variables. Since this is centered around 0, Sex does not appear to be impactful after accounting for Treatment.
+
+
+## 8
+
+Model 1 = $\mu${log(antibody ratio)| TIME, TREAT, DAYS, FEM, weight, loss, tumor} = $\beta_0$ + $\beta_1$TIME + $\beta_2$DAYS + $\beta_3$FEM + $\beta_4$TREAT + $\beta_5$(TIME $\times$ TREAT)
+
+Model 2 = $\mu${log(antibody ratio)| TIME, TREAT, DAYS, FEM, weight, loss, tumor} = $\beta_0$ + $\beta_1$TIME + $\beta_2$TREAT + $\beta_3$(TIME $\times$ TREAT)
+
+Model 3 = $\mu${log(antibody ratio)| TIME, TREAT, DAYS, FEM, weight, loss, tumor} = $\beta_0$ + $\beta_1$DAYS + $\beta_2$FEM
+
+```{r q8}
+model1 <- lm(log(ratio) ~ factor(Days) + factor(Time) + Treatment + SexRelevel + factor(Time):Treatment, data = case1102)
+model2 <- lm(log(ratio) ~ factor(Time) * Treatment, data = case1102)
+model3 <- lm(log(ratio) ~ factor(Days) + SexRelevel, data = case1102)
+
+# comparing model 2 vs model 1
+tidy(anova(model2, model1)) %>%
+  kable(
+    align = c('l'),
+    digits = 4
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+# comparing model 3 vs model 1
+tidy(anova(model3, model1)) %>%
+  kable(
+    align = c('l'),
+    digits = 4
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+
+# show the estimated values for Model 1 and Model 2 and their absolute difference
+tidy(model1) %>% 
+  inner_join(tidy(model2), by = "term", suffix = c(".model1", ".model2")) %>%
+  mutate(estimate.abs.diff = abs(estimate.model1 - estimate.model2), term = gsub(":", " X ", term)) %>%
+  select(term, estimate.model1, estimate.model2, estimate.abs.diff) %>%
+  kable(
+    align = c('l'),
+    digits = 4,
+    col.names = c("Term", "Model 1", "Model 2", "Abs. Diff"),
+    caption = "Estimated values for Design variables with Covariates (Model 1) vs Design Variables without Covariates (Model 2)"
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  column_spec(1, width = "5em")
+```
+
+There is not enough evidence to suggest that Model 1 is a better fit than Model 2 (Sum of Squares F-Test. p-value = 0.8105). Model 2 being the simpler model, this means that Days and Sex are not significant when the design variables Time, Treatment, and their interaction are included.
+
+There is convincing evidence that Model 1 is a better fit than Model 3 (Sum of Squares F-Test. p-value = 1.17e-9). This means that design variables are considered significant compared to the covariates.
+
+The absolute difference between the estimates is minute between the models meaning that the covariates don't affect the conclusion.
+
+## 9
+
+```{r q9}
+
+tidy(model2) %>%
+  mutate(term = gsub(":", " X ", term)) %>%
+  kable(
+    align = c('l'),
+    digits = 4,
+    caption = "Summary of Model 2"
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  column_spec(1, width = "5em")
+
+
+model2.nointer <- lm(log(ratio) ~ factor(Time) + Treatment, data = case1102)
+
+tidy(model2.nointer) %>%
+  mutate(term = gsub(":", " X ", term)) %>%
+  kable(
+    align = c('l'),
+    digits = 4,
+    caption = "Summary of Model 2 with No interaction Terms"
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  column_spec(1, width = "5em")
+
+tidy(anova(model2.nointer, model2)) %>%
+  kable(
+    align = c('l'),
+    digits = 4
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+Since the interaction terms in model 2 are not significant, I expect that an F-test will confirm that fact. A Sum of Squares F-Test shows that there is not enough evidence to suggest that the interaction term has a significant effect on the model (p-value = 0.9175).
+
+## 10
+
+```{r q10}
+# Readjust parameters to interpret BD treatment affect.
+case1102$TreatmentRelevel <- relevel(case1102$Treatment, ref = "NS")
+model2.nointer <- lm(log(ratio) ~ factor(Time) + TreatmentRelevel, data = case1102)
+
+# get last row which contains the Treatment group. 
+confint_tidy(model2.nointer)[5,] %>%
+  kable(
+    align = c('l'),
+    digits = 4
+  ) %>%
+  row_spec(0, bold = T) %>%
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+With 95% confidence, the mean log ratio of Brain-Liver antibodies is between 0.4218 and 1.1718 greater for the BD Treatment group than the Control Group.

@@ -1,0 +1,191 @@
+---
+title: 'Homework #5'
+author: "Dustin Leatherman"
+date: "February 23, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10, warning = F, message = F)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(broom)
+library(kableExtra)
+library(tidyverse)
+library(grid)
+library(gridExtra)
+
+words <- read_csv("~/Downloads/words.csv")
+
+# Sort by least complicated to most complicated with Intentional being the Control Group
+words$Process <- factor(words$Process,levels = c("Counting", "Rhyming", "Adjective", "Imagery", "Intentional"))
+```
+
+# 1
+
+*Is this dataset balanced?*
+
+This dataset is balanced. Each Age and Process variable has 10 observations
+
+```{r q1}
+words %>% 
+  group_by(Process, Age) %>% 
+  summarise_at("Words", funs(n=n())) %>% 
+  kable %>%
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+```
+
+# 2
+
+*Create a plot of the raw data*
+
+```{r q2}
+words %>%
+  ggplot(aes(x = Process, y = Words, color = Age, shape = Age, alpha = 0.6)) + 
+    geom_point()
+```
+
+# 3
+
+*Produce a two-way table of sample averages, along with row and column averages. Using the table you produce:*
+  *- Under the saturated model, what is the estimated difference in mean number of words recalled between the younger and older groups in the adjective treatment?*
+
+```{r q3}
+words %>% 
+    group_by(Process, Age) %>% 
+    # get mean for each group
+    summarize_at("Words", funs(Mean=mean)) %>%
+    # Break into two-tab formula
+    unstack(form = Mean ~ Process) %>% 
+    # calculate the Total column the total across rows
+    mutate(Total = rowSums(.)) %>% 
+    # Calculate the total row. This isn't pretty but it works :/ Would love to know a better way
+    rbind(list(
+      Adjective = sum(.[1]), 
+      Counting = sum(.[2]), 
+      Imagery = sum(.[3]), 
+      Intentional = sum(.[4]), 
+      Rhyming = sum(.[5]), 
+      Total = sum(.[6]))
+    ) %>% 
+    # Create a column and convert it to the row name for output
+    mutate(i1 = c("Older","Younger", "Total")) %>% 
+    column_to_rownames("i1") %>%
+  kable(
+    caption = "Average Word Count for number of Words Recalled"
+  ) %>%
+      kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+      column_spec(1, bold = T, color = "black", border_right = T) %>%
+      row_spec(3, color = "black", bold = T) %>%
+      column_spec(7, color = "black", bold = T)
+```
+
+65.8 - 50.3 = 15.5 = ~16
+
+It is estimated that the younger group would recall an average of 16 words more than the older group after controlling for the word recalled.
+
+# 4
+
+*Fit the saturated model and examine the residuals. Is there any evidence of a need for transformation?*
+
+```{r q4}
+model.full <- lm(Words ~ Age * Process, words)
+age.res <- qplot(Age, .resid, data = model.full) + ylab("Residuals")
+process.res <- qplot(Process, .resid, data = model.full) + ylab("")
+
+grid.arrange(age.res, process.res,
+             ncol = 2, 
+             widths = c(1, 1), 
+             top = textGrob("Age and Process Residuals for Saturated Model",
+                            gp=gpar(fontsize=14,font=1),just=c("center")))
+
+```
+
+There are no distinct patterns in the residual charts so there is no evidence that transformations are required.
+
+# 5
+
+*Run an extra sum of squares F-test to compare the saturated model to the additive model. Is there evidence against the simpler additive model?*
+
+```{r q5}
+model.add <- lm(Words ~ Age + Process, words)
+
+tidy(anova(model.add, model.full)) %>%
+  kable(
+    caption = "Extra Sum of Squares F-Test for Saturated vs Additive Model"
+  ) %>%
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+```
+
+There is convincing evidence that the full model is a better model to use than the additive model (Extra Sum of Squares F-Test. p-value = 0.0003)
+
+
+# 6
+
+*Using the saturated model, produce a plot of the estimated mean responses.*
+
+```{r q6}
+model.full %>% 
+  # sort the x-axis by the number of words
+  ggplot(aes(x = reorder(Process, Words), y = Words, group = Age, color = Age)) + 
+  # plot original data
+  geom_point(alpha = 0.6) + 
+  # Add a best-fit line
+  geom_line(aes(Process, .fitted), size = 1) + 
+  # Highlight the fitted points so we can see them clearly
+  geom_point(aes(Process, .fitted)) +
+    ylab("Number of Words Recalled") +
+    xlab("Level of Processing (least to most)") +
+    ggtitle("Number of Words Recalled by Level of Processing") +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+
+# 7
+
+```{r q7}
+# Make 'Adjective' the baseline
+words$Process <- relevel(words$Process, ref = "Adjective")
+
+# Create indicator variables for each Process Level
+words$isYounger <- ifelse(words$Age == "Younger", 1, 0)
+words$isRhyming <- ifelse(words$Process == "Rhyming", 1, 0)
+words$isIntentional <- ifelse(words$Process == "Intentional", 1, 0)
+words$isImagery <- ifelse(words$Process == "Imagery", 1, 0)
+words$isCounting <- ifelse(words$Process == "Counting", 1, 0)
+words$isAdjective <- ifelse(words$Process == "Adjective", 1, 0)
+
+model.full.reparam <- lm(Words ~ Process + isAdjective:isYounger + isCounting:isYounger + isImagery:isYounger + isIntentional:isYounger + isRhyming:isYounger , words)
+
+tidy(model.full.reparam) %>%
+  kable %>%
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+model.full.reparam %>% 
+  # sort the x-axis by the number of words
+  ggplot(aes(x = reorder(Process, Words), y = Words, group = isYounger, color = isYounger)) + 
+    # plot original data
+    geom_point(alpha = 0.6) + 
+    # Add a best-fit line
+    geom_line(aes(Process, .fitted), size = 1) + 
+    # Highlight the fitted points so we can see them clearly
+    geom_point(aes(Process, .fitted)) +
+      ylab("Number of Words Recalled") +
+      xlab("Level of Processing (least to most)") +
+      ggtitle("Number of Words Recalled by Level of Processing") +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+
+Using 'Intentional' as an example
+
+$\beta_0$ + $\beta_3$ + $\beta_8$ - ($\beta_0$ + $\beta_3$) 
+
+$\to$ $\beta_8$
+
+$\beta_8$ represents the difference in mean words between older and younger people for the Process Level 'Intentional'. Since all of the process levels are represented similarly, this explanation can be applied to each.
+
+There is convincing evidence that young people have an advantage on Intentional, Imagery, and Adjective Processing (p-values =1.15e-07, 0.00132, and 0.0035 respectively).

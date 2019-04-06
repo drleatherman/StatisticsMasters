@@ -1,0 +1,121 @@
+---
+title: 'Homework #3'
+author: "Dustin Leatherman"
+date: "February 3, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(GGally)
+library(Sleuth3)
+library(ggplot2)
+library(dplyr)
+```
+
+# Income, Intelligence & Gender
+
+```{r incomePlots, fig.width=10, warning=FALSE, message=FALSE}
+# Common transformations on the dataset
+data <- 
+  ex0923 %>% 
+  mutate(logIncome = log(Income2005))
+
+# Scatterplot matrix for variables of interest grouped by Gender. No Transformations appplied
+data %>%
+  select("AFQT", "Educ", "Income2005", "Gender") %>% 
+  ggscatmat(color="Gender", alpha = 0.6)
+
+# Scatterplot matrix for variables of interest. I found that having gender separated made scatterplots harder to read so I used both types for analysis. Transformations Applied
+data %>%
+  select("AFQT", "Educ", "logIncome", "Gender") %>% 
+  ggscatmat(alpha = 0.6)
+
+# Scatterplot for variables of interest grouped by Gender. Transformations applied
+data %>%
+  select("AFQT", "Educ", "logIncome", "Gender") %>% 
+  ggscatmat(color="Gender", alpha = 0.6)
+```
+
+The scatterplot for Income has a funneling shape which indicates that it is skewed. This is confirmed by its density plot. Income tends to be right skewed so a log transformation has been applied to make it more normal. The density plots in the scatter matrix show the distribution of each variable categorized by Gender. The distribution of AFQT is left skewed for males while it is normalish looking for females. After applying a log transformation, logIncome appears to be left skewed but the distribution appears more normal with the peak logIncome for males being larger. There are two peaks in the Education Density graph, one at 12 years and 16 years. This indicates that a majority of the respondents had either a high school or bachelors degree. Besides Income, no other fields need to transformations applied.
+
+### Log-Income & Intelligence
+
+Log-Income and AFQT Score have a positive correlation. The scatterplot indicates a linear increase in Log-Income as the AFQT score increases. There are many outliers as indicated by the by the dots that fall below the main cluster. It is interesting to note that a majority of the outliers that fall below the cluster appear to be female.
+
+### Log-Income & Education
+
+Log-Income and Education have a positive correlation with Log-Income generally increasing for each year of education. It is interesting to note that the spread of Log-Income is largest at year 12 and decreases steadily after. There are some outliers for people with more years of education. For almost all years of education, females have generally have less Log-Income than males. The exception to this is year 19 where it appears fairly even between the two genders.
+
+### Intelligence & Education
+
+AFQT Scores and Years of Education have a positive correlation. For every year of education, AFQT Scores generally increase. There is a small number of outliers who have higher AFQT scores with 10 or less years of education as well as a single outlier who has 20 years of education and a score of approximately 13.
+
+### Model
+
+$\mu${logIncome|AFQT,Educ,Gender} = $\beta_0$ + $\beta_1$MALE + $\beta_2$AFQT + $\beta_3$Educ
+
+```{r regressionFit}
+model <- lm(logIncome ~ Educ + AFQT + Gender, data=data, na.action = na.exclude)
+summary(model)
+confint(model)
+```
+
+There convincing evidence that being being male has a positive multiplicative effect on median income (Sum of Squares F-Test. p-value < 2.2e-16). The estimated median income of a male is exp(0.6245) = 1.8673 times the median income of a female after accounting for Education and AFQT Score. With 95% confidence, the median income of a male is between exp(0.5575) = 1.7463 and exp(0.6915) = 1.9967 times the median income of a female after accounting for Education and AFQT Score.
+
+# Crab Force
+
+```{r crabplots, fig.width=10}
+ggplot(ex0722, aes(y = log(Force), x = log(Height), color = Species, shape = Species)) + 
+  geom_smooth(method = "lm",se = FALSE) +
+  geom_point() +
+    xlab("Log(Height)") + 
+    ylab("Log(Force)") +
+    ggtitle("Affects of Claw Closing Force with Respect to Height") +
+      theme(plot.title = element_text(hjust = 0.5))
+```
+$\mu${Log(Force)|Log(Height), Species} = $\beta_0$ + $\beta_1$log(Height) + $\beta_2$NUDUS + $\beta_3$BELLUS+ $\beta_4$(Log(Height) $\times$ NUDUS) + $\beta_5$(Log(Height) $\times$ BELLUS)
+
+```{r crabmodel}
+ex0722$Species2 <- relevel(ex0722$Species, ref = "Lophopanopeus bellus")
+
+# Interaction terms make a parallel lines model
+model <- lm(log(Force) ~ log(Height) + Species + log(Height):Species, data = ex0722)
+summary(model)
+confint(model)
+
+# Change base comparison to use bellus instead for easier comparisons between Nudus and Bellus 
+model.rebase <- lm(log(Force) ~ log(Height) + Species2 + log(Height):Species2, data = ex0722)
+summary(model.rebase)
+confint(model.rebase)
+```
+
+
+
+#### Comparing NUDUS to BELLUS
+
+$\beta_0$ + $\beta_1$log(Height) + $\beta_2$PRODUCTUS + $\beta_3$NUDUS + $\beta_4$(Log(Height) $\times$ PRODUCTUS) + $\beta_5$(Log(Height) $\times$ NUDUS)
+
+  $\to$ $\beta_3$ + $\beta_5$Log(Height)
+
+There is convincing evidence that Hemigraspus Nudus has a weaker claw strength than Lophopanopeus Bellus after accounting for Log(Height) (p-value = 0.00144). It is estimated that Hemigraspus Nudus has an average weaker claw force than Lophopanopeus Bellus by 2.5653 Log-Force units. With 95% confidence, Hemigraspus Nudus mean claw strength is between 1.0674 Log-Force units and 4.0633 Log-Force units weaker than Lophopanopeus Bellus after accounting for Log(Height).
+
+
+#### Comparing NUDUS to PRODUCTUS
+
+$\beta_0$ + $\beta_1$log(Height) + $\beta_2$NUDUS + $\beta_4$Log(Height) - ($\beta_0$ + $\beta_1$log(Height))
+
+  $\to$ $\beta_2$ + $\beta_4$Log(Height)
+  
+There is moderate evidence that Hemigraspus Nudus has weaker claw strength than Cancer Productus after accounting for Log(Height) (p-value = 0.00144). It is estimated that Hemigraspus Nudus is an average of 1.6601 Log(Force) units weaker than Cancer Productus. With 95% confidence, Hemigraspus Nudus mean claw strength is between 0.0531 and 3.2671 Log(Force) units weaker than Cancer Productus after accounting for Log(Height).
+
+
+#### Comparing BELLUS to PRODUCTUS
+
+$\beta_0$ + $\beta_1$log(Height) + $\beta_3$BELLUS + $\beta_5$Log(Height) - ($\beta_0$ + $\beta_1$log(Height))
+  
+  $\to$ $\beta_3$ + $\beta_5$Log(Height)
+
+There is no evidence that Lophopanopeus Bellus has a difference in mean claw strength in Log(Force) units compared to Cancer Productus (p-value = 0.28368).

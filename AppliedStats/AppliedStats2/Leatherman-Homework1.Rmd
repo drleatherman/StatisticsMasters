@@ -1,0 +1,124 @@
+---
+title: 'Homework #1'
+author: "Dustin Leatherman"
+date: "January 12, 2019"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+urlcolor: blue
+---
+
+```{r setup, echo=TRUE, warning=FALSE, message=FALSE,}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(kableExtra)
+library(dplyr)
+library(grid)
+library(gridExtra)
+library(tidyr)
+library(broom)
+
+# Create residual plots for a dataframe containing an x and y variable.
+# returns the created model in the event the caller wishes to do further analysis
+plotSummary <- function (df) {
+  model <- lm(y~x, data=df)
+  
+  # Scatterplot with Regression Model
+  df.splot <-
+    ggplot(model, aes(x = x, y = y)) +
+      geom_point() +
+      geom_smooth(method = "lm") +
+      xlab("X") + 
+      ylab("Y") +
+      ggtitle("Scatterplot with Regression") +
+        theme(plot.title = element_text(hjust = 0.5))
+  
+  # Residual vs fitted values
+  model.resfit <-
+    ggplot(model, aes(x = .fitted, y = .resid)) + 
+      geom_point() + 
+      geom_hline(yintercept = 0, lty = 2) +
+      geom_smooth() +
+      ggtitle("Residual vs Fitted") +
+        theme(plot.title = element_text(hjust = 0.5)) +
+      xlab("Fitted Values") + 
+      ylab("Residuals")
+  
+  # Residual vs predictor (x)
+  model.predict <- ggplot(model, aes(x = x, y = .resid)) + 
+    geom_point() + 
+    geom_hline(yintercept = 0, lty = 2) +
+    geom_smooth() +
+    ggtitle("Residual vs Predictor (X)") +
+      theme(plot.title = element_text(hjust = 0.5)) +
+    xlab("X") + 
+    ylab("Residuals")
+  
+  # Normality plot against residuals
+  model.qq <- ggplot(aes(sample = .resid), data = model) + 
+    stat_qq() + 
+    stat_qq_line() +
+    ggtitle("Normality Plot") +
+      theme(plot.title = element_text(hjust = 0.5))
+  
+  grid.arrange(df.splot, model.resfit, model.predict, model.qq,
+               widths = c(1,1),
+               ncol = 2)
+  return (model)
+}
+```
+
+# Question 1
+
+## Introduction
+
+Each dataset consists of an explanatory variable (x) and a response variable (y). There are no particular references attached to these datasets so each can be considered depersonalized. With depersonalized datasets, the analyst is able to extract quantify the relationship between the explanatory variable(s) and the response variable(s) through statistical analysis but remain unaware of the implications of their analysis. This type of dataset is common in industries that regularly deal with sensitive data such as the Financial or Healthcare industries.
+
+### Dataset #1
+
+```{r df1, echo=FALSE, fig.align='center', warning=FALSE, message=FALSE, fig.height=6, fig.width=10}
+model1 <- read.csv("~/Downloads/df1.csv") %>% plotSummary
+shapiro.test(model1$residuals)
+confint(model1)
+summary(model1)
+```
+
+The first dataset clearly has a categorical explanatory variable since each variable is associated with more than one response.
+The Normality Plot for this model appears suspect but the p-value of the Shapiro-Wilk test indicates that there is not enough evidence to suggest that it is non-normal. The residual plots appear symmetric about the gression line and the spread is equal. The line at y = 0 remains within the confidence band which indicates the spread of residuals is fairly even around the regression line. The R^2 value is close to 1 which indicates that 99.44% of the data is explained by this model. This provides a level of confidence that this model is accurate. 
+
+There is convincing evidence that there is a relationship between the explanatory and response variable (p-value < 2e-16). It is estimated that for each increase in the explanatory variable, there is an associated increase in average response value by 4.0557 units. With 95% confidence, for every increase in the explanatory variable, there is an associated increase in the mean response variable by between 3.94 and 4.172 units.
+
+### Dataset #2
+
+```{r df2, echo=FALSE, fig.align='center', warning=FALSE, message=FALSE, fig.height=6, fig.width=10}
+model2 <- read.csv("~/Downloads/df2.csv") %>% plotSummary
+```
+
+The residul plots are not quite symmetric about the regression line. There is fanning in the tail ends of the confidence bands in the residual plots and the stronger deviation from normality in the tail ends of the normality plot which indicate that the spread of the tails are wider than the other parts of the model. This indicates that this model does not work well at extreme values due to lack of data for extreme values of X. Other than the tails, the normality plot indicates that the data is normal. The uneven spread violates the equal variance assumption and the lack of symmetry violates the Linearity Assumption, both of which are required for Linear Regression to be accurate. As such, a Simple Linear Regression model is not appropriate.
+
+
+### Dataset #3
+
+```{r df3, echo=FALSE, fig.align='center', warning=FALSE, message=FALSE, fig.height=6, fig.width=10}
+model3 <- read.csv("~/Downloads/df3.csv") %>% plotSummary
+```
+
+The residual plots are not symmetric about the regression line indicating the data is not linear. There is also uneven spread about the regression line which indicates that the variances are not equal. The normality plot indicates that this data is normal barring the most extreme values on either tail. The response value contains negative values which means it is not a candidate for a log transformation. Because of the violation of both A Simple Linear Regression Model is not appropriate.
+
+### Dataset #4
+
+```{r df4, echo=FALSE, fig.align='center', warning=FALSE, message=FALSE, fig.height=6, fig.width=10}
+model4 <- read.csv("~/Downloads/df4.csv") %>% plotSummary
+model4$residuals %>% shapiro.test %>% tidy %>% knitr::kable()
+```
+
+The residual plots are not symmetric about the regression line thus violating the Linearity assumption. This is readily apparent because the regression line lies outside the confidence interval at times in the residual plots. The spread seems to be fairly consistent so the Equal Spread assumption is met. The normality plot appears to be close for values near the median but drift closer to the tails. The Shapiro-Wilk test indicates that there is not enough evidence to indicate that the data is non-normal so it can be said that the Normality assumption is met. Because the data is not linear, a Simple Linear Regression model is not appropriate.
+
+## Question #2
+
+a. [Culturally transmitted song exchange between humpback whales (Megaptera novaeangliae) in the southeast Atlantic and southwest Indian Ocean basins](https://royalsocietypublishing.org/doi/full/10.1098/rsos.172305)
+
+b. The article's headline vaguely implies a generalization about songs and the culture of humpback whales in the Southern Hemisphere.
+
+c. The headline is accurate and I personally appreciate that the headline doesn't give it all away. The study followed pitches of humback whales trying to find similarities between various groups throughout the Southern Oceans. The hypothesis is that groups of humpback whales pass on songs that they have heard to other whales. The conclusion suggests how that these different groups of humpback whales intermingle since they have heard similar songs around the southern oceans.
