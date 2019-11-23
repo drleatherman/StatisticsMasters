@@ -1,6 +1,7 @@
 #+TITLE:     Applied Regression Analysis Classnotes
 #+AUTHOR:    Dustin Leatherman
 
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script>
 * Session 1 - Summary and Review
 :LOGBOOK:
 CLOCK: [2019-09-11 Wed 18:08]
