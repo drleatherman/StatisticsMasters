@@ -1,0 +1,499 @@
+---
+title: 'Homework #1'
+author: "Dustin Leatherman"
+date: "April 6, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(broom)
+library(tidyverse)
+library(kableExtra)
+library(knitr)
+library(yacca)
+```
+```{r, functions}
+# pca_analysis
+# Parameters: 
+# dataset - data.frame containing all items that will be run against pca. Note: filter factors beforehand!
+# type - enumeration for "original" or "standard". orginal applies pca to the orginal values while standard does # standardized values
+# returns a tibble containing the original data, a PCA object, and an augmented set of the data with fitted values from the PCA object
+pca_analysis <- function(dataset, type) {
+  if(type == "original") {
+      dataset %>% 
+      # calculate mean eigenvalue from covariance matrix to determine floor for principle component selection
+      mutate(avg_eigen = eigen(var(.))$values %>% mean) %>%
+      nest() %>%
+      mutate(
+        pca = map(data, ~ prcomp(.x %>% select(-avg_eigen))),
+        # add values from pca output onto original data
+        pca_aug = map2(pca, data, ~augment(.x, data = .y))
+      )
+  } else if(type == "standard") {
+      dataset %>% 
+      # calculate mean eigenvalue from correlation matrix to determine floor for principle component selection
+      mutate(avg_eigen = eigen(cor(.))$values %>% mean) %>%
+      nest() %>%
+      mutate(
+        pca = map(data, ~ prcomp(.x %>% select(-avg_eigen), scale. = TRUE, center = TRUE)),
+        # add values from pca output onto original data
+        pca_aug = map2(pca, data, ~augment(.x, data = .y))
+      )
+  }
+}
+
+# pca_tidy
+# Parameters:
+# pca_analysis - a tibble returned from the pca_analysis function
+# Returns: a tibble containing summarized pca information
+pca_summary <- function(pca_analysis) {
+  pca_analysis %>%
+    unnest(pca_aug) %>% 
+    # calculate variance for all PC variables
+    summarize_at(.vars = vars(contains("PC")), .funs = funs(var)) %>% 
+    # pivot columns to rows
+    gather(
+      key = pc, 
+      value = variance
+    ) %>% 
+    mutate(
+      # variance explained
+      var_exp = variance / sum(variance),
+      # cumulative sum of variance explained so far
+      cum_var_exp = cumsum(var_exp),
+      # name of principle component
+      pc = str_replace(pc, ".fitted", "")
+    )
+}
+
+# pca_kable
+# Taking all the above parameters, produce a kable which highlights Principle Components where
+# the variance exceeds the average eigenvalue
+pca_kable <- function(pca_analysis, pca_summary, type) {
+  caption_txt <- ifelse(type == "standard", "Standardized", "Original")
+  pca_summary %>%
+  kable(
+    digits = 4,
+    col.names = c("PC", "Variance", "Var. Explained", "Cumulative  Var. Explained"),
+    caption = paste(caption_txt, "Principle Components. Bolded rows indicate where variance is greater than the average eigenvalue. These are the chosen PCs")
+    ) %>%
+  kable_styling("striped", full_width = FALSE, latex_options = "hold_position") %>%
+  # bold rows that are greater than the average eigenvalue.
+  row_spec(which(pca_summary$variance >= (pca_analysis$pca_aug[[1]]$avg_eigen) %>% mean), bold = T)
+  
+}
+
+# kable_pc_list
+# Parameters:
+# pca_analysis - output from pca_analysis function
+# type - "original"/"standard" for type of analysis
+# pc_list - vector of Principle Components to retrieve. i.e. c("PC1", "PC2")
+# This function is a utility function to write out the PC coefficients in a formatted way
+kable_pc_list <- function(pca_analysis, type, pc_list){
+  caption_txt <- ifelse(type == "standard", "Standardized", "Original")
+  
+  pca_analysis$pca[[1]]$rotation[, pc_list] %>% 
+  kable(
+    caption = paste("Coefficients for selected ", caption_txt, " Principle Components"),
+    col.names = pc_list
+  ) %>%
+  kable_styling("striped", full_width = FALSE, latex_options = "hold_position")
+}
+
+
+# return correlation for a given principle component
+pc_corr <- function(dataset, pc_num, type) {
+  if(type == "standard") {
+    R <- cor(dataset)
+    pca <- prcomp(dataset, scale. = TRUE, center = TRUE)
+    lambda <- eigen(R)$values
+    diag <- diag(R)
+  } else if (type == "original") {
+    S <- var(dataset)
+    pca <- prcomp(dataset)
+    lambda <- eigen(S)$values
+    diag <- diag(S)
+  } else {
+    stop(paste("Invalid type specified:", type))
+  }
+  PC1 <- pca$rotation[,pc_num]
+  PC1 * sqrt(lambda[1] / diag)
+}
+```
+
+# 1
+
+*Carry out a principal components analysis of the diabetes data (diabetes.csv on D2L). Use all five variables, including y’s and x’s. Use both S and R. Which do you think is more appropriate here? Show the precent of variance explained. Based on the average eigenvalue or a scree plot, decide how many components to retain. Can you interpret the components of either S or R? Note that:*
+  *x1 = glucose intolerance*
+  *x2 = insulin response to oral glucose*
+  *x3 = insulin resistance*
+  *y1 = relative weight*
+  *y2 = fasting plasma glucose*
+  
+```{r, q1}
+diabetes <- read.csv("~/Downloads/diabetes.csv")
+diabetes.pca.orig <- pca_analysis(diabetes %>% select(-Patient), "original")
+diabetes.pca.tidy.orig <- pca_summary(diabetes.pca.orig)
+
+pca_kable(diabetes.pca.orig, diabetes.pca.tidy.orig, "original")
+
+# get coefficients from first two principle components since these are the winners per above
+kable_pc_list(diabetes.pca.orig, "original", c("PC1", "PC2"))
+
+diabetes.pca.std <- pca_analysis(diabetes %>% select(-Patient), "standard")
+diabetes.pca.tidy.std <- pca_summary(diabetes.pca.std)
+
+pca_kable(diabetes.pca.std, diabetes.pca.tidy.std, "standard")
+
+# get coefficients from first two principle components since these are the winners per above
+kable_pc_list(diabetes.pca.std, "standard", c("PC1", "PC2"))
+```
+
+The average eigenvalue for the original scale is 1141.152 which means the Principle Components of Interest are PC1 and PC2. The average eigenvalue for the standardized data is always 1 indicating the same results.
+
+### Interpretation
+
+Using the Original variables allows for a bit easier interpretation.
+
+#### PC1
+
+The coefficients are much higher for x2 (insulin response to oral glucose) and x3 (insulin resistance). Without knowing more about the data points, I posit that PC1 is a measure of insulin impact to the body.
+
+#### PC2
+
+The largest magnitudes for the coefficients are x1 (glucose intolerance), x2 (insulin response to oral glucose), and x3 (insulin resistance). x3 is negative while x1 and x2 are positive. This indicates that this variable may reference an interaction effect of oral glucose and insulin. This is because x1 and x3 are nearly the same magnitude with opposite signs and x3 is a measure involving some combonation of them both.
+
+# 2
+
+*Carry out a principal components analysis of the word probe data (wordprobe.csv on D2L). Use all five variables, including y’s and x’s. Use both S and R. Which do you think is more appropriate here? Show the precent of variance explained. Based on the average eigenvalue or a scree plot, decide how many components to retain. Can you interpret the components of either S or R? Note that:*
+
+  *$y_i$ = response time for the i-th probe word*
+  
+*where i = 1, 2, 3, 4, 5.*
+
+```{r, q2}
+
+wordprobe <- read.csv("~/Downloads/wordprobe.csv")
+
+wordprobe.pca.orig <- pca_analysis(wordprobe %>% select(-Subject), "original")
+wordprobe.pca.tidy.orig <- pca_summary(wordprobe.pca.orig)
+
+pca_kable(wordprobe.pca.orig, wordprobe.pca.tidy.orig, "original")
+
+# get coefficients from first two principle components since these are the winners per above
+kable_pc_list(wordprobe.pca.orig, "original", c("PC1"))
+
+wordprobe.pca.std <- pca_analysis(wordprobe %>% select(-Subject), "standard")
+wordprobe.pca.tidy.std <- pca_summary(wordprobe.pca.std)
+
+pca_kable(wordprobe.pca.std, wordprobe.pca.tidy.std, "standard")
+
+# get coefficients from first two principle components since these are the winners per above
+kable_pc_list(wordprobe.pca.std, "standard", c("PC1"))
+
+# calculate correlation between a principle component and the original variables
+# pc_corr(wordprobe %>% select(-Subject), 1, "standard")
+```
+
+The average eigenvalue based on the original values is 58.5782. Only the first principle component exceeds this value so it is the only one that is chosen according to this method. The 80% rule would include the second principle component as well but it is outside this analysis. The same results are seen when looking at the Standardized Principle Components.
+
+### Interpretation
+
+The coefficients in both analysis appear to be generally close so this PC can be interpreted as a weighted average of response times.
+
+# 3
+
+*Carry out a principal components analysis separately for males and females in the psyc.csv dataset. Compare the results for the two groups. Use S.*
+
+## Men
+
+```{r, q3.men}
+
+psych <- read.csv("~/Downloads/psych.csv")
+
+psych.pca.men <- pca_analysis(
+  psych %>% filter(Sex == "Male") %>% select(-Sex), 
+  "standard"
+  )
+
+
+psych.pca.men.tidy <- pca_summary(psych.pca.men)
+
+pca_kable(psych.pca.men, psych.pca.men.tidy, "standard")
+
+# get coefficients from first principle component 
+kable_pc_list(psych.pca.men, "standard", c("PC1"))
+```
+
+## Women
+
+```{r, q3.women}
+
+psych.pca.women <- pca_analysis(
+  psych %>% filter(Sex == "Female") %>% select(-Sex), 
+  "standard"
+  )
+psych.pca.women.tidy <- pca_summary(psych.pca.women)
+
+pca_kable(psych.pca.women, psych.pca.women.tidy, "standard")
+
+# get coefficients from first principle component 
+kable_pc_list(psych.pca.women, "standard", c("PC1"))
+```
+
+## Interpretation
+
+The coefficients for both groups are roughly similar in magnitude to the coefficients within and between groups. The women have all negative loadings while the men are positive. Positive loadings of approximately the same size indicate a weighted average. All negative loadings of approximately the same indicate weighted average as well. 
+
+
+## Comparison
+
+The loadings are similar in magnitude and spread for both groups so there does not appear to be much of a difference between men and women.
+
+# 4
+
+*Carry our a principal components analysis separately for the two species in the beetle data set (beetles.csv). Compare the results for the two groups. Use S.*
+
+## Oleracea
+
+```{r, q4.oler}
+
+beetles <- read.csv("~/Downloads/beetles.csv")
+
+beetles.pca.oler <- pca_analysis(
+  beetles %>% filter(Species == "Oleracea") %>% select(-Species), 
+  "standard"
+  )
+
+beetles.pca.oler.tidy <- pca_summary(beetles.pca.oler)
+
+pca_kable(beetles.pca.oler, beetles.pca.oler.tidy, "standard")
+
+# get coefficients from first principle component 
+kable_pc_list(beetles.pca.oler, "standard", c("PC1"))
+```
+
+## Carduorum
+
+```{r, q4.card}
+
+beetles.pca.card <- pca_analysis(
+  beetles %>% filter(Species == "Carduorum") %>% select(-Species), 
+  "standard"
+  )
+beetles.pca.card.tidy <- pca_summary(beetles.pca.card)
+
+pca_kable(beetles.pca.card, beetles.pca.card.tidy, "standard")
+
+# get coefficients from first principle component 
+kable_pc_list(beetles.pca.card, "standard", c("PC1"))
+```
+
+## Interpretation
+
+The coefficients for both groups are roughly similar in magnitude to the coefficients within and between groups. Carduorum beetles have all negative loadings while Oleracea beetles are positive. Positive loadings of approximately the same size indicate a weighted average. All negative loadings of approximately the same indicate weighted average as well. 
+
+
+## Comparison
+
+The loadings are similar in magnitude and spread for both groups so there does not appear to be much of a difference between men and women.
+
+# 5
+
+*The weekly rates of return for five stocks were recorded for the period January 1995 through March 1995. The data provided here are for 16 weekly rates of return. The stocks observed are Allied Chemical, Dow Chemical, Union Chemical, the Standard Oil Company, and Texas oil. Data can be found under the Week #1 course content in the file stocks.csv.*
+
+```{r, q5ab}
+stocks <- read.csv("~/Downloads/stocks.csv")
+
+# (a) Calculate the mean and standard deviation for each variable.
+stocks %>% summarize_all(.funs = c(Mean=mean, Stdev=sd))
+
+# (b) Calculate the correlation structure between and within the chemical companies and the oil companies.
+chemical <- stocks %>% select(Allied,Dow,Union)
+oil <- stocks %>% select(Standard,Texas)
+cca.res <- cca(chemical, oil, xscale = TRUE, yscale = TRUE)
+summary(cca.res)
+```
+
+## (c) State the hypotheses and test for the significance of the canonical correlations.
+
+There is convincing evidence that the first or second canonical correlation is non-zero (Bartlett Chi-Squared Test. p-value = 0.0043). There is no evidence that the second canonical correlation is non-zero (Bartlett Chi-Squared Test. p-value = 0.2954). The first canonical correlation will be used going forward.
+
+## (d) Give the values for the significant canonical correlations and the squared canonical correlations. Interpret the squared canonical correlations in the context of the problem.
+
+#### Significant Canonical Correlation
+
+```{r, q5d}
+cca.res$corr[1]
+```
+
+#### Canonical Correlation Squared
+
+```{r, q5d2}
+cca.res$corr[1]^2
+```
+
+77.62% of the variance in the stock price of the Oil companies is explained by the stock price of the Chemical companies.
+
+## (e) Write the equations of the significant canonical variables (based on the method, unstandardized or standardized) that you choose. Comment on their relative importance of the original variables to the canonical variables.
+
+$U_1$ = 0.0316($\frac{Allied - \bar{Allied}}{Allied_s}$) + 0.1576($\frac{Dow - \bar{Dow}}{Dow_s}$) + 0.9225($\frac{Union - \bar{Union}}{Union_s}$)
+
+$V_1$ = 0.0683($\frac{Standard - \bar{Standard}}{Standard_s}$) - 1.0025($\frac{Texas - \bar{Texas}}{Texas_s}$)
+
+```{r, q5e}
+cca.res$xstructcorr[,1]
+cca.res$ystructcorr[,1]
+```
+
+The standardized value of Union dominates $U_1$ while the standardized value of Texas dominates $V_1$. Inspecting at the correlations between the canonical loadings and the standardized variables show that Union and $U_1$ have correlation of 0.985 while Texas and $V_1$ have a correlation of -0.998. This means that $r_1$ = 0.881 may be a surrogate of the relationship between the stock price of Union Chemical and the stock price of Texas Oil.
+
+## (f) Comment and interpret the redundancy analysis.
+
+```{r, q5f, echo=FALSE}
+cca.res$xcanvad[1]
+cca.res$ycanvad[1]
+cca.res$xvrd[1]
+cca.res$yvrd[1]
+```
+
+$U_1$ explains 45.7% of the variance in the chemical variables and 35.5% of the variance in the oil variables. $V_1$ explains 49.8% of the variance in the oil variables and 38.6% of the variance in the chemical variables.
+
+# 6
+
+*Height and weight data were collected on a sample of 19 fathers and their adult sons. Height is given in inches and weight is given in pounds. Data can be found under the Week #1 course content in the file fatherson.csv.*
+
+```{r, q6ab}
+fatherson <- read.csv("~/Downloads/fatherson.csv")
+
+# (a) Calculate the mean and standard deviation for each variable.
+fatherson %>% summarize_all(.funs = c(Mean=mean, Stdev=sd))
+
+# (b) Calculate the correlation structure between and within the fathers’ characteristics and the sons’ characteristics.
+father <- fatherson %>% select(FatherHT, FatherWT)
+son <- fatherson %>% select(SonHT, SonWT)
+cca.res <- cca(son, father, xscale = TRUE, yscale = TRUE)
+summary(cca.res)
+```
+
+## (c) State the hypotheses and test for the significance of the canonical correlations.
+
+There is convincing evidence that the first or second canonical correlation is non-zero (Bartlett Chi-Squared Test. p-value = 0.0001). There is no evidence that the second canonical correlation is non-zero (Bartlett Chi-Squared Test. p-value = 0.4241). The first canonical correlation will be used going forward.
+
+## (d) Give the values for the significant canonical correlations and the squared canonical correlations. Interpret the squared canonical correlations in the context of the problem.
+
+#### Significant Canonical Correlation
+
+```{r, q6d}
+cca.res$corr[1]
+```
+
+#### Canonical Correlation Squared
+
+```{r, q6d2}
+cca.res$corr[1]^2
+```
+
+77.02% of the variance in the measurements for sons is explained by the measurements of their fathers.
+
+## (e) Write the equations of the significant canonical variables (based on the method, unstandardized or standardized) that you choose. Comment on their relative importance of the original variables to the canonical variables.
+
+$U_1$ = -0.1028($\frac{SonHT - \bar{SonHT}}{SonHT_s}$) - 0.9713($\frac{SonWT - \bar{SonWT}}{SonWT_s}$)
+
+$V_1$ = -0.0916($\frac{FatherHT - \bar{FatherHT}}{FatherHT_s}$) - 0.9627($\frac{FatherWT - \bar{FatherWT}}{FatherWT_s}$)
+
+```{r, q6e}
+cca.res$xstructcorr[,1]
+cca.res$ystructcorr[,1]
+```
+
+The standardized value of Son Weight dominates $U_1$ while the standardized value of Father Weight dominates $V_1$. Inspecting at the correlations between the canonical loadings and the standardized variables show that Son Weight and $U_1$ have correlation of -0.995 while Father Weight and $V_1$ have a correlation of -0.996. This means that $r_1$ = 0.8776 may be a surrogate of the relationship between the Father and Son's Weight.
+
+## (f) Comment and interpret the redundancy analysis.
+
+```{r, q6f, echo=FALSE}
+cca.res$xcanvad[1]
+cca.res$ycanvad[1]
+cca.res$xvrd[1]
+cca.res$yvrd[1]
+```
+
+$U_1$ explains 54.8% of the variance in the Son variables and 42.2% of the variance in the Father variables. $V_1$ explains 59.6% of the variance in the Father variables and 45.9% of the variance in the Son variables.
+
+# 7
+
+*The data set student.csv (found under the Week #1 course content) contains information on six predictor measures of student success in a statistics class:*
+
+* socioeconomic status (SES) (1=high, 2=middle, 3=low)
+* sex (0=male, 1=female)
+* grade point average (GPA)
+* Scholastic Aptitude Test (SAT)
+* previous statistics class (0=no, 1=yes)
+* pretest score
+
+*and three statistics course measures:*
+
+* Exam 1 score
+* Exam 2 score
+* Exam 3 score
+
+```{r, q7ab}
+students <- read.csv("~/Downloads/student.csv")
+
+# (a) Calculate the mean and standard deviation for each variable.
+students %>% summarize_all(.funs = c(Mean=mean, Stdev=sd))
+
+# (b) Calculate the correlation structure between and within the predictor measures of student success and the statistics course measures.
+success <- students %>% select(SES, sex, GPA, SAT, stats, pretest)
+measures <- students %>% select(exam1, exam2, exam3)
+cca.res <- cca(measures, success, xscale = TRUE, yscale = TRUE)
+summary(cca.res)
+```
+
+## (c) State the hypotheses and test for the significance of the canonical correlations.
+
+There is convincing evidence that at least one canonical correlation is non-zero (Bartlett Chi-Squared Test. p-value = 0.0094). There is no evidence that the second or third canonical correlation is non-zero  (Bartlett Chi-Squared Test. p-value = 0.8609). The first canonical correlation will be used going forward.
+
+## (d) Give the values for the significant canonical correlations and the squared canonical correlations. Interpret the squared canonical correlations in the context of the problem.
+
+#### Significant Canonical Correlation
+
+```{r, q7d}
+cca.res$corr[1]
+```
+
+#### Canonical Correlation Squared
+
+```{r, q7d2}
+cca.res$corr[1]^2
+```
+
+80.69% of the variance in the measurements for the exams are explained by the student success measurements.
+
+## (e) Write the equations of the significant canonical variables (based on the method, unstandardized or standardized) that you choose. Comment on their relative importance of the original variables to the canonical variables.
+
+$U_1$ = -0.3299($\frac{exam1 - \bar{exam1}}{exam1_s}$) + 0.1889($\frac{exam2 - \bar{exam2}}{exam2_s}$) - 0.8515($\frac{exam3 - \bar{exam3}}{exam3_s}$)
+
+$V_1$ = 0.2478($\frac{SES - \bar{SES}}{SES_s}$) - 0.1612($\frac{sex - \bar{sex}}{sex_s}$) - 0.0315($\frac{GPA - \bar{GPA}}{GPA_s}$) - 1.025($\frac{SAT - \bar{SAT}}{SAT_s}$) - 0.1728($\frac{stats - \bar{stats}}{stats_s}$) - 0.2328($\frac{pretest - \bar{pretest}}{pretest_s}$)
+
+```{r, q7e}
+cca.res$xstructcorr[,1]
+cca.res$ystructcorr[,1]
+```
+
+The standardized value of exam 3 dominates $U_1$ while the standardized value of the SAT score dominates $V_1$. Inspecting at the correlations between the canonical loadings and the standardized variables show that exam 3 and $U_1$ have correlation of -0.9464 while SAT score and $V_1$ have a correlation of -0.9245. This means that $r_1$ = 0.8983 may be a surrogate of the relationship between the standardized third exam score and the standardized SAT score.
+
+## (f) Comment and interpret the redundancy analysis.
+
+```{r, q7, echo=FALSE}
+cca.res$xcanvad[1]
+cca.res$ycanvad[1]
+cca.res$xvrd[1]
+cca.res$yvrd[1]
+```
+
+$U_1$ explains 47.9% of the variance in the Measurement variables and 38.7% of the variance in the Success variables. $V_1$ explains 18.4% of the variance in the Success variables and 14.8% of the variance in the Measurement variables.

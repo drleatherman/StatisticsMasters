@@ -1,0 +1,88 @@
+---
+title: 'Quiz #3'
+author: "Dustin Leatherman"
+date: "5/17/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(broom)
+```
+
+# 1 
+
+*For the 23 space shuttle flights before the Challenger mission disaster in 1986, the data set Oring.csv shows the temperature (◦F) at the time of the flight and whether at least one primary O-ring suffered thermal distress.*
+
+```{r intro}
+oring <- read.csv("~/Downloads/Oring.csv")
+head(oring) %>% tidy %>% kable
+```
+
+## a
+
+*Use logistic regression to model the effect of temperature on the probability of thermal distress. Interpret the effect.*
+
+```{r 1a}
+oring.lrm <- glm(TD ~ Tempeature, family = "binomial", data = oring)
+tidy(oring.lrm)
+```
+
+There is moderate evidence that temperature is associated with thermal distress (Two-Tailed Wald Logistic Regression on a Single Variable. p-value = 0.032).
+
+## b 
+
+*Estimate the probability of thermal distress at 31◦F , the temperature at the time of the Challenger flight.*
+
+The estimated logit of failure probablitiy is 1.7164. The estimated failure probability is 0.9962.
+
+```{r 1b}
+eta <- predict(oring.lrm, newdata = data.frame(Tempeature=c(31)))
+est.logit <- log(eta)
+est.prob <- exp(eta) / (1 + exp(eta))
+
+est.logit
+est.prob
+```
+
+## c
+
+*At what temperature does the estimated probability equal 0.50? At that temperature, give a linear approximation for the change in the estimated probability per degree increase in temperature. Use $\hat{\beta_1}\pi(1 - \pi)$ for the second part of this problem.*
+
+$\hat{y} = 15.0429 - 0.2322 \times Temperature$
+
+$logit(0.50) = 15.0429 - 0.2322 \times Temperature$
+
+$\to logit(0.50 = log(0.5/0.5) = log(1) = 0$
+
+$\to 0 = 15.0429 - 0.2322 \times Temperature \to Temperature = \frac{15.0429}{0.2322} = 64.7842$ 
+
+### Linear Approximation
+
+$0.5 \times 0.5 \times -0.2322 = -0.0581$
+
+## d
+
+*Interpret the effect of temperature on the odds of thermal distress.*
+
+For every 1 degree increase in temperature, the odds of thermal distress vs non-thermal distress decrease by 0.0581.
+
+## e
+
+*Test the hypothesis that temperature has no effect using the Wald test and using the drop-in-deviance test.*
+
+There is convincing evidence that temperature has no effect on O-ring failure (Drop-in-deviance Test. p-value =  0.167).
+
+There is moderate evidence that temperature has an effect on O-ring failure (Two-Tailed Wald Logistic Regression on a Single Variable. p-value = 0.032).
+
+Given that the drop-in-deviance test more powerful than the Wald Test, the conclusions from the Drop-in-Deviance test are preferred.
+
+```{r 1e}
+# Drop in Deviance Test
+1 - pchisq(oring.lrm$null.deviance, oring.lrm$df.null)
+```

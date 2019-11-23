@@ -1,0 +1,234 @@
+---
+title: 'Homework #5'
+author: "Dustin Leatherman"
+date: "5/12/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(Sleuth3)
+library(dplyr)
+
+# calculate drop in deviance based on a full and reduced glm model
+dind <- function (glm.full, glm.reduced) {
+  lrt <- glm.reduced$deviance - glm.full$deviance
+  lrt.df <- glm.reduced$df.residual - glm.full$df.residual
+  1 - pchisq(lrt, lrt.df)
+}
+```
+
+# 10
+
+$$
+  \omega = \frac{\pi}{1 - \pi} = e^{\beta_0 + \sum_{i = 1}^{p} \beta_iX_i}
+$$
+
+Let $A = X_i$
+
+$$
+\omega_A = e^{\beta_0 + \beta_1A}
+$$
+
+Let $B = X_i$
+
+$$
+  \omega_B = e^{\beta_0 + \beta_1B}
+$$
+
+$$
+  \frac{\omega_A}{\omega_B} = \frac{e^{\beta_0 + \beta_1A}}{e^{\beta_0 + \beta_1B}} = e^{e^{\beta_0 + \beta_1A} - (e^{\beta_0 + \beta_1B})} = e^{\beta_1(A - B)}
+$$
+
+# 11
+
+The data in Display 20.14 are the launch temperatures (degrees Fahrenheit) and an indicator of O-ring failures for 24 space shuttle launches prior to the space shuttle Challenger disaster of January 28, 1986. (See the description in Section 4.1.1 for more background information.) 
+
+  (a) Fit the logistic regression of Failure (1 for failure) on Temperature. Report the estimated coefficients and their standard errors. 
+  
+  (b) Test whether the coefficient of Temperature is 0, using Wald’s test. Report a one-sided p-value (the alternative hypothesis is that the coefficient is negative; odds of failure decrease with increasing temperature). 
+  
+  (c) Test whether the coefficient of Temperature is 0, using the drop-in-deviance test. 
+  
+  (d) Give a 95% confidence interval for the coefficient of Temperature. 
+  
+  (e) What is the estimated logit of failure probability at 31ıF (the launch temperature on January 28, 1986)? What is the estimated probability of failure? 
+  
+  (f) Why must the answer to part (e) be treated cautiously? (Answer: It is a prediction outside the range of the available explanatory variable values.) 
+
+## a
+
+```{r 11a}
+failure.lr <- glm(Failure ~ Temperature, family = "binomial", data = ex2011)
+summary(failure.lr)
+```
+
+## b
+
+There is suggestive evidence that the temperature coefficient is non-zero (Wald Lower Tail T-Test. p-value = 0.02).
+
+```{r 11b}
+est <- summary(failure.lr)$coef[2,]
+pnorm(est[3])
+```
+
+## c
+
+There is convincing evidence that there is an association between O-ring failure and Temperature (Drop-in-Deviance Test. p-value = 0.0148)
+
+```{r 11c}
+failure.reduced <- glm(Failure ~ 1, family = "binomial", data = ex2011)
+dind(failure.lr, failure.reduced)
+```
+
+## d
+
+```{r 11d}
+confint(failure.lr)[2,]
+```
+
+## e
+
+The estimated logit of failure probablitiy is 1.7164. The estimated failure probability is 0.9962.
+
+```{r 11e}
+eta <- predict(failure.lr, newdata = data.frame(Temperature=c(31)))
+est.logit <- log(eta)
+est.prob <- exp(eta) / (1 + exp(eta))
+
+est.logit
+est.prob
+```
+
+## f
+
+Since 31 is not within the range of temperature data provided, this result is an extrapolation and cannot be tested against without further data collection.
+
+# 12
+
+	Duchenne Muscular Dystrophy (DMD) is a genetically transmitted disease, passed from a mother to her children. Boys with the disease usually die at a young age; but affected girls usually do not suffer symptoms, may unknowingly carry the disease, and may pass it to their offspring. It is believed that about 1 in 3,300 women are DMD carriers. A woman might suspect she is a carrier when a related male child develops the disease. Doctors must rely on some kind of test to detect the presence of the disease. The data in Display 20.15 are levels of two enzymes in the blood, creatine kinase (CK) and hemopexin (H), for 38 known DMD carriers and 82 women who are not carriers. (Data from D. F. Andrews and A. M. Herzberg, Data, New York: Springer-Verlag, 1985.) It is desired to use these data to obtain an equation for indicating whether a woman is a likely carrier. 
+	
+	 (a) Make a scatterplot of H versus log(CK); use one plotting symbol to represent the controls on the plot and another to represent the carriers. Does it appear from the plot that these enzymes might be useful predictors of whether a woman is a carrier? 
+	 
+	 (b) Fit the logistic regression of carrier on CK and CK-squared. Does the CK-squared term significantly differ from 0? Next fit the logistic regression of carrier on log(CK) and [log(CK)]2. Does the squared term significantly differ from 0? Which scale (untransformed or log-transformed) seems more appropriate for CK? 
+	 
+	 (c) Fit the logistic regression of carrier on log(CK) and H. Report the coefficients and standard errors. 
+	 
+	 (d) Carry out a drop-in-deviance test for the hypothesis that neither log(CK) nor H are useful predictors of whether a woman is a carrier. 
+	 
+	 (e) Typical values of CK and H are 80 and 85. Suppose that a suspected carrier has values of 300 and 100. What are the odds that she is a carrier relative to the odds that a woman with typical values (80 and 85) is a carrier? 
+	 
+## a
+
+```{r 12a}
+qplot(H, log(CK), color = Group, data = ex2012)
+```
+
+It appears that there is a decent amount of separation between Carriers and Controls so there appears to be usefulness for using these enzymes as predictors.
+
+## b
+
+There is no evidence that the squared CK term is non-zero (Two-tailed Wald Test for single logistic regression coefficient. p-value = 0.122).
+
+There is no evidence that the squared log(CK) term is non-zero (Two-tailed Wald Test for single logistic regression coefficient. p-value = 0.1737).
+
+The log transformation is more appropriate for this data since it is right-skewed. A log transformation doesn't make it entirely normal but it does help.
+
+```{r 12b, fig.width=10}
+mdc.lr.ck <- glm(Group ~ poly(CK, 2), family = "binomial", data = ex2012)
+summary(mdc.lr.ck)
+
+mdc.lr.logck <- glm(Group ~ poly(log(CK), 2), family = "binomial", data = ex2012)
+summary(mdc.lr.logck)
+
+qplot(x = CK, geom="histogram", data = ex2012)
+qplot(x = log(CK), geom="histogram", data = ex2012)
+```
+
+## c
+
+```{r 12c}
+mdc.lr <- glm(Group ~ log(CK) + H, family = "binomial", data = ex2012)
+summary(mdc.lr)
+```
+
+## d
+
+There is convincing evidence that at least one of the predictors, log(CK) and H, are significant for determining whether a woman is a muscular dystrophy carrier (Drop-in-Deviance Test. p-value = 0). 
+
+```{r 12d}
+mdc.reduced <- glm(Group ~ 1, family = "binomial", data = ex2012)
+dind(mdc.lr, mdc.reduced)
+```
+
+## e
+
+Typical values of CK and H are 80 and 85. Suppose that a suspected carrier has values of 300 and 100. What are the odds that she is a carrier relative to the odds that a woman with typical values (80 and 85) is a carrier? 
+
+A woman with CK = 300 and H = 100 is 177.8424 times more likely to be a carrier.
+
+$$
+e^{\beta_0 + \beta_1(300 - 80) + \beta_2(100 - 85)} = e^{28.9134 + log(220)\beta_1 + 15\beta_2} = 177.8424 
+$$
+
+# 16
+
+Hermon Bumpus analyzed various characteristics of some house sparrows that were found on the ground after a severe winter storm in 1898. Some of the sparrows survived and some perished. The data on male sparrows in Display 20.17 are survival status (1 = survived, 2 = perished), age (1 = adult, 2 = juvenile), the length from tip of beak to tip of tail (in mm), the alar extent (length from tip to tip of the extended wings, in mm), the weight in grams, the length of the head in mm, the length of the humerus (arm bone, in inches), the length of the femur (thigh bones, in inches), the length of the tibio-tarsus (leg bone, in inches), the breadth of the skull in inches, and the length of the sternum in inches. (A subset of this data was discussed in Exercise 2.21.)
+
+Analyze the data to see whether the probability of survival is associated with physical characteristics of the birds. This would be consistent, according to Bumpus, with the theory of natural selection: those that survived did so because of some superior physical traits. Realize that (i) the sampling is from a population of grounded sparrows, and (ii) physical measurements and survival are both random. (Thus, either could be treated as the response variable.)
+
+Null Hypothesis: Physical characteristics are not associated with the survival of grounded sparrows.
+Alternative Hypothesis: Physical characteristics are associated with the survival of grounded sparrows.
+
+Comparing a logistic regression intercept-only model with a full logistic regression model using the drop-in-deviance test will tell if any of the physical characteristics are useful in predicting survival.There is convincing evidence that there is an association between physical characteristics and survival with grounded sparrows (Drop-in-Deviance Test. p-value = 1.099047e-07).
+
+```{r 16}
+birds <- ex2016
+# get a 0-based variable
+birds$AGScale <- birds$AG - 1
+birds.full <- glm(Status ~ ., family = "binomial", data = birds %>% select(-AG))
+birds.reduced <- glm(Status ~ 1, family = "binomial", data = birds)
+summary(birds.full)
+
+dind(birds.full, birds.reduced)
+```
+
+# 19
+
+Following a successful test of an anti-ballistic missile (ABM) in July 1999, many prominent U.S. politicians called for the early deployment of a full ABM system. The scientific community was less enthusiastic about the efficacy of such a system. G. N. Lewis, T. A. Postol, and J. Pike (“Why National Missile Defense Won’t Work,” Scientific American, 281(2): 36–41, August 1999) traced the history of ABM testing, reporting the results shown in Display 20.20. Do these data suggest any improvement in ABM test success probability over time? 
+
+Null Hypothesis: Time is not associated the results of a missle test
+Alternative Hypothesis: Time is associated with the results of a missle test
+
+As done in the previous problem, comparing an intercept-only logistic regression model with a logistic regression model containing time using the drop-in-deviance statistic is telling in the efficacy of missle testing.
+
+There is no evidence that there is an association between Time and the Results of a Missle Test (Drop-in-Deviance. p-value = 0.6909)
+
+```{r 19}
+missle.full <- glm(Result ~ Months, family = "binomial", data = ex2019)
+missle.reduced <- glm(Result ~ 1, family = "binomial", data = ex2019)
+summary(missle.full)
+summary(missle.reduced)
+
+dind(missle.full, missle.reduced)
+```
+
+# 20
+
+Reconsider the NLSY79 data in Exercise 12.23. The variable Esteem1 is the respondent’s degree of agreement in 2006 with the statement “I feel that I’m a person of worth, at least on equal basis with others,” with values of 1, 2, 3, and 4 signifying strong agreement, agreement, disagreement, or strong disagreement, respectively. Construct a new binary response variable from this, which takes on the value 1 for strong agreement and 0 for agreement, disagreement, or strong disagreement. 
+
+Explore the dependence of the probability that a person has positive self-esteem (as indicated by a response of strong agreement on Esteem1) on these explanatory variables: log annual income in 2005 (Income2005), intelligence as measured by the AFQT score in 1981 (AFQT), years of education (Educ), and gender (Gender). 
+
+There is convincing evidence that log income, AFQT score, and Years of Education are associated with person with positive self esteem (Two-tailed Wald Test for single logistic regression coefficient. p-value = 0.0004, 0.0000365, 0.000297 respectively). There is suggestive but weak evidence that being Male is associated with positive self-esteem.
+
+```{r 20}
+esteem <- ex1223
+esteem$high <- ifelse(esteem$Esteem1 == 1, 1, 0)
+esteem.full <- glm(high ~ log(Income2005) + AFQT + Educ + Gender, family = "binomial", data = esteem)
+summary(esteem.full)
+```

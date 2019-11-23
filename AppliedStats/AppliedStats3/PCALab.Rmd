@@ -1,0 +1,63 @@
+---
+title: "PCA"
+author: "Dustin Leatherman"
+date: "April 1, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# read in data 
+football <- read.csv("~/Downloads/football.csv")
+
+library(ggplot2)
+library(tidyverse)
+
+# first principle component analysis for groups <> 1
+pca1 <- prcomp(football[football$Group != 1, 2:7])
+summary(pca1)
+
+# create covariance matrix
+s <- var(football[football$Group != 1, 2:7])
+
+# average eigenvalue. used to determine which PC are taken
+eigen(s)$values %>% mean
+
+# scree plot.
+qplot(1:6, eigen(s)$values, geom= c("point", "line"))
+
+# fetch principle components
+PC1 <- pca1$rotation[,1]
+PC2 <- pca1$rotation[,2]
+PC1
+PC2
+
+# get eigenvalues to find correlation of z1 with y
+lambda <- eigen(s)$values
+corr.z1.y <- PC1 * sqrt(lambda[1]/diag(s))
+corr.z2.y <- PC2 * sqrt(lambda[2]/diag(s))
+corr.z1.y
+corr.z2.y
+
+# centered and standardized PCA
+pca.std <- prcomp(football[football$Group != 1, 2:7], center = T, scale. = T)
+summary(pca.std)
+
+PC1.std <- pca.std$rotation[,1]
+PC2.std <- pca.std$rotation[,2]
+PC3.std <- pca.std$rotation[,3]
+PC1.std
+PC2.std
+PC3.std
+
+R <- cor(football[football$Group != 1, 2:7])
+lambda1 <- eigen(R)$values
+corr.std.z1.y <- PC1.std * sqrt(lambda1[1]/diag(R))
+corr.std.z2.y <- PC2.std * sqrt(lambda1[2]/diag(R))
+corr.std.z3.y <- PC3.std * sqrt(lambda1[3]/diag(R))
+corr.z2.y
+
+```

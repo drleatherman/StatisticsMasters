@@ -1,0 +1,660 @@
+---
+title: 'Data Analysis #1'
+author: "Dustin Leatherman"
+date: "April 18, 2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10, message = FALSE, warning = FALSE)
+
+library(MASS)
+library(DMwR)
+library(splitstackshape)
+library(reshape2)
+library(broom)
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(car)
+library(ggplot2)
+library(MVN)
+library(class)
+
+baseball <- read.csv("~/Downloads/baseballHOF.csv")
+```
+
+```{r utilityFunctions}
+# PUTTING THESE HERE INSTEAD OF A SEPARATE FILE FOR VISIBILTY
+
+# pca_analysis
+# Parameters: 
+# dataset - data.frame containing all items that will be run against pca
+# type - enumeration for "original" or "standard". orginal applies pca to the orginal values while standard does # standardized values
+# returns a tibble containing the original data, a PCA object, and an augmented set of the data with fitted values from the PCA object
+pca_analysis <- function(dataset, type) {
+  inputDataset <- dataset
+  if(type == "original") {
+    inputDataset %>% 
+      # calculate mean eigenvalue from covariance matrix to determine floor for principle component selection
+      select_if(is.numeric) %>%
+      mutate(avg_eigen = eigen(var(.))$values %>% mean) %>%
+      # merge back the original data into data
+      bind_cols(inputDataset %>% select_if(is.factor)) %>%
+      nest() %>%
+      mutate(
+        pca = map(data, ~ prcomp(.x %>% select_if(is.numeric) %>%  select(-avg_eigen))),
+        # add values from pca output onto original data
+        pca_aug = map2(pca, data, ~augment(.x, data = .y))
+      )
+  } else if(type == "standard") {
+    inputDataset %>% 
+      # calculate mean eigenvalue from correlation matrix to determine floor for principle component selection
+      select_if(is.numeric) %>%
+      mutate(avg_eigen = eigen(cor(.))$values %>% mean) %>%
+      # merge back the original data into data
+      bind_cols(inputDataset %>% select_if(is.factor)) %>%
+      nest() %>%
+      mutate(
+        pca = map(data, ~ prcomp(.x %>% select_if(is.numeric) %>% select(-avg_eigen), scale. = TRUE, center = TRUE)),
+        # add values from pca output onto original data
+        pca_aug = map2(pca, data, ~augment(.x, data = .y))
+      )
+  }
+}
+
+# pca_tidy
+# Parameters:
+# pca_analysis - a tibble returned from the pca_analysis function
+# Returns: a tibble containing summarized pca information
+pca_summary <- function(pca_analysis) {
+  pca_analysis %>%
+    unnest(pca_aug) %>% 
+    # calculate variance for all PC variables
+    summarize_at(.vars = vars(contains("PC")), .funs = funs(var)) %>% 
+    # pivot columns to rows
+    gather(
+      key = pc, 
+      value = variance
+    ) %>% 
+    mutate(
+      # variance explained
+      var_exp = variance / sum(variance),
+      # cumulative sum of variance explained so far
+      cum_var_exp = cumsum(var_exp),
+      # name of principle component
+      pc = str_replace(pc, ".fitted", "")
+    )
+}
+
+# pca_kable
+# Taking all the above parameters, produce a kable which highlights Principle Components where
+# the variance exceeds the average eigenvalue
+pca_kable <- function(pca_analysis, pca_summary, type) {
+  caption_txt <- ifelse(type == "standard", "Standardized", "Original")
+  pca_summary %>%
+  kable(
+    digits = 4,
+    col.names = c("PC", "Variance", "Var. Explained", "Cumulative  Var. Explained"),
+    caption = paste(caption_txt, "Principle Components. Bolded rows indicate where variance is greater than the average eigenvalue. These are the chosen PCs")
+    ) %>%
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  # bold rows that are greater than the average eigenvalue.
+  row_spec(which(pca_summary$variance >= (pca_analysis$pca_aug[[1]]$avg_eigen) %>% mean), bold = T)
+}
+
+# kable_pc_list
+# Parameters:
+# pca_analysis - output from pca_analysis function
+# type - "original"/"standard" for type of analysis
+# pc_list - vector of Principle Components to retrieve. i.e. c("PC1", "PC2")
+# This function is a utility function to write out the PC coefficients in a formatted way
+kable_pc_list <- function(pca_analysis, type, pc_list){
+  caption_txt <- ifelse(type == "standard", "Standardized", "Original")
+  
+  pca_analysis$pca[[1]]$rotation[, pc_list] %>% 
+  kable(
+    caption = paste("Coefficients for selected ", caption_txt, " Principle Components"),
+    col.names = pc_list
+  ) %>%
+  kable_styling("striped", full_width = FALSE, latex_options = "hold_position")
+}
+
+# return correlation for a given principle component
+pc_corr <- function(dataset, pc_num, type) {
+  if(type == "standard") {
+    R <- cor(dataset)
+    pca <- prcomp(dataset, scale. = TRUE, center = TRUE)
+    lambda <- eigen(R)$values
+    diag <- diag(R)
+  } else if (type == "original") {
+    S <- var(dataset)
+    pca <- prcomp(dataset)
+    lambda <- eigen(S)$values
+    diag <- diag(S)
+  } else {
+    stop(paste("Invalid type specified:", type))
+  }
+  pc <- pca$rotation[,pc_num]
+  pc * sqrt(lambda[pc_num] / diag)
+}
+
+# run N knn simulations for a given k
+knn_n <- function(training, testing, training.grouping, testing.grouping, k, simulations) {
+  output <- lapply(1:simulations, function(i) {
+    knnRes <- knn(training, testing, training.grouping, k)
+    confusion <- as.matrix(table(Actual = testing.grouping, Predicted = knnRes))
+    err.pcnt <- 1 - sum(diag(confusion))/length(testing.grouping)
+    
+    list(res = knnRes, confusion = confusion, error.pcnt = err.pcnt)
+  })
+  # error.pcnt is a nested within each index so this pulls it into a list for quick summary calculations
+  output$error.pcnt =  Reduce(c, Reduce(c, map(output, function(z) z$error.pcnt)))
+  output
+}
+
+```
+
+# Introduction
+
+What does a baseball player need to do over their career to end up in the Hall of Fame? In recent years, baseball writers who have voting privileges for the Hall of Fame have been using more advanced statistics to make a case for a certain player of interest; however, it was not always that way! In the past, anyone could submit a vote to the Hall of Fame for any reason so it is possible that many Hall of Famers' aren't statistically Hall of Fame material. 
+
+This analysis gathers summary statistics and uses them to investigate the distributions of each measure in order to test assumptions required for  Discriminant Analysis and Classification. Dimension reduction is explored through Principle Component Analysis to gather a smaller number of predictors. These predictors are used in Discriminant Analysis to ascertain whether or not a Hall of Fame Winner can be be predicted from this dataset.
+
+## Background
+
+The dataset in question represents the population of the all non-pitchers who recieved a vote for the MLB Hall of Fame. A representative subset of this will be taken for training data. Since HoF is the classification of interest, a 30% stratified sample will be used to build the training set.
+
+
+## Variables of Interest
+
+### Categorical
+
+| Field Name  | Description | Type |
+| ---------- | ----------------------------------------------------- | ---- |
+| HoF | This is a “Yes”/“No” indicator on whether or not the player is in the Hall of Fame. | categorical |
+
+### Continuous
+
+| Field Name  | Description | Type |
+| ---------- | ----------------------------------------------------- | ---- |
+| Yrs | How many seasons did the player play in MLB | continuous |
+| WAR |  Baseball References’s measure of Wins Above Replacement. This is a single number that describes the number of wins the player added to their teams over the course of their career. | continuous
+| WAR7 | The sum of the seven best seasons of WAR in the player’s career. It may not be seven seasons in a row. | continuous |
+| JAWS |  Developed by Baseball Prospectus. It contains a combination of career and 7-year peak WAR totals allowing for comparison to average Hall of Fame players by position. | continuous |
+| Jpos | The average JAWS score for all Hall of Fame players at this position plus overall Hall of Fame averages for positions with fewer inducted players. | continuous |
+| JAWSRatio | JAWS divided by Jpos and multiplied by 100. | continuous | 
+| G | Games played during a player's career. | continuous |
+| AB | at bats during a player's career. | continuous |
+| R | Runs scored during a player's career. | continuous | 
+| H | Hits during a player's career. | continuous |
+| HR | Home runs during a player’s career. | continuous |
+| RBI | Runs batted during a player's career. | continuous |
+| SB | Stolen bases during a player's career. | continuous |
+| BB | Walks during a player's career. | continuous |
+| BA | Batting average. | continuous
+| OBP | On Base Percentage. This is the sum of the number of hits, walks, and times hit by a pitch divided by the sum of the number of at bats, walks, times hit by a pitch, and sacrifice flies. | continuous |
+| SLG | Slugging Percentage. This is the number of bases divided by the number of at bats. Every single is one base, double is two bases, triple is three bases, and home run is four bases in the numerator of this calculation. | continuous |
+| OPS | On Base Percentage plus slugging percentage | continuous | 
+| OPS+ | OPS adjusted to the player's ball park. 100 is an average hitter. | continuous | 
+
+## Summary Statistics
+
+General summary statistics for each of the variables are shown below.
+
+```{r summaryStats}
+
+# Overall statistics
+baseball %>% 
+  select(-Name, -HoF) %>% 
+  summarize_all(
+    funs(
+      Min=min, 
+      Q25 = quantile(., 0.25), 
+      Median=median, 
+      Q75 = quantile(., 0.75), 
+      Max=max, 
+      Mean=mean, 
+      Stdev = sd, 
+      N = n()
+      )
+    ) %>% 
+  gather(stat, val) %>%
+  separate(stat, into = c("Variable", "stat"), sep = "_") %>%
+  spread(stat, val) %>%
+  select(Variable, Min, Q25, Median, Q75, Max, Mean, Stdev, N) %>%
+  kable(
+    digits = 4,
+    caption = "Continuous Variable Summary for Hall of Fame Nominees and Winners"
+  ) %>% 
+       kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+sum.grouped <- 
+  baseball %>% 
+  select(-Name) %>% 
+  group_by(HoF) %>%
+  summarize_all(
+    funs(
+      Min=min, 
+      Q25 = quantile(., 0.25), 
+      Median=median, 
+      Q75 = quantile(., 0.75), 
+      Max=max, 
+      Mean=mean, 
+      Stdev = sd, 
+      N = n()
+      )
+    ) 
+
+  sum.grouped %>% 
+    filter(HoF == "Yes") %>%
+    select(-HoF) %>%
+    gather(stat, val) %>%
+    separate(stat, into = c("Variable", "stat"), sep = "_") %>%
+    spread(stat, val) %>%
+    select(Variable, Min, Q25, Median, Q75, Max, Mean, Stdev, N) %>%
+    kable(
+      caption = "Hall of Fame Winner Variable Summary",
+      digits = 4
+    ) %>% 
+        kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+  
+  sum.grouped %>% 
+    filter(HoF == "No") %>%
+    select(-HoF) %>%
+    gather(stat, val) %>%
+    separate(stat, into = c("Variable", "stat"), sep = "_") %>%
+    spread(stat, val) %>%
+    select(Variable, Min, Q25, Median, Q75, Max, Mean, Stdev, N) %>%
+    kable(
+      caption = "Hall of Fame Nominee Variable Summary",
+      digits = 4
+    ) %>% 
+      kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+### Distributions
+
+Are the variables normally distributed?
+
+```{r distribitions}
+# Histogram matrix with free scales
+melt(baseball) %>% 
+   ggplot(aes(value)) + 
+    geom_histogram() + 
+    facet_wrap(~variable, scales = "free") +
+    xlab("Variable Values") +
+    ylab("Frequency") +
+    ggtitle("Distributions of Baseball Measures")
+
+# Standardized Histogram matrix
+baseball %>%
+  select(-Name, -HoF) %>%
+  scale %>%
+  melt %>%
+  ggplot(aes(value)) + 
+    geom_histogram() + 
+    facet_wrap(~Var2) +
+    xlab("Standardized Variable Values") +
+    ylab("Frequency") +
+    ggtitle("Standardized Distributions of Baseball Measures")
+
+```
+
+While a handful appear to be normally distributed, a Shapiro-Wilk Test indicates that there is convincing evidence that all variables except for **G**, **AB**, and **H** are non-normal. Additionally though not picture, excluding the columns with negative values (JAWS, JAWSratio, and WAR) and applying a log transformation does not yield differing results.
+
+```{r shap}
+# Run shapiro-wilk tests for all columns and display to table, highlighting variables with low p-values
+meltedRows <- 
+  baseball %>% 
+  select(-Name, -HoF) %>% 
+  apply(., 2, shapiro.test) %>%
+  map(function(res) res$p.value) %>%
+  melt %>%
+  select(Variable = L1, Value = value)
+
+meltedRows %>%
+  kable(
+    caption = "Shapiro-Wilk Tests for Baseball Measures",
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  row_spec(which(meltedRows$Value <= 0.05), bold = T)
+```
+
+### Equal Variances
+
+Are there equal variance between Hall of Fame Winners and Non-Hall of Fame Nominees?
+
+```{r eqVar}
+meltedRows <- 
+  baseball %>% 
+  select_if(is.numeric) %>%
+  apply(., 2, function(c) leveneTest(y = c, group = baseball$HoF, data = .)) %>%
+  map(function(res) res$`Pr(>F)`[1]) %>% 
+  melt %>%
+  select(Variable = L1, Value = value)
+
+meltedRows %>%
+  kable(
+    caption = "Levene's Test for Equal Variance between Hall of Fame Winners and Hall of Fame Nominees",
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  row_spec(which(meltedRows$Value <= 0.05), bold = T)
+```
+
+There is convincing evidence that WAR, JAWS, Jpos, JAWSratiom HR, SB, BB, and BA have non-equal variances for Hall of Fame Winners and Hall of Fame Nominees.
+
+## Analysis
+
+### Data Reduction Through Principle Component Analysis
+
+With 19 continuous dimensions, can Principle Component Analysis be used to reduce dimensions while retaining a large amount of explained variance? Given that the scales for the variables are not homogenous, principle components against standardized variables should be run. The floor of the mean eigenvalue from the correlation matrix is used to determine which Principle Components should be selected use in further analysis.
+
+```{r prcompAnalysis}
+
+prcomp.analysis <-
+  baseball %>% 
+  pca_analysis(., "standard")
+
+# get the summary statistics in tibble form
+prcomp.summary <- pca_summary(prcomp.analysis)
+
+# print out a kable showing which principle components should be selected
+pca_kable(prcomp.analysis, prcomp.summary, "standard")
+
+```
+$\pagebreak$
+
+There are four principle components that can be used to explain 88.25% of the variability within the data. This significantly reduces potential variables in our models from 19 to 4. Listed below are the coefficients for the first four principle components.
+
+```{r pcrcompAnalysisSummary}
+# print coefficients for 4 principle components
+kable_pc_list(prcomp.analysis, "standard", c("PC1", "PC2", "PC3", "PC4"))
+```
+
+#### Correlation
+
+Determining the correlation between a Principle Component and the original variable helps show which variables are most correlated with a given Principle Component.
+
+```{r prcompCorr}
+contvars <- baseball %>% select(-Name, -HoF) 
+
+# wanted to do this in a more functional way but spent enough time on it
+correlations <- data.frame(
+  PC1 = pc_corr(contvars, 1, "standard"),
+  PC2 = pc_corr(contvars, 2, "standard"),
+  PC3 = pc_corr(contvars, 3, "standard"),
+  PC4 = pc_corr(contvars, 4, "standard")
+)
+
+correlations %>% 
+  kable(
+    digits = 4
+  ) %>%
+   kable_styling(full_width = FALSE, bootstrap_options = "striped", latex_options = "hold_position")
+
+
+```
+
+#### Interpretation
+
+##### PC1
+
+The coefficients for PC1 are all positive and roughly a similar magnitude (0.9 - 0.28) indicating that this represents a weighted average of the measures. The magnitudes are also positively correlated with the correlation values which further supports this.
+
+##### PC2
+
+The coefficients for PC2 are a mix of both positive and negative values. The positive values are dominated by BA, OPB, SLG, OPS, OPSadj and the negative values are dominated by Yrs, G, AB, H, and SB. The correlation value of the largest magnitude is associated with OPS at 0.5965 which is considered a weak correlation. At best, this principle component can be interpreted as a difference in weighted averages between BA, OPB, SLG, OPS, OPSadj and Yrs, G, AB, H, SB. 
+
+##### PC3
+
+Akin to PC2, there are a mix of both positive and negative values. The positive values are dominated by SB, BA, Jpos, and OBP while the negative values are dominated by HR and RBI. The largest correlation value is associated with SB as 0.6403 which is considered a weak correlation. At best. this principle component can be interpreted as a difference in weighted averages between SB, BA, Jpos, OBP and HR, RBI.
+
+##### PC4
+
+There is a mix of positive and negative components but the Jpos coefficient dominates values on both side. Jpos has the largest  correlation value with -0.8056. This principle component can interpreted as an effect of Jpos.
+
+
+### Discriminant Analysis
+
+
+```{r setupAnalysis}
+baseball.aug <- prcomp.analysis$pca_aug[[1]] %>%
+   dplyr::select(Name, HoF, PC1.fit = .fittedPC1, PC2.fit = .fittedPC2, PC3.fit = .fittedPC3, PC4.fit = .fittedPC4)
+# create a 30% sample for training data. The 30% is arbitrary
+baseball.training <- 
+  stratified(baseball.aug, c("HoF"), .3)
+
+# Names are unique so exclude the players from our training set to make up our testing set
+baseball.testing <- baseball.aug %>% filter(!(Name %in% baseball.training$Name))
+```
+
+#### Assumptions
+
+Discriminant Analysis can be formed given these assumptions are met:
+
+1. Multivariate Normality
+2. Multicollinearity
+3. Equal Covariance Matrices
+4. Independence
+
+##### Multivariate Normality
+
+Shapiro-Wilk Tests for each variable for both the Hall of Fame Winners and Nominee groups show that there is a mix of normal variables and non-normal variables. Since multivariate normality is defined as a linear combination of normal variables, the non-normal variables cause both groups to be considered **not** multivariate normal. This is confirmed by the results for the Mardia Test for multivariate normality.
+
+
+```{r lda1}
+
+mardia.res.yes <- 
+  baseball.aug %>%
+  filter(HoF == "Yes") %>%
+  dplyr::select(-Name, -HoF) %>% 
+  mvn(mvnTest = "mardia")
+
+mardia.res.yes$univariateNormality %>%
+  kable(
+    caption = "Univariate Tests for Normality for Hall of Fame Winners",
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  row_spec(which(stringr::str_trim(mardia.res.yes$univariateNormality$Normality) == "YES"), bold = T)
+
+mardia.res.yes$multivariateNormality %>%
+  kable(
+    caption = "Multivariate Tests for Normality for Hall of Fame Winners",
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  row_spec(which(stringr::str_trim(mardia.res.yes$multivariateNormality$Result) == "YES"), bold = T)
+
+mardia.res.no <- 
+  baseball.aug %>%
+  filter(HoF == "No") %>%
+  dplyr::select(-Name, -HoF) %>% 
+  mvn(mvnTest = "mardia")
+
+mardia.res.no$univariateNormality %>%
+  kable(
+    caption = "Univariate Tests for Normality for Hall of Fame Nominees",
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  row_spec(which(stringr::str_trim(mardia.res.no$univariateNormality$Normality) == "NO"), bold = T)
+
+mardia.res.no$multivariateNormality %>%
+  kable(
+    caption = "Multivariate Tests for Normality for Hall of Fame Nominees",
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  row_spec(which(stringr::str_trim(mardia.res.no$multivariateNormality$Result) == "YES"), bold = T)
+
+```
+
+##### Equal Covariance Matrices
+
+Since the multivariate normality is violated, this cannot be tested with Box's M Test. Levene's Test can be used to test equal variances for the univariate case. There is convincing evidence that PC2 and PC3 have unequal variances. Given that at least one of univariate tests have shown unequal variance, it can be assumed that the covariance matrices are also non-homogenous.
+
+Since this assumption is not met, LDA **cannot** be used. Instead Quadratic Discriminant Analysis is appropriate.
+
+```{r eqcovmatr}
+
+pc1 <- leveneTest(baseball.aug$PC1.fit, baseball.aug$HoF, data = baseball.aug)
+pc2 <- leveneTest(baseball.aug$PC2.fit, baseball.aug$HoF, data = baseball.aug)
+pc3 <- leveneTest(baseball.aug$PC3.fit, baseball.aug$HoF, data = baseball.aug)
+pc4 <- leveneTest(baseball.aug$PC4.fit, baseball.aug$HoF, data = baseball.aug)
+
+data.frame(pc1 = pc1$`Pr(>F)`[1], pc2 = pc2$`Pr(>F)`[1], pc3 = pc3$`Pr(>F)`[1], pc4 = pc4$`Pr(>F)`[1]) %>%
+  kable(
+    caption = "Univariate Levene's Tests on each Principle Component",
+    digits = 4
+  ) %>%
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+```
+
+##### Multicollinearity and Independence
+
+Principle Components are uncorrelated and independent from each other by definition so their use satisifies both assumptions.
+
+### A Note About SMOTE
+
+Synthetic Minority Over-sample Technique (SMOTE) is a well known algorthim for unbalanced classification problems. SMOTE under samples the majority group while oversampling the minority group in order to create a balanced dataset. Behind the scenes, synthetic records for the minority and majority groups are created based on the KNN algorithm. This is useful for classification problems where a given dataset is unbalanced. Because SMOTE creates synthetic data based on KNN, doing so violates the independence assumption which bars its use in QDA but its effect is explored for KNN.
+
+### Results
+
+Despite the principle components not meeting the multivariate normality assumption, QDA still provides predictive value because we are interested in a binary classifier. Using a 30% stratified sample as our training set, QDA gives us an error rate of 14.11% when run against the test set which is the remainder of the data. 
+
+```{r qda}
+
+baseball.aug.qda <- qda(HoF ~  PC1.fit + PC2.fit + PC3.fit + PC4.fit, data = baseball.training)
+
+confusion <- as.matrix(table(baseball.testing$HoF, predict(baseball.aug.qda, baseball.testing)$class))
+err.pcnt <- 1 - sum(diag(confusion)) / length(baseball.testing$HoF)
+
+kable(
+  confusion,
+  caption = "Confusion Matrix for Actual vs Predicted for QDA"
+  ) %>%
+  kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  add_header_above(c(" ", "Predicted" = 2))
+
+```
+
+Can the error rate be improved with Cross Validation? An error rate of 14% is yielded which is a slight improvement opposed to using a training set.
+
+```{r qdacv}
+
+baseball.aug.qda.cv <- qda(HoF ~  PC1.fit + PC2.fit + PC3.fit + PC4.fit, data = baseball.aug, CV = TRUE)
+
+confusion <- as.matrix(table(baseball.aug$HoF, baseball.aug.qda.cv$class))
+err.pcnt <- 1 - sum(diag(confusion)) / length(baseball.aug$HoF)
+
+kable(
+  confusion,
+  caption = "Confusion Matrix for Actual vs Predicted for QDA with Cross Validation"
+  ) %>%
+  kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position") %>%
+  add_header_above(c(" ", "Predicted" = 2))
+```
+
+#### KNN
+
+For comparison, knn is also run using a training dataset with a 30% stratified sample on HoF. Multiple simulations were run for k = 10 through 14 and the average error rate was taken. K was determined by the following formula:
+
+$$
+  K = \sqrt{min(n_i)} = \sqrt{157} \approx 13
+$$ 
+
+Error percentages vary between executions of KNN but the percentages are generally between 13-20 percent though it can exceed this. Not pictured is the number of executions of 1000 iterations done on this dataset. The lower end of this range matches what QDA provides consistently.
+
+**Pardon the formatting beyond this point. Unresolved technical issues arose when compiling to PDF**
+
+```{r resulsdr}
+
+training.pc <- 
+  baseball.training %>% 
+  dplyr::select(-Name, -HoF)
+
+testing.pc <-
+  baseball.testing %>% 
+  dplyr::select(-Name, -HoF)
+
+knn14 <- knn_n(training.pc, testing.pc, baseball.training$HoF, baseball.testing$HoF, 14, 1000)
+knn13 <- knn_n(training.pc, testing.pc, baseball.training$HoF, baseball.testing$HoF, 13, 1000)
+knn12 <- knn_n(training.pc, testing.pc, baseball.training$HoF, baseball.testing$HoF, 12, 1000)
+knn11 <- knn_n(training.pc, testing.pc, baseball.training$HoF, baseball.testing$HoF, 11, 1000)
+knn10 <- knn_n(training.pc, testing.pc, baseball.training$HoF, baseball.testing$HoF, 10, 1000)
+
+# summary statistics on error percentages
+knn14.err <- knn14$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 14, Mean = value)
+knn13.err <- knn13$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 13, Mean = value)
+knn12.err <- knn12$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 12, Mean = value)
+knn11.err <- knn11$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 11, Mean = value)
+knn10.err <- knn10$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 10, Mean = value)
+
+knn.err <- bind_rows(knn14.err, knn13.err, knn12.err, knn11.err, knn10.err)
+
+as.data.frame(knn.err) %>% 
+  dplyr::select(K, Mean) %>%
+  kable(
+    caption = "Average Error % for 1000 KNN simulations",
+    digits = 4
+  ) %>%
+ kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+Can usage of SMOTE on the fitted PCA values improve our error percentage? K is chosen based on the method described above though $n_i = 1413$ after SMOTE has been applied. It can have a significant impact on the results depending on the outcome. This is not useful if a consistent answer is needed.
+
+```{r smote}
+# SMOTE proved to not be helpful in improving error percentages. It was performed after PCA since it violates an independence assumption. 
+
+baseball.smote <- SMOTE(HoF ~ ., as.data.frame(baseball.aug), perc.over = 800, perc.under = 113, k = 13)
+
+# create a 30% sample for training data. The 30% is arbitrary
+baseball.smote.training <- stratified(baseball.smote, c("HoF"), .3)
+
+# Names are unique so exclude the players from our training set to make up our testing set
+baseball.smote.testing <- baseball.smote %>% filter(!(Name %in% baseball.smote.training$Name))
+
+training.pc.smote <- 
+  baseball.smote.training %>% 
+  dplyr::select(-Name, -HoF)
+
+testing.pc.smote <-
+  baseball.smote.testing %>% 
+  dplyr::select(-Name, -HoF)
+
+knn34.smote <- knn_n(training.pc.smote, testing.pc.smote, baseball.smote.training$HoF, baseball.smote.testing$HoF, 34, 1000)
+knn35.smote <- knn_n(training.pc.smote, testing.pc.smote, baseball.smote.training$HoF, baseball.smote.testing$HoF, 35, 1000)
+knn36.smote <- knn_n(training.pc.smote, testing.pc.smote, baseball.smote.training$HoF, baseball.smote.testing$HoF, 36, 1000)
+knn37.smote <- knn_n(training.pc.smote, testing.pc.smote, baseball.smote.training$HoF, baseball.smote.testing$HoF, 37, 1000)
+knn38.smote <- knn_n(training.pc.smote, testing.pc.smote, baseball.smote.training$HoF, baseball.smote.testing$HoF, 38, 1000)
+# summary statistics on error percentages
+knn34.err.smote <- knn34.smote$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 34, Mean = value)
+knn35.err.smote <- knn35.smote$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 35, Mean = value)
+knn36.err.smote <- knn36.smote$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 36, Mean = value)
+knn37.err.smote <- knn37.smote$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 37, Mean = value)
+knn38.err.smote <- knn38.smote$error.pcnt %>% mean %>% as.tibble %>% mutate(K = 38, Mean = value)
+
+knn.err.smote <- bind_rows(knn34.err.smote, knn35.err.smote, knn36.err.smote, knn37.err.smote, knn38.err.smote)
+knn.err.smote %>% 
+  dplyr::select(K, Mean) %>%
+   kable(
+     caption = "Average Error % for 1000 KNN simulations - SMOTE'd Data",
+     digits = 4
+   ) %>%
+    kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+## Conclusion
+
+Quadratic Discriminant Analysis with Cross Validation gives the best error rate with the most consistent result. The analysis was done using Principle Components in order to reduce the dimensions of the data and mitigate the effects of multicollinearity. Using standardized principle components, a Hall of Fame winner can be predicted with 85.89% accuracy. This isn't the best accuracy percentage but it is passible. Interpretation of the impact of certain predictors is difficult given that principle components were standardized and fed into the model. In terms of satisfying the main goal which was to produce the best predictive accuracy rate, that has been met.
+
+### Final Thoughts
+
+Much of the data is on varying scales which means it has to be standardized for any analysis. While this is fine for interpretation for the signifance of variables, it makes it difficult to create a classic interpretation. i.e. an X increase in Y yields an increase D in Z. I pursued this analysis to provide a smaller set of predictors to improve Classification percentages. Were I to analyze this set further, I would start looking into correlations between variables to see what fields could be used directly through classification rather than abstracted through principle components.
