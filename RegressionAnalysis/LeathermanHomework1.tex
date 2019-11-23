@@ -1,0 +1,264 @@
+% Created 2019-09-15 Sun 19:33
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usetheme{default}
+\author{Dustin}
+\date{\today}
+\title{}
+\hypersetup{
+ pdfauthor={Dustin},
+ pdftitle={},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 26.2 (Org mode 9.2.4)}, 
+ pdflang={English}}
+\begin{document}
+
+\begin{frame}{Outline}
+\tableofcontents
+\end{frame}
+
+
+\begin{frame}[label={sec:orgb1fb7b8},fragile]{Applied Regression Analysis - Homework 1}
+ \begin{block}{2 (p33)}
+\(Y = 300 + 2X\)
+
+This is a functional relation since it is deterministic.
+\end{block}
+
+\begin{block}{5 (p33)}
+\emph{When asked to state the SLR model, a student wrote it as follows:}
+
+\(E(Y_i) = \beta_0 + \beta_1 x_i + \epsilon_i\)
+
+\Do you agree?$\backslash$
+
+The model proposed by the student does not calculate the expectation of
+\(\epsilon\). The SLR model should be as follows:
+\(E(Y_i) = \beta_0 + \beta_1 x_i\) since \(E(\epsilon_i) = 0\)
+\end{block}
+
+\begin{block}{8 (p33)}
+If another observation is obtained at \(X = 45\), the expected value will still
+remain as \(Y = 104\) since the expected value represents the average response for
+a given predictor. The new Y value may not be 108 however since each observation
+has its own error term.
+\end{block}
+
+\begin{block}{11 (p34)}
+/The regression function relating production output by an employee after taking
+a training  program (Y) to the production output before the training program (X)
+is \(E(Y) = 20 + .95X\) where x:[40, 100]. An observer concludes that the training
+program does not raise production output on average because \(\beta_1\) is not
+greater than 1. Comment./
+
+The average production output of an employee after taking the training program
+is represented by \(Y_i\). \(\beta_1\) represents the effect of an employee's
+pre-training-program production output in the model. For all values of X within
+the model, the average post-training-program production output (Y) exceeds the
+pre-training-program production output (X) so the observer's interpretation of
+\(\beta_1\) is incorrect.
+\end{block}
+
+\begin{block}{16 (p34)}
+\emph{Evaluate the following satement: "For the least squares method to be fully
+valid, it is required that the distribution of Y be normal."}
+
+One of the assumptions for the Least Squares method is that all observations are
+Independent and Identically Distributed (i.i.d). Least Squares does not require a
+specific distribution thus normality for Y is not a requirement.
+\end{block}
+
+\begin{block}{18 (p34)}
+/According to (1.17), \(\Sigma e_i = 0\) when regression model (1.1) is fitted to
+a set of n cases by the method of least squares. Is it also true that \(\Sigma
+\epsilon_i = 0\)?. Comment./
+
+It is not necessarily true that \(\Sigma \epsilon_i = 0\).
+
+Let the residual \(e_i\) be defined as \(e_i = Y_i - \hat{Y_i}\)
+
+Let the response value be defined as \(Y_i = \beta_0 + \beta_1 X_i + \epsilon_i\).
+
+Let the predicted response value be defined as:
+\(\hat{Y_i} = \hat{\beta_0} + \hat{\beta_1} X_1\)
+
+Then \(e_i = \beta_0 + \beta_1 X_1 + \epsilon_i - \hat{\beta_0} - \hat{\beta_1}
+X_1\).
+
+Rearranging terms, this becomes
+
+\((\beta_0 - \hat{\beta_0}) + (\beta_1 X_i - \hat{\beta_1} X_i) + \epsilon_i =
+e_i\)
+
+Summing the residuals gives us the following:
+
+\(\sum_{1}^{n} (\beta_0 - \hat{\beta_0}) + \sum_{1}^{n} (\beta_1 X_i - \hat{\beta_1} X_i) + \sum_{i}^{n} \epsilon_i = \Sigma e_i = 0\)
+
+\(\to \sum_{i}^{n} \epsilon_i = \sum_{i}^{n} [(\hat{\beta_0} - \beta_0) + (\hat{\beta_1 X_i} - \beta_1 X_i) ]\)
+
+Thus it is not true that \(\Sigma \epsilon_i = 0\)
+\end{block}
+
+\begin{block}{19 (p35)}
+\begin{block}{a}
+\begin{verbatim}
+data <- readxl::read_excel("~/Downloads/GradePointAverage.xlsx")
+model <- lm(GPA ~ ACT, data = data)
+summary(model)
+\end{verbatim}
+
+\begin{verbatim}
+Call:
+lm(formula = GPA ~ ACT, data = data)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-2.74004 -0.33827  0.04062  0.44064  1.22737 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  2.11405    0.32089   6.588  1.3e-09 ***
+ACT          0.03883    0.01277   3.040  0.00292 ** 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.6231 on 118 degrees of freedom
+Multiple R-squared:  0.07262,	Adjusted R-squared:  0.06476 
+F-statistic:  9.24 on 1 and 118 DF,  p-value: 0.002917
+\end{verbatim}
+
+Least Squares estimates:
+\begin{itemize}
+\item \(\beta_0 = 2.11405\)
+\item \(\beta_1 = 0.03883\)
+\end{itemize}
+
+Estimated Regression Function: \(\hat{Y} = 2.11405 + 0.03883 X_{GPA}\)
+\end{block}
+\begin{block}{b}
+\begin{verbatim}
+data %>%
+   ggplot(aes(x = ACT, y = GPA)) +
+   geom_point() +
+   geom_smooth(method = "lm", se = FALSE)
+\end{verbatim}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{/home/dustin/19b.png}
+\caption{\label{fig:orgd07a152}
+Regression Line}
+\end{figure}
+
+The regression line fits decently. It is far from a perfect fit but it does
+capture a general positive correlation between ACT Scores and GPA.
+\end{block}
+\begin{block}{c}
+\begin{verbatim}
+predict(model, data.frame(ACT = c(30)))
+\end{verbatim}
+
+\alert{3.278863}
+\end{block}
+\begin{block}{d}
+The point estimate for the mean response increases by 0.03883 for each
+additional point scored on the ACT.
+\end{block}
+\end{block}
+
+\begin{block}{23b (p36)}
+\emph{Estimate \(\sigma^2\) and \(\sigma\). In what units is \(\sigma\) expressed?}
+
+\begin{verbatim}
+mean((data$GPA - predict(model))^2)
+# [1] 0.3818134
+\end{verbatim}
+
+\(\hat{\sigma^2} = 0.3818134\)
+
+\(\hat{\sigma} = 0.6179105\)
+
+\(\sigma\) is expressed as GPA.
+\end{block}
+
+\begin{block}{22 (p36)}
+\begin{block}{a}
+\(\hat{Y} = 168.6 + 2.03438 \times X_{HOURS}\)
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=.9\linewidth]{/home/dustin/22a.png}
+\caption{\label{fig:org0de7e37}
+Regression Line}
+\end{figure}
+
+The estimated line gives a pretty good fit to the data.
+\end{block}
+\begin{block}{b}
+\begin{verbatim}
+predict(model2, data.frame(Hours = c(40)))
+# 249.975
+\end{verbatim}
+
+\(\hat{Y_{40}} = 249.975\)
+\end{block}
+
+\begin{block}{c}
+The mean Brinell Hardness score increases by 2.03438 per hour of elapsed time.
+\end{block}
+\end{block}
+
+\begin{block}{26b (p36)}
+\emph{Estimate \(\sigma^2\) and \(\sigma\). In what units is \(\sigma\) expressed?}
+
+\begin{verbatim}
+mean((plastic$Hardness - predict(model2))^2)
+# [1] 9.151563
+\end{verbatim}
+
+\(\hat{\sigma^2} = 9.151563\)
+
+\(\hat{\sigma} = 83.7511\)
+
+\(\sigma\) is expressed as the Brinell Hardness Score.
+\end{block}
+
+\begin{block}{30 (p37)}
+/What is the implication for the regression function if \(\beta_1 = 0\) so that
+the model is \(Y_i = \beta_0 + \epsilon_i\)? How would the regression function
+plot on a graph?/
+
+This type of model is known as an intercept-only model. The model is a constant
+so it would appear as a straight line on a graph. There are many uses
+but a primary use is as a baseline for comparing with a model containing
+parameters. If an intercept-only model is considered a better fit than models
+with parameters, it means that additional parameters do not help explain the
+model any more than the intercept.
+\end{block}
+
+\begin{block}{33 (p37)}
+\(Q = \sum_1^n [Y_i - \beta_0]^2\)
+
+\(\to \frac{\partial Q}{\partial \beta_0} = -2 \sum_1^n [Y_i - \beta_0] = 0\)
+
+\(\to -2 \sum_1^n Y_i - n \beta_0 = 0\)
+
+\(\to -2 n \bar{y} - n \beta_0 = 0\)
+
+\(\to \beta_0 = -2 \bar{y}\)
+\end{block}
+\end{frame}
+\end{document}

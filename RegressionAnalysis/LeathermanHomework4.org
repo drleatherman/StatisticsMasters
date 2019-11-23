@@ -1,0 +1,15 @@
+#+TITLE:     Homework \#4
+#+AUTHOR:    Dustin Leatherman
+
+* 3.18
+* 3.20
+* 4.9
+* 4.20
+* 4.19
+* 4.22
+* 5.1
+* 5.5
+* 5.13
+* 5.15
+* 5.17
+* Regression through the origin

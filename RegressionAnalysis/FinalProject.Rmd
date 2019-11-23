@@ -1,0 +1,370 @@
+---
+title: "Car Prices for Dummys"
+author: "Dustin Leatherman, Kyra Kemp, Danielle Deng, Zhichun Ke"
+date: "11/16/2019"
+output:
+  html_document: default
+  slidy_presentation: default
+  ioslides_presentation: default
+  pdf_document: default
+  beamer_presentation: default
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = FALSE,
+	fig.width = 10,
+	warning = FALSE,
+	messsage = FALSE
+)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(broom)
+library(GGally)
+library(grid)
+library(gridExtra)
+library(ggfortify)
+library(olsrr)
+library(Epi)
+
+cars <- readxl::read_excel("~/Downloads/kuiper.xls")
+cars.clean <- 
+  cars %>% 
+  # remove trim and model because they are discrete with high cardinality and are more descriptive
+  select(-Trim, -Model) %>% 
+  rowid_to_column("id") %>% 
+  # set low cardinality numerics as factors to treat them as such
+  mutate(
+    cylinder.factor = factor(Cylinder),
+    Type = Relevel(Type, ref = "Sedan"),
+    Make = Relevel(Make, ref = "Saturn"),
+    cruise.factor = factor(Cruise), 
+    sound.factor = factor(Sound), 
+    leather.factor = factor(Leather), 
+    doors.factor = factor(Doors),
+    log.price = log(Price)
+  )
+```
+
+# Introduction
+
+@Kyra to fill this in
+
+# The Data
+> This dataset is a representative sample of over eight hundred 2005 GM cars from the Kelly Blue Book.
+
+Due to the right-skewed nature of Price, a log transformation has been applied and displayed alongside for comparison.
+
+@Zhichun @Danielle to fill this in
+
+```{r}
+cars %>% head %>% 
+  kable(
+    caption = "Sample Dataset"
+  )
+```
+
+
+```{r fig.height=8, warning=FALSE, message=FALSE}
+cars.clean %>% 
+  ggpairs(
+    columns = c("Price", "log.price", "Mileage", "Liter", "cylinder.factor", "doors.factor", "cruise.factor", "sound.factor", "leather.factor"),
+    columnLabels = c("Price", "Log(Price)", "Mileage", "Liter", "Cylinder", "Doors", "Cruise", "Sound", "Leather"),
+    title = c("Generic Scatterplot")
+  ) + labs(caption = "Figure 1. A general sense of the relationship between variables is provided.")
+```
+
+# Summary (cont.) 
+
+```{r fig.height=8, warning=FALSE, message=FALSE}
+cars.clean %>% 
+  ggpairs(
+    columns = c("Price", "log.price", "Mileage", "Liter", "cylinder.factor", "doors.factor", "cruise.factor", "sound.factor", "leather.factor"),
+    columnLabels = c("Price", "Log(Price)", "Mileage", "Liter", "Cylinder", "Doors", "Cruise", "Sound", "Leather"),
+    aes(color = Type, alpha = 0.3), 
+    legend = c(1,1),
+    # correlation text is off so this makes it readable
+    upper = list(continuous = wrap("cor", size = 2.5, hjust=0.15, alignPercent=1)),
+    title = c("Scatterplot by Type"),
+  ) + labs(caption = "Figure 2. Relationships between variables are explored in regards to Type.")
+```
+
+# Summary (cont.) 
+
+```{r fig.height=8, warning=FALSE, message=FALSE}
+cars.clean %>% 
+  ggpairs(
+    columns = c("Price", "log.price", "Mileage", "Liter", "cylinder.factor", "doors.factor", "cruise.factor", "sound.factor", "leather.factor"),
+    columnLabels = c("Price", "Log(Price)", "Mileage", "Liter", "Cylinder", "Doors", "Cruise", "Sound", "Leather"),
+    aes(color = Make, alpha = 0.3), 
+    legend = c(1,1),
+    # correlation text is off so this makes it readable
+    upper = list(continuous = wrap("cor", size = 2, hjust=0.15, alignPercent=1)),
+    title = c("Scatterplot by Make")
+  ) + labs(caption = "Figure 3. Relationships between variables are explored in regards to Make.")
+```
+
+# Analysis
+
+## Multicollinearity
+
+There are predictors in the dataset that are correlated with each other and cause multicollinearity. The best examples of this is Engine Size (in Liters) and Number of Cylinders. This relationship is visibile in Scatterplot figures 1, 2, and 3. Multicollinearity must be accounted for in subsequent models since there will be inferences drawn from the models.
+
+```{r}
+qplot(factor(Cylinder), Liter, data = cars.clean, xlab = "Number of Cylinders", ylab ="Size of Engine (Liters)") + labs(caption = "Figure 4.", title = "Engine Size (Liters) vs. Number of Cylinders")
+```
+
+## Autocorrelation
+
+Autocorrelation occurs when there is a relationship, usually time-related, unaccounted for in the model. In this dataset, there is an undescribed relationship with Price and Case Number. There is a pattern when examining this relationship. A pattern in the response indicates a pattern in the residuals which means that the data is not independent. Coincidentally, this contributes to non-constant variance. While there is not any more detail on how this data was collected, Prices are clsutered by Make and there is a clear relationship between one price and the next.
+
+```{r}
+qplot(,log.price, data = cars.clean, color = Make, ylab = "Log (Price)", xlab = "Case Number") + labs(caption = "Figure 5. Notice the clustering by Make and the patterns in the Log(Price).", title = "Log(Price) vs Case Number")
+```
+
+```{r fig.cap="Figure 5"}
+pacf.model <- pacf(cars.clean$log.price, plot = FALSE)
+plot(pacf.model, main="Partial Autocorrelations of Residuals", xlab="Lag (Log Price)")
+```
+
+The Partial Autocorrelation of the residuals of the full model (forth coming) show that this autocorrelation has made its way into the models.
+
+```{r}
+cars.m.full <- 
+  cars.clean %>% 
+  lm(log.price ~ Mileage + Make + Type + Liter + cylinder.factor + doors.factor + cruise.factor + sound.factor + leather.factor, data = .)
+
+cars.m.adjusted1 <- 
+  cars.clean %>% 
+  lm(log.price ~ Mileage + Make + Type + Liter + cylinder.factor + cruise.factor + sound.factor + leather.factor, data = .)
+
+cars.m.adjusted2 <- 
+  lm(log.price ~ Mileage + Make + Type + Liter + cruise.factor + sound.factor + leather.factor, data = cars.clean)
+```
+
+$log(price) = \beta_0 + \beta_1 Mileage + \beta_2 Cadillac + \beta_3 Chevrolet + \beta_4 Pontiac + \beta_5 SAAB + \beta_6 Saturn + \beta_7 Coupe + \beta_8 Hatchback + \beta_9 Sedan + \beta_{10} Wagon + \beta_{11} Liter + \beta_{12} Cruise + \beta_{13} Sound + \beta_{14} Leather + \beta_{15} Doors2 + \beta_{16} Doors4 + \beta_{17} Cylinder4 + \beta_{18} Cylinder6 + \beta_{19} Cylinder8$
+
+Prior to fitting any model, a full model will be fit first in order to ensure that model assumptions are correct. 
+
+```{r fig.height=8, warning=FALSE, message=FALSE}
+autoplot(cars.m.full) + labs(caption = "Figure 6. Diagnostic Plots for the Full Model")
+```
+
+### Normality
+
+The residuals are close to the line barring a few outliers on the left tail. From a visual perspective, data appear normal but a Shapiro-Wilk test indicates there is convincing evidence that the data is non-normal (p-value = 0.002606). There are three outliers identified on the left tail that may be influencing this outcome. This must be explored. 
+
+```{r warning=FALSE, message=FALSE}
+shapiro.test(cars.m.full$residuals) %>% 
+  tidy %>% 
+  select(method, statistic, p.value) %>% 
+  kable(
+    caption = "Test Statistics for Model Assumptions"
+  )
+```
+
+### Linearity
+
+There do not appear to be any patterns in the residuals indicating that a linear regression model is appropriate for the data.
+
+### Constant Variance
+
+The spread around y = 0 on the Residuals vs Fitted plot appears to be constant barring the same potential outliers present in the normal probability plot; however, the Brown-Forsyth test indicates that there is convincing evidence that the variance is not constant (p-value = 0.00016).
+
+```{r warning=FALSE, message=FALSE}
+lawstat::levene.test(
+  cars.m.full$residuals, 
+  group = cars.m.full$residuals <= median(cars.m.full$residuals)
+) %>% 
+  tidy %>% 
+  select(method, statistic, p.value) %>% 
+  kable(
+    caption = "Test Statistics for Model Assumptions."
+  )
+
+cor(cars$Cylinder, cars$Liter) %>% 
+  kable(
+    col.names = c("correlation"),
+    caption = "Correlation between Liter and Cylinder"
+  )
+
+# checks to see aliases within a model. AKA says what a beta is dependent on if it was not estimated.
+alias(cars.m.full)
+```
+
+The **Doors** predictor is linearly dependent on the Indicator variables TypeWagon, TypeHatchback, and TypeSedan. This means that this coefficient is not independent and thus should be removed from the model.
+
+```{r}
+car::vif(cars.m.adjusted1) %>% 
+  tidy %>% 
+  kable(
+    caption = "Variance Inflation Factors"
+  )
+car::vif(cars.m.adjusted2) %>% 
+  tidy %>% 
+  kable (
+    caption = "Variance Inflation Factors"
+  )
+```
+
+Checking for Variance Inflation Factors for the model full model sans **Doors** yields extreme multicollinearity for cylinder and Liter. Given that Liter is more precise than Cylinder in terms of measurement and Cylinder has a higher correlation with log.price, Liter will be dropped from the model. This produces a drastic decrease in mulitcollinearity to a more acceptable level.
+
+```{r}
+cars.m.adjusted2$residuals %>%
+  shapiro.test %>%
+  tidy %>%
+  bind_rows(
+    lawstat::levene.test(
+      cars.m.adjusted2$residuals, 
+      group = cars.m.adjusted2$residuals <= median(cars.m.adjusted2$residuals)
+    ) %>% tidy
+  ) %>% select(method, statistic, p.value) %>% 
+  kable(
+    caption = "Test Statistics for Model Assumptions."
+  )
+```
+
+The data appears more normal now (Shapiro-Wilk Test. p-value = 0.1305) but there is still moderate evidence of non-constant variance (Brown-Forsythe. p-value = 0.0323). 
+
+## Outliers
+
+Three different types of Outliers and/or Influencers were tested for:
+1. Bonferroni adjustment using Studentized Deleted Residuals
+2. Outlying values with respect to the Predictors using Leverage values
+3. Influential values for each predictor when using DFFITS
+
+```{r}
+cars.m.adjusted2.calcs <- 
+  augment(cars.m.adjusted2) %>% 
+  mutate(
+    stud.res = rstudent(cars.m.adjusted2),
+    dffits = dffits(cars.m.adjusted2),
+    is.outlier.stud.res = stud.res > qt(1 - 0.01 / (2 * nrow(.)), nrow(.) - length(.) - 1),
+    is.outlier.hat = .hat > 2 * mean(.hat),
+    is.outlier.dffits = abs(dffits) > (2 * sqrt(length(.) / nrow(.)))
+  )
+
+cars.m.adjusted2.calcs %>% 
+  summarise_at(c("is.outlier.stud.res", "is.outlier.hat", "is.outlier.dffits"), list("sum")) %>% 
+  kable(
+    col.names = c("Studentized Del Res Count", "Leverage Outlier Count", "DFFITS Influencer Count"),
+    caption = "Count of Outliers/Influencers found with each method"
+  )
+
+ols_plot_dffits(cars.m.adjusted2) + labs(caption = "Figure 7.")
+
+cars.m.adjusted2.no.outliers <- lm(log.price ~ Mileage + Make + Type + Liter + cruise.factor + sound.factor + leather.factor, data = cars.m.adjusted2.calcs %>% filter(!is.outlier.hat & !is.outlier.dffits))
+
+cars.m.adjusted2.no.outliers$residuals %>%
+  shapiro.test %>%
+  tidy %>%
+  bind_rows(
+    lawstat::levene.test(
+      cars.m.adjusted2.no.outliers$residuals, 
+      group = cars.m.adjusted2.no.outliers$residuals <= median(cars.m.adjusted2.no.outliers$residuals)
+    ) %>% tidy    
+  ) %>% 
+  select(method, statistic, p.value) %>% 
+  kable(
+    caption = "Test Statistics for Model Assumptions."
+  )
+```
+
+No outliers were found using studentized deleted residuals as a metric whereas several were found with the other two metrics. Removing the outliers and checking for the Constant Variance and Normality assumptions yielded no differing results. Thus the outliers will be left in.
+
+## Other Approaches to Resolving Homoscedasticity
+
+### Box-Cox Transformation 
+
+A Box-Cox transformation can potentially be applied in order to help our constant variance issue. The confidence interval encompasses 1 which indicates that a transformation is not appropriate for the data.
+
+```{r yar, fig.width=5, fig.height=5}
+lindia::gg_boxcox(cars.m.adjusted2)
+```
+
+### Resolve Autocorrelation
+
+Autocorrelation is present in the residuals as evidenced by the Partial Autocorrelation function chart. One way to account for autocorrelation is to introduce a lag variable. In this instance, an AR(1) term would be sufficient. 
+
+```{r}
+cars.m.adjusted3 <- 
+  lm(log.price ~ Mileage + lag.log.price + Make + Liter + Type + cruise.factor + sound.factor + leather.factor, 
+     data = cars.clean %>%
+       mutate(
+         lag.log.price = lag(log.price)
+         )
+     )
+
+cars.m.adjusted3$residuals %>%
+  shapiro.test %>%
+  tidy %>%
+  bind_rows(
+    lawstat::levene.test(
+      cars.m.adjusted3$residuals, 
+      group = cars.m.adjusted3$residuals <= median(cars.m.adjusted3$residuals)
+    ) %>% tidy    
+  ) %>% select(method, statistic, p.value) %>% kable
+
+car::vif(cars.m.adjusted3) %>% kable
+```
+
+Introducing a Lag term in the model improved homoscedasticity but normality took a hit as well as multicollinearity was reintroduced in the model. It appears that Make and lag(1) of log.price are correlated with each other. In the end, the model with normally distributed terms and moderate evidence of non-constant variance is the best option.
+
+Our *Full* linear regression model is: $log(price) = \beta_0 + \beta_1 Mileage + \beta_2 Cadillac + \beta_3 Chevrolet + \beta_4 Pontiac + \beta_5 SAAB + \beta_6 Saturn + \beta_7 Coupe + \beta_8 Hatchback + \beta_9 Sedan + \beta_{10} Wagon + \beta_{11} Liter + \beta_{12} Cruise + \beta_{13} Sound + \beta_{14} Leather$ 
+
+## Question 1
+> What is the effect of Type and Liter on average Price? How does this change when Mileage is taken into account?
+
+```{r}
+tidy(cars.m.adjusted2) %>% 
+  mutate_at(c("estimate", "std.error"), exp) %>% 
+  kable
+
+confint(cars.m.adjusted2) %>% exp %>% 
+  tidy %>% 
+  kable(
+    caption = "Confidence Intervals for Comparison against Median Price of Base"
+  )
+
+```
+
+- There is convincing evidence that Hatchbacks, Convertables, and Station Wagons have an affect on mean log price when compared to Sedans after accounting for all other predictors in the model (p-values = 0.00265, < 0.0001, < 0.0001 respectively).
+
+- It is estimated that the median Price of a Convertible is 39% more expensive than the median Price of a Sedan. With 95% confidence, the median Price of a Convertible is between 34.69% and 42.73% more expensive than the median price of a Sedan, after accounting for Mileage, Make, Engine Size, Cruise Control, Upgraded Sound Systems, and Leather Seats.
+
+- It is estimated that the median Price of a Station Wagon is 18% more expensive than the median Price of a Sedan. With 95% confidence, the median Price of a Station Wagon is between 14.64% and 21.05% more expensive than the median price of a Sedan, after accounting for Mileage, Make, Engine Size, Cruise Control, Upgraded Sound Systems, and Leather Seats.
+
+- It is estimated that the median Price of a Hatchback is 4.17% cheaper than the median Price of a Sedan. With 95% confidence, the median Price of a Hatchback is between 1.44% and 7.02% cheaper than the median price of a Sedan, after accounting for Mileage, Make, Engine Size, Cruise Control, Upgraded Sound Systems, and Leather Seats.
+
+- It is estimated that the median Price of a Coupe is 1% more expensive than the median Price of a Sedan. With 95% confidence, the median Price of a Coupe is between 0.9% cheaper and 2.83% more expensive than the median price of a Sedan, after accounting for Mileage, Make, Engine Size, Cruise Control, Upgraded Sound Systems, and Leather Seats.
+
+- It is estimated that each additional Liter in Engine Size is associated with an increase median Price of a car by 25%. With 95% confidence, a one-liter increase in engine size is associated with an increase in median price between 23.7% and 25.64%, after accounting for Mileage, Make, Type, Cruise Control, Upgraded Sound Systems, and Leather Seats.
+
+- It is estimated that each additional mile is associated with a 0.0008 decrease in median price of a car. With 95% confidence, each additional mile is associated with a decrease in median price between 0.0008% and 0.0009%, after accounting for Make, Type, Engine Size, Cruise Control, Upgraded Sound Systems, and Leather Seats.
+
+```{r}
+glance(cars.m.adjusted2) %>% kable
+```
+
+
+# Appendices
+
+| Variable | Description |
+|----------+---------------------------|
+| Price    | suggested retail price of the used 2005 GM car in excellent condition. The condition of a car can greatly affect price. All cars in this data set were less than one year old when priced and considered to be in excellent condition. |
+| Mileage  | number of miles that the car has been driven.|
+| Make     | manufacturer of the car such as Saturn, Pontiac, and Chevrolet.|
+| Model    | Specific models for each car manufacturer such as Ion, Vibe, Cavalier.|
+| Trim     | Specific type of car model suc has SE Sedan 4D, Quad Coupe 2D.|
+| Type     | Body type such as sedan, coupe, etc.|
+| Cylinder | Number of cylinders in the engine.|
+| Liter    | A more specific meaasure of engine size.|
+| Doors    | Number of doors|
+| Cruise   | Indicator representing whether the car has cruise control (1 = cruise).|
+| Sound    | Indicator representing whether the car has upgraded speakers (1 = sound).|
+| Leather  | Indicator representing whether the car has leather seats (1 = leather).|
+
+
