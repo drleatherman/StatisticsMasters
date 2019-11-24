@@ -1,0 +1,13 @@
+* Applied Regression Analysis
+
+** Course Description
+Simple linear, multiple, polynomial and general regression models. Selection of
+best regression equation and examination of residuals for homoscedasticity and
+other diagnostics.
+
+** Course Goals
+- learn the basics of simple linear regression, including fitting a model and
+  investigating model diagnostics;
+- learn the basics of multiple regression, including fitting a model and
+  investigating model diagnostics;
+- learn what goes into model building and the selection of the “best” possible model

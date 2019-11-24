@@ -1,0 +1,19 @@
+* Applied Statistics II - MAT 442
+
+** Course Description
+A continuation of MAT 441. Repeated measures design, association, analysis of
+covariance, and multivariate relationships. Diagnostics and model
+building.
+
+** Course Goals
+- recognize  data  sets  for  which  multiple  regression  or  two-way  analysis
+  of  variance  is appropriate;
+- be able to implement such analyses in SAS and R;
+- know how to correct for serial correlation and other kinds of dependence
+- recognize designs that are based on repeated measures or multivariate responses
+- summarize statistical findings in a precise, non-technical manner
+- prepare text summarizing methods and results that would be appropriate
+  for submission to a scientific journal
+
+** What I actually Learned
+TODO: Fill this out

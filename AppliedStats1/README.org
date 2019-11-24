@@ -1,0 +1,21 @@
+* Applied Statistics 1 - MAT 441
+
+** Course Description
+Parametric and non-parametric statistical inferential methods for the univariate
+and bi-variate situations using SAS and R. Specific topics include classical and
+exploratory graphical &numerical methods of data descriptions; inference about
+means, medians, and associationsincluding analysis of variance and linear
+regression.
+
+** Course Goals
+In this course, you will:
+- determine  the  appropriate  statistical  tool  to use  in  data  analyses
+  involving  one  to several samples and simple linear
+regression;
+- learn SAS and R techniques needed to implement such analyses;
+- learn how to interpret statistical findings, write those findings in report format,
+andpresent the data and the results.
+
+
+** What I actually learned
+- Analysis in R using RMarkdown with a focus on the Tidyverse framework.

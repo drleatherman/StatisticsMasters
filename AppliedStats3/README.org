@@ -1,0 +1,17 @@
+* Applied Statistics III - MAT 443
+
+** Course Description
+A continuation of MAT 442. Specific topics include principal component
+analysis, canonical correlation, discriminant analysis, cluster analysis,
+multidimensional scaling, correspondenceanalysis, methods of categorical
+data analysis, logistic regression, and log-linear models.
+
+** Course Goals
+- be introduced to more multivariate statistical techniques;
+- be introduced to inferences using categorical data;
+- be introduced to logistic and log-linear modeling;
+- be able to implement such analyses in SAS and R;
+- know how to correct for serial correlation and other kinds of dependence;
+- summarize statistical findings in a precise, non-technical manner;
+- prepare text summarizing methods and results that would be appropriate for submission to a
+scientific journal
