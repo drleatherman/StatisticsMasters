@@ -1758,3 +1758,165 @@ $W_i = \frac{1}{(\hat{S_i})^2}$ using $|e_i|$
 *OR*
 
 $W_i = \frac{1}{\hat{V_i}}$ using $e_i^2$
+* Extra Curricular - Weighted Least Squares, Ridge, and Robust Regression
+** Weighted Least Squares
+- Useful for models with heteroskedasticity (non-constant variance)
+
+\begin{equation}
+\begin{split}
+\vec{b} = & (X^T X)^{-1} X^T Y\\
+\underset{(n \times n)}{\vec{b_w}} = & (X^T W X)^{-1} X^T W Y\\
+W = & \begin{bmatrix}
+w_1 & 0 & ... & 0\\
+0 & w_2 & ... & 0\\
+... & ... & ... & ...\\
+0 & 0 & ... & w_n
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+- OLS is a special case of WLS where W = J = 1.
+
+- $w_i = k(\frac{1}{\sigma_i^2})$. if error variances known (rare)
+- $w_i = \frac{1}{(\hat{s_i})^2}$. if using fitted standard error
+- $w_i = \frac{1}{(\hat{v_i})}$. if using fitted variance
+
+Using the weights to estimate regression coefficient is called
+/Iteratively Reweighted Least Squares/. Typically done until coefficients have
+stablized.
+
+*Notes*
+- $R^2$ does not have a clearcut meaning for WLS.
+** OLS with Heteroskedasticity
+OLS can still be used with unequal error variances via White's Estimator. This
+leverages something called the /Robust Covariance Matrix/.
+
+\begin{equation}
+\begin{split}
+\sigma^2(b) = & (X^T X)^{-1}(X^T \sigma^2(e) X)(X^T X)^{-1}\\
+S^2(b) = & (X^T X)^{-1}(X^T S_0 X)(X^T X)^{-1}\\
+\underset{(n \times n)}{S_0} = & \begin{bmatrix}
+e_1^2 & 0 & ... & 0\\
+0 & e_2^2 & ... & 0\\
+... & ... & ... & ...\\
+0 & ... & ... & e_n^2
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+$e_i$: OLS estimator of the residuals squared.
+** Ridge Regression
+- Useful for cases with severe Multicollinearity.
+
+  What to do when you have multicollinearity?
+  1. If only estimating and no conf intervals, nothing
+  2. Center predictor variables
+  3. Drop Predictors
+     - Downside: some predictors not acccounted for and there is a relationship
+       affecting the response that is not being represented in the model.
+  4. Add cases that break multicollinearity.
+  5. PCA
+
+_Definition_: Modifies OLS to allow biased estimators to lower variance.
+
+Recall $MSE = Var(Y) + (Bias(Y))^2$
+
+$E(b^R - \beta)^2 = \sigma^2(b^R) + (E(b^R) - \beta)^2$ where $b^R$: biased estimator
+
+Least Squares Normal Equations given by: $r_{XX} b = r_{XY}$
+$r_{XX}$: correlation matrix of X variables
+$r_{XY}$: Vector of coefficients of simple correlation variables between Y and
+each X Variable
+
+Ridge Standardized Regression: $(r_{XX} + eI) b^R = r_{XY}$
+
+$\underset{(p - 1) \times 1}{b^R} =\begin{bmatrix}
+b_1^R\\
+...\\
+b_{p - 1}^R
+\end{bmatrix}
+
+$b^R = (r_{XX} + cI)^{-1} r_{XY}$
+
+A *biasing* constant $c \geq 0$ can be chosen.
+- bias increases as c increases. likewise variance decreases
+- There is always some value /c/ where $b^R$ has a smaller MSE than OLS $b$.
+  - Optimal Values /c/ varies by application and is unknown
+
+*Ridge Trace*: Method often used to determine /c/. This is combined with VIF
+
+#+CAPTION: Ridge Trace Example
+#+ATTR_LaTeX: scale=0.75
+#+LABEL: fig:rt
+[[./images/ridge_trace.png]]
+
+
+*look for*
+- spots where the line smooths out
+- where least change in $b_k^r$ happens
+
+finding /c/ is a bit of an art.
+
+this formula can be used to convert standardized coefficients to unstandardized
+coefficients.
+
+$b_k = (\frac{s_y}{s_k}) b_k^r$
+
+$s_y$: standard dev of y
+$s_k$: standard error of $b_k$
+
+** robust regression
+- reduce influential cases
+
+uses *iteratively reweighted least squares* where $w_i$ dampens influential
+cases instead of heteroskedasticity.
+
+
+$u$: Scaled residual
+0.345|4.685: tuning constants that are robust for 95% of normal data.
+Huber:
+
+\begin{equation}
+\begin{split}
+w = \begin{cases}
+1 & |u| \leq 1.345\\
+\frac{1.345}{|u|} & |u| > 1.345
+\end{cases}
+\end{split}
+\end{equation}
+
+Bisquare:
+
+\begin{equation}
+\begin{split}
+w = \begin{cases}
+[1 - (\frac{u}{4.685})^2]^2 & |u| \leq 4.685\\
+0 & |u| > 4.685
+\end{cases}
+\end{split}
+\end{equation}
+
+Huber is often used to obtain starting weights for Bisquare.
+
+*** $u$
+- Semi-studentized residuals could be used but they are not resistant to
+  outliers
+- Mean Absolute Deviation (MAD) often used.
+
+  $MAD = \frac{1}{0.6745} med (|e_i - med (e_i)|)$
+
+  $u_i = \frac{e_i}{MAD}$
+
+  0.6745 is used to make this an unbiased estimate for $\sigma$ from a normal distribution.
+
+** Regression Tree (Non-parametric Method)
+- Split X's into distinct regions /r/ and run a regression on each region.
+- "Growing a tree" is finding the number of regions /r/ and the boundaries/split
+  points between them.
+- If the variance of the residuals in each region seem constant, splitting may
+  not be necessary.
+- The best split point minimizes $SSE = \sum_{k = 1}^{r} SSE (R_{rk})$
+- Once the optimal /r/ is chosen, each /r/ is subdivided to find the most
+  optimal SSE.
+- The chosen number of regions is done through validation studies, such as
+  choosing the tree that minimizes MSPR
