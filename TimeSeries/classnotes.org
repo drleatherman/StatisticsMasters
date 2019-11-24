@@ -1,0 +1,20 @@
+#+TITLE:     Time Series Analysis Classnotes
+#+AUTHOR:    Dustin Leatherman
+
+* Chapter 1 - Characteristics of Time Series
+** Definitions
+*Filtered Series*: A linear combination of values in a time series
+
+*Autoregression*: A time series where the current value $x_t$ is dependent on a
+function of previous values $x_{t - 1}, x_{t - 2}$, ..., etc. The order of
+Autoregression is dependent on the number of previous values.
+
+*Random Walk (with Drift)*: An AR(1) model with some constant $\delta$ called /drift/. When
+$\delta = 0$, this is called a Random Walk.
+$x_t = \delta + x_{t - 1} + w_t$
+
+*Signal-to-noise Ratio (SNR)*: $SNR = \frac{A}{\sigma_w}$
+$A$: Amplitude of the Waveform
+$\sigma_w$: Additive noise term
+
+Note: A sinusoidal wave form can be written as $A cos(2 \pi \omega t + \phi)$
