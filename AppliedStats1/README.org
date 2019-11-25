@@ -16,6 +16,3 @@ regression;
 - learn how to interpret statistical findings, write those findings in report format,
 andpresent the data and the results.
 
-
-** What I actually learned
-- Analysis in R using RMarkdown with a focus on the Tidyverse framework.

@@ -15,5 +15,3 @@ building.
 - prepare text summarizing methods and results that would be appropriate
   for submission to a scientific journal
 
-** What I actually Learned
-TODO: Fill this out

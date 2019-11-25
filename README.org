@@ -1,0 +1,21 @@
+* Applied Statistics
+
+This repo contains the coursework and projects that were done over the course of my M.S. in Applied Statistics.
+
+This is meant to be a portfolio of my progress as a Statistician and provide a
+nice way to let others view my results, code, and datasets that I have worked
+on.
+
+** Courses
+- /Probability & Statistics Series 1-3 (Not Shown)/
+- Applied Statistics Series 1-3
+- Applied Regression Analysis
+- Time Series Analysis
+- Design of Experiments
+
+** References
+- [[http://pages.cs.wisc.edu/~tdw/files/cookbook-en.pdf][Probability & Statistics Cookbook]]
+
+  While I do have notes from Probability and Statistics 1-3, this cookbook does
+  an excellent job summarizing the content so in lieu of the laborious effort of
+  copying my notes into here, this will do instead.
