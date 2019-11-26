@@ -1,4 +1,4 @@
-* Applied Statistics
+* M.S. in Applied Statistics Cookbook
 
 This repo contains the coursework and projects that were done over the course of my M.S. in Applied Statistics.
 
