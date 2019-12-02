@@ -2,9 +2,8 @@
 
 This repo contains the coursework and projects that were done over the course of my M.S. in Applied Statistics.
 
-This is meant to be a portfolio of my progress as a Statistician and provide a
-nice way to let others view my results, code, and datasets that I have worked
-on.
+This is meant to be a portfolio of my progress as a Statistician, and a
+reference as there are some helpful snippets in here.
 
 ** Courses
 - /Probability & Statistics Series 1-3 (Not Shown)/
