@@ -254,3 +254,55 @@ $2 V_x (h) = var(x_{s + h} - x_s)$
 *Issues*
 - negative estimators for the covariance function occur
 - Indexing issues?
+* Chapter 2 - Time Series Regression and Exploratory Data Analysis
+** Exploratory Data Analysis
+It is necessary for time series data to be stationary so lags are possible. It
+is tough to measure time series if the dependence structure is not regular. At
+bare minimum, the autocovariance and mean functions must be stationary for some
+period of time.
+
+*** Trend Stationary Models
+
+$x_t = \mu_t + y_t$
+
+- $x_t$: Observations
+- $\mu_t$: Trend
+- $y_t$: Stationary Process
+
+Strong trends often obscure behavior of the stationary process so detrending is
+a good first step.
+
+\begin{equation}
+\begin{split}
+\hat{y_t} = & x_t - \hat{\mu_t}\\
+= & x_t - (\beta_0 + \beta_1 t)
+\end{split}
+\end{equation}
+
+Using $\hat{\mu_t} = \beta_0 + \beta_1 t$ detrends the data.
+
+*** Differencing
+
+$x_t - x_{t - 1} = (\mu_t + y_t) - (\mu_{t - 1} + y_{t - 1}) = \beta_1 + y_t -
+y_{t - 1}$
+
+First Difference Notation: $\nabla x_t = x_t - x_{t - 1}$
+
+**** Backshift
+Used to specify a specific difference from a given point in a time series. When
+$k < 0$, it becomes a forward-shift operator.
+
+$B^k x_t = x_{t - k}$
+
+A given difference can be represented as: $\nabla^k x_t = (1 - B)^k x_t$
+
+***** Example - Second Difference
+
+$\nabla^2 x_t = (1 - B)^2 x_t = (1 - 2B + B^2) x_t = x_t - 2 x_{t - 1} + x_{t - 2}$
+
+**** Pros
+- No parameters estimated in differencing operation
+- Not viable when goal is to coerce data to stationarity
+**** Cons
+- does not yield an estimate of the stationary process $y_t$
+- Detrending more viable if trend is fixed
