@@ -1,6 +1,7 @@
 #+TITLE:     Time Series Analysis Classnotes
 #+AUTHOR:    Dustin Leatherman
 
+[[https://www.stat.pitt.edu/stoffer/tsa4/tsa4.pdf][Time Series Analysis and Its Applications - 4th Edition]]
 
 * Chapter 1 - Characteristics of Time Series
 ** Definitions
@@ -294,15 +295,106 @@ $k < 0$, it becomes a forward-shift operator.
 
 $B^k x_t = x_{t - k}$
 
-A given difference can be represented as: $\nabla^k x_t = (1 - B)^k x_t$
+A given difference can be represented as: $\nabla^d x_t = (1 - B)^d x_t$
 
 ***** Example - Second Difference
 
 $\nabla^2 x_t = (1 - B)^2 x_t = (1 - 2B + B^2) x_t = x_t - 2 x_{t - 1} + x_{t - 2}$
 
+***** Example - Fractional Differencing
+
+$-0.5 < d < 0.5$
+
+$\nabla^{0.5} x_t = (1 - B)^{0.5} x_t$
+
+Typically used for environmental time series in hydrology.
 **** Pros
 - No parameters estimated in differencing operation
 - Not viable when goal is to coerce data to stationarity
 **** Cons
 - does not yield an estimate of the stationary process $y_t$
 - Detrending more viable if trend is fixed
+
+**** Transformations
+Just as transformations can fix non-normality, so can they fix non-stationarity.
+The Box-Cox family transformations are useful.
+
+\begin{equation}
+\begin{split}
+y_t = \begin{cases}
+(x_t^\lambda - 1) / \lambda & \lambda \neq 0\\
+log X_t & \lambda = 0
+\end{cases}
+\end{split}
+\end{equation}
+
+*** Trig Identities to Discover a Signal in Noise
+
+\begin{equation}
+\begin{split}
+x_t = & A cos( 2 \pi \omega t + \phi) + w_t\\
+a cos( 2 \pi \omega t + \phi) = & \beta_1 cos(2 \pi \omega t) + \beta_2 sin(2 \pi \omega t)\\
+\beta_1 = & a cos(\phi)\\
+\beta_2 = & -a sin(\phi)\\
+\omega = 1 / 50\\
+x_t = & \beta_1 cos(2 \pi t / 50) + \beta_2 sin(2 \pi t / 50) + w_t
+\end{split}
+\end{equation}
+*** Smoothing
+Let a Moving Average be defined as
+
+$m_t = \sum_{j = -k}^{k} a_j x_{t - j}$
+
+where
+
+$a_j = a_{-j} \geq 0, \sum_{j = -k}^{k} a_j = 1$
+
+**** Kernal smoothing
+
+Moving Average smoother that uses a weight function (kernel) to average
+observations.
+
+\begin{equation}
+\begin{split}
+m_t = & \sum_{i = 1}^{n} w_i(t) x_i\\
+w_i(t) = & K (\frac{t - i}{b}) / \sum_{j = 1}^{n} K (\frac{t - j}{b})
+\end{split}
+\end{equation}
+
+
+
+where $K(.)$ is a kernel function.
+
+***** Example - Original Kernel Function
+
+$K(z) = \frac{1}{\sqrt(2 \pi)} exp(-z^2 / 2)$
+
+**** Lowess
+
+KNN Regression followed by robust weighted regression to obtain smoothed values.
+
+**** Splines
+
+Given the following:
+
+\begin{equation}
+\begin{split}
+x_t = & m_t + w_t\\
+m_t = & \beta_0 + \beta_1 t + \beta_2 t^2 + \beta_3 t^3\\
+t = & 1,...,n
+\end{split}
+\end{equation}
+
+Let $t$ be divied into $k$ intervals called /knots/. In each interval, fit a
+polynomial regression model. The most common is a /cubic spline/ where the Order
+is 3 (as $m_t$ is defined).
+
+
+***** Smoothing Spline
+
+The following is a compromise between the model fit (smoothness) and the data
+(no smoothness).
+
+$\sum_{t = 1}^{n} [x_t - m_t]^2 + \lambda \int (m_t'')^2 dt$
+
+$\lambda > 0$ controls the degree of smoothness.
