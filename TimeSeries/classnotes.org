@@ -398,3 +398,99 @@ The following is a compromise between the model fit (smoothness) and the data
 $\sum_{t = 1}^{n} [x_t - m_t]^2 + \lambda \int (m_t'')^2 dt$
 
 $\lambda > 0$ controls the degree of smoothness.
+
+* Chapter 3 - ARIMA Models
+** Autoregressive Moving Average (ARMA) Models
+*** Autoregressive Models
+Autoregressive models are based on the idea that the current value of the
+series, $x_t$ can be explained as a function of $p$ past values, $x_{t -
+1},x_{t - 2}, ..., x_{t - p}$
+where p determines the number of steps in the past needed to forecast the
+current value.
+
+*AR(P)*: Autoregressive model of the order P
+
+$x_t = \alpha + \phi_1 x_{t - 1} + \phi_2 x_{t - 2} + ... + \phi_p x_{t - p} + w_t$
+
+$\alpha = \mu(1 - \phi_1 - ... - \phi_p)$
+where $x_t$ is stationary, $w_t \sim wn(0, \sigma_w^2)$, and $\phi_1, \phi_2,
+...,\phi_p$ are constants ($\phi_p \neq 0$).
+
+This model can be expressed using the *Backshift* operator. This is known as the
+autoregressive operator.
+
+\begin{equation}
+\begin{split}
+\phi(B) x_t = & w_t\\
+(1 - \phi_1 B - \phi_2 B^2 - ... - \phi_p B^p)x_t = & w_t
+\end{split}
+\end{equation}
+
+**** AR(1)
+An AR(1) model can be represented as a linear process given by $x_t = \sum_{j =
+0}^{\infty} \phi^j w_{t - j}$
+assuming $|\phi| < 1$ and $var(x_t) < \infty$
+
+$E(x_t) = \sum_{j = 0}^{\infty} \phi^j E(w_{t - j}) = 0$
+
+$\gamma(h) = cov(x_{t + h}, x_t) = \frac{\sigma_w^2 \phi^h}{1 - \phi^2}$ for $h
+\geq 0$
+
+**** Explosive AR Models
+When $|\phi| > 1$, the model is considered explosive because it grows without
+bound. A stationary model can be obtained by iterating k steps forward producing
+the model
+
+$x_t = - \sum_{j = 1}^{\infty} \phi^{-j} w_{t + j}$
+
+This model is future dependent and thus useless. When a process does not depend
+on the future, its considered /causal/.
+
+However, explosive models have /causal/ counterparts.
+
+Given
+
+$x_t = \phi x_{t - 1} + w_t$
+
+- $|\phi| > 1$
+- $w_t \sim N(0, \sigma_w^2)$
+- $E(x_t) = 0$
+- $\gamma_x(h) = \frac{\sigma_w^2 \phi^{-2} \phi^{-h}}{1 - \phi^{-2}}$
+
+The causal process is defined by
+
+$y_t = \phi^{-1} y_{t - 1} + v_t$
+- $v_t \sim N(0, \sigma_w^2 \phi^{-2})$
+
+$y_t$ is stochastically equal to $x_t$. i.e. all finite distributions of the
+processes are the same.
+
+\begin{equation}
+\begin{split}
+x_t = & 2 x_{t - 1} + w_t\\
+\sigma_w^2 = & 1\\
+y_t = & \frac{1}{2} y_{t - 1} + v_t\\
+\sigma_v^2 = & \frac{1}{4}
+\end{split}
+\end{equation}
+
+For larger orders of AR models, it is more effective to match coefficients to
+find a stationary solution.
+
+\begin{equation}
+\begin{split}
+\phi(B) x_t = & w_t\\
+\phi(B) = & 1 - \phi B\\
+|\psi| < & 1\\
+x_t = & \sum_{j = 0}^{\infty} \psi_j w_{t - j} = \psi(B) w_t\\
+\psi(B) = & \sum_{j = 0}^{\infty} \psi_j B^j\\
+\psi_j = & \phi^j
+\end{split}
+\end{equation}
+
+*** Moving Average Models
+
+MA(q): $x_t = w_t + \theta_1 w_{t - 1} + \theta_2 w_{t - 2} + ... + \theta_q
+w_{t - q}$
+- $w_t \sim wn(0, \sigma_w^2)$
+- $[\theta_1, \theta_q], \theta_1 \neq 0$ are parameters
