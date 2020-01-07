@@ -494,3 +494,314 @@ MA(q): $x_t = w_t + \theta_1 w_{t - 1} + \theta_2 w_{t - 2} + ... + \theta_q
 w_{t - q}$
 - $w_t \sim wn(0, \sigma_w^2)$
 - $[\theta_1, \theta_q], \theta_1 \neq 0$ are parameters
+
+*Operator Form*
+\begin{equation}
+\begin{split}
+x_t = & \theta(B) w_t\\
+\theta(B) = & 1 + \theta_1 B + \theta_2 B^2 + ... + \theta_q B^q
+\end{split}
+\end{equation}
+
+Unlike the /autoregressive process/, the moving average process is stationary
+for any values for parameters $[\theta_1,\theta_q]$
+
+**** MA(1)
+
+Consider $x_t = w_t + \theta w_{t - 1}$ with $E(x_t) = 0$
+
+\begin{equation}
+\begin{split}
+\gamma(h) = & \begin{cases}
+(1 + \theta^2) \sigma_w^2 & h = 0\\
+\theta \sigma_w^2 & h = 1\\
+0 & h > 1
+\end{cases}\\
+\rho(h) = &\begin{cases}
+\frac{\theta}{(1 + \theta^2)} & h = 1\\
+0 & h > 1
+\end{cases}
+\end{split}
+\end{equation}
+
+***** Properties
+- $\forall \ \theta \ |\rho(1)| < 0.5$
+- $x_t$ and $x_{t - 1}$ correlated but not with $x_{t - 2}, x_{t - 3}, ...$
+  This is unlike an AR(1) model where $cor(x_t, x_{t - k}) \neq 0$
+**** Invertibility of MA Models
+A process with an infinite AR representation is called an /invertible/ process.
+
+Discovering an Invertible Model
+1. Reverse roles of $x_t$ and $w_t$
+   - $w_t = -\theta w_{t - 1} + x_t$
+2. Iterate Backwards k times to get the infinite AR representation of the model
+   - $w_t = \sum_{j = 0}^{\infty} (-\theta)^j x_{t - j}$ if $|\theta| < 1$
+
+\begin{equation}
+\begin{split}
+x_t = & \theta(B) w_t\\
+\theta(B) = & 1 + \theta B\\
+\pi(B) x_t = & w_t \ \text{when} \ |\theta| < 1\\
+\pi(B) = & \theta^{-1}(B)\\
+= & \sum_{j = 0}^{\infty} (-\theta)^j B^j
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\theta(z) = & 1 + \theta z \ \text{for} \ |z| \leq 1\\
+\pi(z) = & \theta^{-1}(z)\\
+= & (1 + \theta z)^{-1}\\
+= & \sum_{j = 0}^{\infty} (-\theta)^j z^j\\
+\end{split}
+\end{equation}
+
+
+*** Autoregressive Moving Average (ARMA) Models
+A time series {$x_t: \ t = 0, \pm 1, \pm 2, ...$} is ARMA(p, q) if it's
+/stationary/ and
+
+$x_t = \phi_1 x_{t - 1} + ... + \phi_p x_{t - p} + w_t + \theta_1 w_{t - 1} +
+... + \theta_q w_{t - q}$
+
+$\phi_p \neq 0,\ \theta_q \neq 0,\ \sigma_w^2 > 0$
+
+$p$: Autoregressive order
+$q$: Moving Average order
+
+When $E(x_t) \neq 0$, $\alpha = \mu(1 - \phi_1 - ... - \phi_p)$
+
+$x_t = \alpha + \phi_1 x_{t - 1} + ... + \phi_p x_{t - p} + w_t + \theta_1 w_{t - 1} +
+... + \theta_q w_{t - q}$
+
+Where $w_t \sim wn(0, \sigma_w^2)$
+
+*Operator Form*: $\phi(B) x_t = \theta(B) w_t$
+
+Be aware that this model can become complicated when multiplying both sides by
+another operator. This leads to /parameter redundancy/ and can lead to (1) and
+over parameterized model and (2) incorrect inferences.
+
+**** Properties
+- AR Polynomial: $\phi(z) = 1 - \phi_1 z - ... - \phi_p z^p, \ \phi_p \neq 0$
+- MA Polynomial: $\theta(z) = 1 + \theta_1 z + ... + \theta_q z^q, \ \theta_q
+  \neq 0$
+  - $z$ is a complex number
+- $\phi(z)$ and $\theta(z)$ have no common factors
+- ARMA(p, q) must be /causal/.
+
+***** Causality
+An ARMA(p,q) model is said to be causal if
+- it can be written as a one sided linear process.
+- if and only if $\phi(z) \neq 0 \ \text{for} \ |z| < 1$
+
+$x_t = \sum_{j = 0}^{\infty} \psi_j w_{t - j} = \psi(B) w_t$
+- $\psi(B) = \sum{j = 0}^{\infty} \psi_j B^j$
+- $\sum_{j = 0}^{\infty} |\psi_j| < \infty$
+- $\psi_0 = 1$
+
+The coefficients can be determined by solving
+
+$\psi(z) = \sum_{j = 0}^{\infty} \psi_j z^j = \frac{\theta(z)}{\phi(z)}, \ |z| \leq
+1$
+
+***** Invertibility
+
+An ARMA(p, q) model is said to be invertible if the time series can be written
+as
+
+$\pi(B) x_t = \sum_{j = 0}^{\infty} \pi_j x_{t - j} = w_t$
+- $\pi(B) = \sum_{j = 0}^{\infty} \pi_j B^j$
+- $\sum_{j = 0}^{\infty} |\pi_j| < \infty$
+- $\pi_0 = 1$
+
+Also if and only if $\theta(z) \neq 0 \ \text{for} \ |z| < 1$
+
+The coefficients can be determined by solving
+
+$\pi(z) = \sum_{j = 0}^{\infty} \pi_j z^j = \frac{\phi(z)}{\theta(z)}, \ |z|
+\leq 1$
+** Difference Equations
+
+Let the sequence of numbers $u_0, u_1,...$ be defined assess
+$u_n - \alpha u_{n - 1} = 0, \ \alpha \neq 0, \ n = 1,2,...$
+
+ARMA and ACFs *are* Difference Equations.
+
+*** Homogeneous Difference Equation (1)
+$u_n - \alpha u_{n - 1} = 0$
+
+*Solution*: $u_n = \alpha u_{n- 1} = \alpha^n u_0$
+
+*Operator Notation*: $(1 - \alpha B) u_n = 0$
+
+*Polynomial*: $\alpha(z) = 1 - \alpha z$
+*** Homogeneous Difference Equation (2)
+$u_n - \alpha_1 u_{n - 1} - \alpha_2 u_{n - 2} = 0, \ \alpha_2 \neq 0, \ n =
+2,3,...$
+
+*Solution*
+- $u_n = c_1 z_1^{-n} + c_2 z_2^{-n}$ when $z_1 \neq z_2$
+- $u_n = z_0^{-n}(c_1 + c_2n)$
+
+*Polynomial*: $\alpha(z) = 1 - \alpha_1 z - \alpha_2 z^2$
+** Autocorrelation and Partial Autocorrelation
+
+Partial Autocorrelation is the marginal effect of a given lag on a comparison
+point. The linear effect of values between the two points are removed.
+
+$\phi_{11} = corr(x_{t + 1}, x_t) = \rho(1)$
+
+and
+
+$\phi_{hh} = corr(x_{t + h} - \hat{x_{t + h}}, x_t - \hat{x_t}),\ h \geq 2$
+
+** Forecasting
+
+*Goal*: Predict future values of a time series, $x_{n + m}, \ m = 1,2,...$
+
+$x_3^2$ is a one-step ahead of $x_3$ given $x_1, \ x_2$
+
+*** Best Linear Predictors (BLP)
+Linear predictors of the following form that minimize square prediction error.
+
+$x_{n + m}^n = \alpha_0 + \sum_{k = 1}^{n} \alpha_k x_k$ where $\alpha_0,
+\alpha_1, ..., \alpha_n$ are real numbers.
+
+
+$E[(x_{n + m} - x_{n + m}^n) x_k] = 0, \ k = [0:n], \ x_0 = 1$
+
+The final form of the BLP is: $x_{n + m}^n = \mu + \sum_{k = 1}^{n} \alpha_k
+(x_k - \mu)$
+
+The equations within the aforementioned expectation are called /prediction
+equations/. They can be written in matrix notation: $\Gamma_n \phi_n =
+\gamma_n$.
+- $\underset{(n \times n)}{\Gamma_n} = (\gamma(k - j))_{j,k = 1}^n$
+- $\phi_n = \Gamma_n^{-1} \gamma_n$
+
+mean square one-step-ahead prediction error: $P_{n + 1}^n = E(x_{n + 1} - x_{n +
+1}^n)^2 = \gamma(0) - \gamma_n^T \Gamma_n^{-1} \gamma_n$
+
+*** M-step-ahead Predictor
+
+$x_{n + m}^n = \phi_{n1}^{(m)} x_n + \phi_{n2}^{(m)} x_{n - 1} + ... +
+\phi_{nn}^{(m)} x_1$
+
+*Matrix Notation*: $\Gamma_n \phi_n^{(m)} = \gamma_n^{(m)}$
+
+$P_{n + m}^n = E(x_{n + m} - x_{n + m}^n)^2 = \gamma(0) - \gamma_n^{(m) T}
+\Gamma_n^{-1} \gamma_n^{(m)}$
+
+*** Truncated Predictors
+
+When dealing with an infinite time series, not all data for all points in time
+will be present so a /truncated predictor/ would be used.
+
+For ARMA(p, q) models, the truncated predictors for m = 1,2,... are
+
+$x_{n + m}^n = \phi_1 x_{n + m - 1}^n + ... + \phi_p x_{n + m - p}^n + \theta_1
+w_{n + m - 1}^n + ... + \theta_q w_{n + m - q}^n$
+
+*** Backcasting
+Predicting $x_{1 - m}$ for $m = 1,2,...$ based on the data $[x_1, x_n]$
+
+$x_{1 - m}^n = \sum_{j = 1}^{n} \alpha_j x_j$
+
+** Estimatation
+
+Goal is to estimate $[\phi_1, \phi_p]$ and $\theta_1, \theta_q$ and $\sigma_w^2$
+for an ARMA model.
+
+*** Method of Moments Estimators
+Equate sample moments to population moments and solve for parameters in terms of
+sample moments. Hit or miss in terms of estimators
+
+Good for AR(p) models: $x_t = \phi_1 x_{t - 1} + ... + \phi_p x_{t - p} + w_t$
+**** Yule-Walker Estimators (AR(p) Models)
+
+Approx. Gaussian for large sample sizes for AR(p) models ($N(0, \sigma_w^2
+\Gamma_p^{-1})$).
+- Best for AR(p) models since they are linear models and Yule-Walker estimators are essentially
+  least squares.
+ 
+\begin{equation}
+\begin{split}
+\Gamma_p \phi = & \gamma_p\\
+\sigma_w^2 = & \gamma(0) - \phi^T \gamma_p\\
+\underset{(p \times p)}{\Gamma_p} = & \gamma(k - j)_{j,k = 1}^{p}\\
+\underset{(p \times 1)}{\phi} = & (\phi_1, ..., \phi_p)^T\\
+\underset{(p \times 1)}{\gamma_p} = & (\gamma(1), ..., \gamma(p))^T
+\end{split}
+\end{equation}
+
+Using /method of moments/, the following estimates are derived:
+
+\begin{equation}
+\begin{split}
+\hat{\phi} = & \hat{\Gamma_p^{-1}} \hat{\gamma_p}\\
+\hat{\sigma_w^2} = & \hat{\gamma(0)} - \hat{\gamma_p}^T \hat{\Gamma_p^{-1}} \hat{\gamma_p}
+\end{split}
+\end{equation}
+
+/Durbin-Levinson/ algo calculates $\hat{\phi}$ without inverting
+$\hat{\Gamma_p}$ by replacing $\gamma(h)$ with $\hat{\gamma}$. In doing so,
+$\underset{(h \times 1)}{\hat{\phi}} = (\hat{\phi_{h1}}, ...,
+\hat{\phi_{hh}})^T$ is calculated.
+- $\hat{\phi_{hh}}$ = sample PACF
+
+***** Large Sample Distribution of PACF
+For a causal AR(p) process (n $\to \ \infty$)
+$\sqrt{n} \ \hat{\phi_{hh}} \to N(0,1)$
+
+**** MA(p)
+Let $$.
+
+\begin{equation}
+\begin{split}
+x_t = & 1_t + \theta w_{t - 1}, \ |\theta| < 1\\
+= & \sum_{j = 1}^{\infty} (-\theta)^j x_{t - j} + w_t\\
+\gamma(0) = & \sigma_w^2 (1 + \theta^2)\\
+\gamma(1) = & \sigma_w^2 \theta\\
+\hat{\rho(1)} = & \frac{\hat{\gamma(1)}}{\hat{\gamma(0)}} = \frac{\hat{\theta}}{1 + \hat{\theta^2}}
+\end{split}
+\end{equation}
+
+Two solutions /exist/ so the *invertible* one should be chosen
+- If $|\hat{\rho(1)}| < 0.5$, solutions are real. else they dont exist
+
+*Invertible Estimate*
+$\hat{\theta} = \frac{1 - \sqrt{1 - 4 \hat{\rho}(1)^2}}{2 \hat{\rho}(1)}$
+
+$\hat{\theta} \sim AN(\theta, \frac{1 + \theta^2 + 4 \theta^4 + \theta^6 +
+\theta^8}{n(1 - \theta^2)^2})$
+
+*AN*: Asymptotically Normal
+
+***** Maximum Likelihood and Least Square Estimation
+\begin{equation}
+\begin{split}
+S(\mu, \phi) = & (1 - \phi^2)(x_1 - \mu)^2 + \sum_{t = 2}^{n} [(x_t - \mu) - \phi(x_{t - 1} - \mu)]^2\\
+\hat{\sigma_w^2} = & n^{-1} s(\hat{\mu}, \hat{\phi})
+\end{split}
+\end{equation}
+
+- $\hat{\mu}, \ \hat{\phi}$ are MLEs of $\mu, \ \phi$ respectively.
+- $S(\phi, \phi)$: unconditional sum of squares
+  - This can be minimized to find /unconditional least squares/ estimators
+
+Conditional MLE of $\hat{\sigma_w^2} = S_c(\hat{\mu}, \hat{\phi}) / (n - 1)$
+
+Recall Standard Error of 1-step ahead forecast is $P_t^{t - 1} = \gamma(0)
+\Pi_{j = 1}^{t - 1} (1 - \phi_{jj}^2)$. For ARMA models, $\gamma(0) = \sigma_w^2
+\sum_{j = 0}^{\infty} \psi_j^2$
+
+Thus, $P_t^{t - 1} = \sigma_w^2 ([\sum_{j = 0}^{\infty} \psi_j^2][\Pi_{j =
+1}^{t - 1} (1 - \phi_{jj}^2)]) = \sigma_w^2 r_t$
+
+\begin{equation}
+\begin{split}
+S(\beta) = & \sum_{t = 1}^{n}[\frac{(x_t - x_t^{t - 1}(\beta))^2}{r_t(\beta)}]\\
+\hat{\sigma_w^2} = & n^{-1} S(\hat{\beta})
+\end{split}
+\end{equation}
