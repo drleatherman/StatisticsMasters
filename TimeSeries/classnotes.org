@@ -805,3 +805,79 @@ S(\beta) = & \sum_{t = 1}^{n}[\frac{(x_t - x_t^{t - 1}(\beta))^2}{r_t(\beta)}]\\
 \hat{\sigma_w^2} = & n^{-1} S(\hat{\beta})
 \end{split}
 \end{equation}
+
+*** Newton-Raphson & Scoring Algorithms
+AR(p) models are linear so traditional Regression works. MA(q) and ARMA(p, q)
+models are non-linear so numerical methods are required to calculate MLE for
+$\beta$.
+
+
+*Score Vector*: $t^{(1)}(\beta) = (\frac{\partial l(\beta)}{\partial \beta_1}, ...,
+\frac{\partial l(\beta)}{\partial \beta_k})^T$
+
+*Hessian*: $t^{(2)}(\beta) = (- \frac{\partial t^2(\beta)}{\partial
+ \beta_i \partial \beta_j})_{i,j = 1}^k$
+
+When using the method of scoring, the /Hessian Matrix/ is replaced by the
+/information matrix/ ($E[t^{(2)}(\beta)]$)
+
+**** Gauss-Newton
+
+*Conditional Sum of Square Error*: $S_c(\beta) = \sum_{t = p + 1}^{n} w_t^2(\beta)$
+- Minimizing leads to /conditional leaste squares estimate/
+- $q > 0$ is a nonlinear regression problem and requires numerical optimization
+- Conditioning on a few samples with a large n has little influence on final
+  parameter estimates
+
+*Unconditional Sum of Square Error*
+\begin{equation}
+\begin{split}
+S(\beta) = & \sum_{t = - \infty}^{n} \hat{w_t}^2(\beta)\\
+\hat{w_t}(\beta) = & E(w_t | x_1, ..., x_n)
+\end{split}
+\end{equation}
+- /t/ chosen using $t = -M + 1$ where $M$ is large enough to guarantee $\sum_{t
+  = - \infty}^{-M} \hat{w_t}^2(\beta) \approx 0$
+- Numerical optimization needed even when $q = 0$
+
+Gauss-Newton estimation is calculated by:
+
+$\beta_{(j)} = \beta_{j - 1} + \Delta(\beta_{j - 1})$
+- see p124 for more details.
+
+*Information Matrix*: $\underset{(p + q) \times (p + q)}{\Gamma_{p,q}} = \begin{bmatrix}
+\Gamma_{\phi \phi} & \Gamma_{\phi \theta}\\
+\Gamma_{\theta \phi} & \Gamma_{\theta \theta}
+\end{bmatrix}$
+
+*AR(p)*: $\Gamma_{\phi \phi}$
+*MA(q)*: $\Gamma_{\theta \theta}$
+
+**** Asymptotic Distribution Examples
+
+***** AR(1)
+$\hat{\phi} \sim AN[\phi, \ n^{-1} (1 - \phi^2)]$
+
+***** MA(1)
+$\hat{\theta} = AN [\theta, n^{-1} (1 - \theta^2)]$
+
+***** ARMA(1,1)
+$\begin{bmatrix}
+\hat{\phi}\\
+\hat{\theta}
+\end{bmatrix} \sim AN [\begin{bmatrix}
+\phi\\
+\theta
+\end{bmatrix}, n^{-1} \begin{bmatrix}
+(1 - \phi^2)^{-1} & (1 + \phi \theta)^{-1}\\
+sym & (1 - \theta^2)^{-1}
+\end{bmatrix}^{-1}]$
+
+Fitting an AR(2) model when an AR(1) model is appropriate leads to
+/overfitting/. Variance is inflated. Though it can be useful to do this for
+diagnostic purposes.
+
+Note that MA(1) and AR(1) have similar variances. This is partially due to the
+fact that MA regressors are the differential processes $z_t(\theta)$ that have
+AR structure, and it is this structure that determines the asymptotic variance
+of the estimators.
