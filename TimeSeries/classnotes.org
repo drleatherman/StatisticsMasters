@@ -144,3 +144,158 @@ $H_A: \ \rho(h) \neq 0$
 
 *Sample Covariance*: $\hat{\gamma(h)} = \frac{1}{n} \sum_{t = 1}^{n - h} (x_{t +
  h} - \bar{x}) (x_t - \bar{x})$
+* Time Series Regression, Exploratory Data Analysis, and ARIMA Models (2020/01/16)
+** Differences
+
+Taking differences between successive values helps remove trend to help bring a
+time series to stationarity.
+
+1st diff - $\nulpa x_t = x_t - x_{t - 1}$ (removes linear trend)
+
+2nd diff - $(x_t - x_{t - 1}) - (x_{t - 1} - x_{t - 2}) = \nulpa x_t - \nulpa
+x_{t - 1} = \nulpa^2 x_T$ (removes quadratic trend)
+
+*Proof*
+$x_t - x_{t - 1} = \beta_0 + \beta_1 t - [\beta_0 + \beta_1 (t - 1)] = \beta_1$
+
+Order of Attempt
+1. Transformation
+2. Differencing
+  
+*** Backshift
+- $B x_t = x_{t - 1}$
+- $B^k x_t = x_{t - k}$
+
+\begin{equation}
+\begin{split}
+(1 - 2 B + B^2) x_t\\
+= & x_t - 2 x_{t - 1} + x_{t - 2}
+= & (x_t - x_{t - 1}) - (x_{t - 1} - x_{t - 2})
+\end{split}
+\end{equation}
+
+A MA model can be expressed using Backshift operators and subsequently,
+expressed as an AR model.
+
+\begin{equation}
+\begin{split}
+m_t = & \frac{w_t + w_{t - 1} + w_{t - 2}}{3}\\
+= & \frac{1}{3} (1 + B + B^2) w_t
+\end{split}
+\end{equation}
+
+**** Properties
+- $BC = C$ for constant C
+- (1 - B) x_t = \nulpa x_t$
+- $(B \times B) = B^2$
+- $(1 - B)^2 x_t = \nulpa^2 x_t$
+- $(1 - B)^0 x_t = x_t$
+- $(1 - B) x_t$ - considered a linear filter since it filters out linear trend.
+  i.e. first difference
+*** MA(1)
+$x_t = w_t + \theta_1 + w_{t - 1} = (1 + \theta_1 B) w_t$ (AR Model Form)
+
+\begin{equation}
+\begin{split}
+& \ (1 - 0.7 B) (1 - B) x_t = w_t\\
+\to & \ (1 - 1.7 B + 0.7 B^2) x_t = w_t\\
+\to & \ (x_t = 1.7 x_{t - 1} - 0.7 x_{t - 2} + w_t)
+\end{split}
+\end{equation}
+
+_Aside_: Time series predicts future values. Regression is for estimation within
+known values.
+*** Functional Differencing
+Use $-0.5 \leq B \leq 0.5$ to do differencing
+
+*long memory*: for $h \to \infty, \ \rho(h) \to 0$ /slowly/
+*short memory*: for $h \to \infty, \ \rho(h) \to 0$ /quickly/
+
+** ARIMA
+
+AR-I-MA
+
+AR: Autoregressive
+I: Integrated (differencing)
+MA: Moving Average
+
+*** AR(1)
+
+Uses p past observations to predict future observations. The preset value is
+predicted by a linear combination of previous time points.
+
+$x_t = \phi_t x_{t - 1} + \phi_2 x_{t - 2} + ... + \phi_p x_{t - p} + w_t$
+
+$[\phi_1, \phi_p]$ - unknown parameters
+
+$(1 - \phi_1 B - \phi_2 B^2 - ... - \phi_p B^p) x_t = w_t$
+
+$\to \phi(B) x_t = w_t$
+
+\begin{equation}
+\begin{split}
+x_t = & \phi x_{t - 2} + w_t\\
+= & \phi (\phi x_{t - 2} + w_{t - 1}) + w_t\\
+= & \phi^2 (x_{t - 2} + \phi w_{t - 1} + w_t)\\
+...\\
+= & \sum_{j = 0}^{\infty} \phi^j w_{t - j}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+E(x_t) =& E(\sum_{j = 0}^{\infty} \phi^j w_{t - j}) = 0\\
+\gamma(x_t) =& E(X_t x_{t + h}) - E(x_t) E(x_{t + h})\\
+= & E(x_t x_{t + h}) \ \text{when}\ \mu = 0\\
+\gamma(0) =& \sum_{j = 0}^{\infty} \phi^j w_{t - j}\\
+=& \sum_{j = 0}^{\infty} \phi^{2j} var(w_{t - j})\\
+=& \sigma_w^2 \sum_{j = 0}^{\infty} \phi^{2j} = \frac{\sigma_w^2}{1 - \phi^2} \ \text{where} \ h = 0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\gamma(h) = & \frac{\phi^h \sigma_w^2}{1 - \phi^2}\\
+\rho(h) = & \frac{\gamma(h)}{\gamma(0)} = \phi^h
+\end{split}
+\end{equation}
+
+
+Given $|\phi| < 1$, an AR(1) Model can be expressed as a MA(1) Model (i.e. a sum
+of $w_t$'s).
+
+*** MA(1)
+
+\begin{equation}
+\begin{split}
+\gamma(h) = & \begin{cases}
+\sigma_w^2 (1 + \theta_1^2) & h = 0\\
+\theta_1 \sigma_w^2 & h = 1\\
+0 & h \geq 2
+\end{cases}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\rho(h) =\begin{cases}
+1 & h = 0\\
+\frac{\theta_1}{(+ \theta_1^2)} & h = 1\\
+0 & h > 1
+\end{cases}
+\end{split}
+\end{equation}
+
+
+*** ARMA(p, q)
+
+$(1 - \phi_1 B - \phi_2 B^2 - ... - \phi_p B^p) x_t = (1 + \theta_1 B + \theta_2
+B^2 + ... + \theta_q B^q) w_t$
+
+$\to \phi(B) x_t = \theta(B) w_t$ assuming x_t is stationary
+
+**** Parameter Redundancy
+Because AR and MA models can be converted back and forth, _parameter redundancy_
+can occur. For example, $ARMA(2, 1) == AR(1)$. This mostly happens for
+theoretical data but R will throw an error if this happens. Can use polyroot()
+to debug.
