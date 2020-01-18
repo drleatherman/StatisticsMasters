@@ -1,0 +1,173 @@
+---
+title: 'Homework #1'
+author: "Dustin Leatherman"
+date: "1/11/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,  fig.width=8, fig.height=3)
+
+library(ggplot2)
+library(tidyverse)
+library(broom)
+library(knitr)
+library(kableExtra)
+
+pdiff <- function(ls) {
+  a <- ls[1]
+  b <- ls[2]
+  (abs(a - b) / ((a + b) / 2)) * 100
+}
+```
+
+# 1.5
+> For a moving average process of the form
+> $x_t = w_{t - 1} + 2 w_t + w_{t + 1}$ 
+
+> where $w_t$ are independent with zero means and variance $\sigma_w^2$ , determine the autocovariance and autocorrelation functions as a function of lag h and sketch the ACF as a function of h.
+
+$$
+\begin{aligned}
+\hat{\gamma(h)} &= cov(x_t, x_{t + h}) = E(x_t \times x_{t + h})\\
+&= E[(w_{t - 1} + 2 w_t + w_{t + 1})(w_{t + h - 1} + 2 w_{t + h} + w_{t + h + 1})]\\
+&= E[w_{t - 1} w_{t + h - 1} + 2 w_{t - 1} w_{t + h} + w_{t - 1} w_{t + h + 1} + 2 w_{t} w_{t + h - 1} + 4 w_{t} w_{t + h} + 2 w_{t} w_{t + h + 1} + w_{t + 1} w_{t + h - 1} + 2 w_{t + 1} w_{t + h} + w_{t + 1} w_{t + h + 1}]
+\end{aligned}
+$$
+$\hat{\rho(h)} = \frac{\hat{\gamma(h)}}{\hat{\gamma(0)}} = \frac{\hat{\gamma}(h)}{\sigma_w^2}$
+
+Note the following definitions
+$$
+\begin{aligned}
+E(w_t^2) &= var(w_t) + E(w_t)^2\\
+E(w_t) &= 0\\
+E(w_t w_s) &= 0, \ \text{where} \ s \neq t\\
+var(w_t) &= \sigma_w^2\\
+E(w_t^2) &= \sigma_w^2
+\end{aligned}
+$$
+
+In the interest of brevity and readability, the following Expectations only contain non-zero terms. 
+
+When |h| = 0:
+
+$$
+E[x_t^2] = E[w_{t - 1}^2 + 4 w_t^2 + w_{t + 1}^2] = \sigma_w^2 + 4 \sigma_w^2 + \sigma_w^2 = 6 \sigma_w^2
+$$
+
+When |h| = 1:
+
+$$
+E[x_t x_{t + 1}] = E[2 w_t^2 + 2 w_{t + 1}^2] = 4 \sigma_w^2
+$$
+
+When |h| = 2:
+
+$$
+E[x_t x_{t + 2}] = E(w_{t + 1}^2) = \sigma_w^2
+$$
+
+When |h| = 3:
+
+$$
+E[x_t x_{t + 3}] = 0
+$$
+
+```{r}
+data <- data.frame(h = c(0,1,2,3), acf = c(6,4,1,0))
+ggplot(data, aes(x = h, y = acf)) + 
+  geom_bar(stat = "identity", fill = "blue")
+```
+
+# 1.12
+
+> Let $w_t$ , for $t = 0, \pm 1, \pm 2$,...$ be a normal white noise process, and consider
+> the series
+> $x_t = w_t w_{t - 1}$
+> Determine the mean and autocovariance function of $x_t$, and state whether it is stationary.
+
+Given $w_t \sim ind \ N(0, \sigma_w^2)$.
+$$
+\mu_{x_t} = E(x_t) = E(w_t w_{t - 1}) = E(w_i) * E(w_{t - 1}) = 0
+$$
+
+$$
+\begin{aligned}
+\hat{\gamma}(h) &= E(x_t \times x_{t + h})\\
+&= E(w_t w_{t - 1} w_{t + h} w_{t + h - 1})\\
+&= E(w_t w_{t - 1}) \times E(w_{t + h} w_{t + h - 1})\\
+&= 0
+\end{aligned}
+$$
+
+Since this time series is the product of two stationary time series, it is considered stationary. This is further proven by the mean and covariance functions being independent of time.
+
+# 1.14
+
+> (a) Simulate a series of n = 500 Gaussian white noise observations as in Example 1.6 
+> and compute the sample ACF, $\hat{\rho}(h)$ to lag 20. 
+> Compare the sample ACF you obtain to the actual ACF, $\rho(h)$. [Recall Example 1.18.]
+> (b) Repeat part (a) using only n = 50. How does changing n affect the results?
+
+## a
+
+```{r}
+set.seed(123)
+
+w500 <- rnorm(500)
+
+w500.acf <- 
+  bind_cols(
+  acf(w500, type="correlation", plot = FALSE) %>% 
+    tidy %>% 
+    select(lag, correlation = acf),
+  acf(w500, type="covariance", plot = FALSE) %>% 
+    tidy %>% 
+    select(covariance = acf)
+) 
+
+w500.acf %>% 
+  filter(lag <= 20) %>%
+  kable(
+    caption = "First 20 lags of 500 random Normal observations"
+  ) %>% 
+  kable_styling(full_width = FALSE, protect_latex = TRUE, latex_options = "hold_position")
+
+ggplot(w500.acf, aes(x = lag)) + 
+  geom_line(aes(y = correlation), linetype = "dotted") + 
+  geom_line(aes(y = covariance, color = "red"), linetype = "dotted", show.legend = FALSE)
+```
+
+
+
+The actual correlation coefficient for Normal White Noise is equal to the covariance between a given time point and lag $h$. The values are very close as seen in the table and the graph.
+
+## b
+
+```{r}
+w50 <- rnorm(50)
+w50.acf <-
+  bind_cols(
+  acf(w50, type="correlation", plot = FALSE) %>% 
+    tidy %>% 
+    select(lag, correlation = acf),
+  acf(w50, type="covariance", plot = FALSE) %>% 
+    tidy %>% 
+    select(covariance = acf)
+) 
+
+w50.acf %>%
+  filter(lag <= 20) %>% 
+  kable(
+    caption = "Lags of 50 random Normal observations"
+  ) %>% 
+  kable_styling(full_width = FALSE, protect_latex = TRUE, latex_options = "hold_position")
+
+ggplot(w50.acf, aes(x = lag)) + 
+  geom_line(aes(y = correlation), linetype = "dotted") + 
+  geom_line(aes(y = covariance, color = "red"), linetype = "dotted", show.legend = FALSE)
+```
+
+Changing n reduces the number of lags that are created and the sample correlation drifts further from the actual correlation. This is an expected effect when using smaller sample sizes.
