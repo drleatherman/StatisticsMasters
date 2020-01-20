@@ -1,0 +1,70 @@
+---
+title: 'Homework #2'
+author: "Dustin Leatherman"
+date: "1/18/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(tidyverse)
+library(broom)
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(forecast)
+```
+
+> Consider a signal-plus-noise model of the general for $x_t = s_t + w_t$ for t: [1, 100] where
+> $s_t = \begin{cases} 0 & t:[1, 100]\\ 10 \ exp(- \frac{t - 100}{20}) cos(\frac{2 \pi t}{4}) & t: [101, 200]\end{cases}$
+>
+> and $w_t$ is Gaussian White Noise with $\sigma_w^2 = 1$
+> 
+> a) Simulate (set.seed(123)) and plot n = 200 observations from the model
+> b) Although the model is not stationary, the ACF can be informative. For the data you generated, plot the ACF then comment
+
+# a
+
+```{r fig.width=10}
+set.seed(123)
+
+generateSignal <- function(n, cutoff) {
+  # assume standard gaussian white noise
+  w <- rnorm(n)
+  
+  # generate a signal (s)
+  s <- function(t, cutoff) {
+    ifelse(t <= cutoff, 0, 10 * exp(- (t - 100)/(20)) * cos((2 * pi * t)/(4)))
+  }
+  
+  # combine white noise and signal
+  w + sapply(seq(1, n), function(x) s(x, cutoff))
+}
+
+obs <- generateSignal(200, 100)
+
+
+obs %>% 
+  enframe %>% 
+  ggplot(aes(x = name, y = value)) + 
+    geom_point() + 
+    geom_hline(yintercept = 0, linetype = "dashed") + 
+    geom_line() +
+    ylab(expression(x[t])) + 
+    xlab("t")
+```
+
+
+# b
+
+```{r fig.width=10}
+autoplot(acf(obs, type = "correlation", plot = FALSE))
+```
+
+As the comparison between the current value and the number of lags increases, correlation slightly decreases yet remains significant. This is typically indicative of a trend within the data. The correlation value oscilates between positive and negative values for every other lag indicating that the dependence between the current value and the subsequent lags is _negative_. This can be confirmed by the scatterplot which shows choppiness from t = 100, ..., 140.
+
+Additionally, even-numbered lags are significantly correlated with the current value of the time series. This may indicate that there is consistent interference with the data based on a multiple of 2. This makes sense since with know $cos(\frac{2 \pi t}{4})$ is a component of the signal and thus its frequency being $\frac{1}{4}$.
