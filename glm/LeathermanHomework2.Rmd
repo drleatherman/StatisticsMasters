@@ -2,7 +2,9 @@
 title: 'Homework #2'
 author: "Dustin Leatherman"
 date: "1/20/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
