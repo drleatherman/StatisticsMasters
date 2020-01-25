@@ -299,3 +299,116 @@ Because AR and MA models can be converted back and forth, _parameter redundancy_
 can occur. For example, $ARMA(2, 1) == AR(1)$. This mostly happens for
 theoretical data but R will throw an error if this happens. Can use polyroot()
 to debug.
+* ARMA Models (2020/01/23)
+ARIMA models are reduced to ARMA after differencing.
+
+** AR(p)
+\begin{equation}
+\begin{split}
+x_t = (\sum_{j = 1}^{p} \phi_j x_{t - j}) + \epsilon
+\end{split}
+\end{equation}
+
+** MA(q)
+\begin{equation}
+\begin{split}
+x_t = & (+ \theta_1 B + \theta_2 B^2 + ... + \theta_q B^q) w_t\\
+= & (\sum_{j = 0}^{q} \theta_j B^j) w_t, \ s.t. \ \theta_0 = 1, \ w_t \sim \ ind. \ N(0 \sigma_w^2) \ for \ t = 1,...,n\\
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+ACF = & \gamma(h) = cov(x_t, x_{t + h})\\
+= & E(x_t x_{t + h}) - E(x_t) E(x_{t + h})\\
+= & E(x_t x_{t + h})\\
+= & ...\\
+= & \sigma_w^2 \sum_{i = 0}^{q - h} \theta_i \theta_{i + h}, \ \text{if j = i + h}
+\end{split}
+\end{equation}
+
+Thus
+
+\begin{equation}
+\begin{split}
+\gamma(h) = &\begin{cases}
+\sigma_w^2 \sum_{i = 0}^{q - h} \theta_i \theta_{i + h}, & 0 \leq h \leq q\\
+0, & h > q
+\end{cases}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\gamma(0) = \sigma_w^2 \sum_{i = 0}^{q} \theta_i^2
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\rho(h) = \frac{\gamma(h)}{\gamma(0)} =\begin{cases}
+(\sum_{i = 0}^{q} \theta_i^2)^{-1} \sum_{i = 0}^{q - h} \theta_i \theta_{i + h}, & 0 \leq h \leq q\\\
+0, & h > q
+\end{cases}
+\end{split}
+\end{equation}
+
+
+
+** ACF & PACF
+These plots are used to find values at lags $h = 0,1,2,...$ for a specific ARMA
+process. These values can be compared with the /observed/ values to determine
+the appropriate model to use for the data.
+
+ACF plot helps determine q for a MA(q) model.
+PACF plot helps determine p for an AR(p) model.
+
+PACF plots will "cut off to 0" for an AR(p) model whereas ACF plots will not.
+ACF plots for AR(p) models are act like PACF plots for MA(q) models.
+
+|          | AR(p)                     | MA(q)                     | ARMA(p,q)                   |
+|----------+---------------------------+---------------------------+-----------------------------|
+| *ACF*    | Tails off to 0            | Cuts off to 0 after lag q | Tails off to 0 after q lags |
+| *PACF*   | Cuts off to 0 after lag p | Tails off to 0            | Tails off to 0 after p lags |
+
+*Examining these plots is the first step to constructing an ARMA model.*
+*** PACF
+$\beta$'s are called partial autocorrelations because they measure the
+dependence of $x_t$ on $x_{t + h}$ removing the effect all other random
+variables in between. These can be treated like regular correlations.
+
+
+\begin{equation}
+\begin{split}
+\beta_{11} = & Corr(x_t, x_{t + 1})\\
+\beta_{22} = & Corr(x_t, x_{t + 2} | x_{t + 1})\\
+\beta_{33} = & Corr(x_t, x_{t + 3} | x_{t + 1}, x_{t + 2})
+...
+\end{split}
+\end{equation}
+
+
+** ARMA(p, q)
+
+Since AR(p) and MA(q) processes are interoperable, it is easier to deal with
+them as one.
+
+\begin{equation}
+\begin{split}
+& \phi(B) x_t = \theta (B) w_t\\
+\to & x_t = [\theta(B) / \phi(B)] w_t\\
+\to & x_t = \psi (B) w_t\\
+\to & \psi (B) = 1 + B \psi_1 + B^2 \psi_w + ... + , \ \psi_0 = 1, \ E(x_i) = 0
+\end{split}
+\end{equation}
+
+$\psi (B)$ is a *constant*.
+
+\begin{equation}
+\begin{split}
+\gamma(h) = \begin{cases}
+\sum_{i = 1}^{p} \theta_j \gamma(h - j) + \sigma_w^2 \sum_{j = h}^{q} \theta_j \psi_{j - h}, & 0 \leq h \leq max(p, q + 1)\\
+\sum_{i = 1}^{p} \phi_j \gamma(h - j), & h \geq max(p, q + 1)
+\end{cases}
+\end{split}
+\end{equation}
