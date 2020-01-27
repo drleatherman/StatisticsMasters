@@ -79,7 +79,10 @@ grid.arrange(
   hawaii.p.quad, 
   hawaii.t.quad, 
   ncol = 2,
-  top = textGrob("Lease Price by Square Foot - Quadratic Regression", gp=gpar(fontsize=14,font=1),just=c("center"))
+  top = textGrob(
+    "Lease Price by Square Foot - Quadratic Regression", 
+    gp=gpar(fontsize=14,font=1),just=c("center")
+  )
 )
 ```
 
@@ -91,7 +94,7 @@ augment(hawaii.m.quad) %>%
   select(.fitted, .resid) %>% 
   kable(
     col.names = c("Fitted Value", "Residual")
-  )
+  ) %>% kable_styling(latex_options = "hold_position")
 ```
 
 ## c
@@ -105,7 +108,9 @@ The QQ plot shows that the data appear to be close to the theoretical line indic
 6759).
 
 ```{r}
-shapiro.test(hawaii.m.quad$residuals) %>% tidy %>% kable
+shapiro.test(hawaii.m.quad$residuals) %>% 
+  tidy %>% 
+  kable %>% kable_styling(latex_options = "hold_position")
 ```
 
 ## d
@@ -116,18 +121,22 @@ There appears to be a pattern in the Residual plot that veers upwards. Many of t
 ## e
 >  Conduct a test of heteroscedasticity (hint divide the data into subsamples and fit the model to both subsamples).
 
-There is fanning as the fitted values increase meaning that the non-constant variance assumption is not met. According to the Brown-Forsyth Test. There is moderate evidence that the residuals are heteroscedastic (p-value = 0.0391). 
+There is fanning as the fitted values increase meaning that the non-constant variance assumption is not met. According to the Brown-Forsyth Test. There is moderate evidence that the residuals are heteroscedastic (p-value = 0.0055). 
 
 Since the error terms are normal, this can be confirmed with the Breusch-Pagan Test (p-value = 0.0204). 
 
 ```{r}
 bind_rows(
-levene.test(hawaii.m.quad$residuals, group = hawaii.m.quad$model$LEASEFEE <= median(hawaii.m.quad$model$LEASEFEE)) %>% 
-  tidy,
-lmtest::bptest(hawaii.m.quad, studentize = FALSE) %>% 
-  tidy
+  levene.test(
+    hawaii.m.quad$residuals, 
+    group = hawaii$SIZE <= median(hawaii$SIZE)
+    ) %>% tidy,
+lmtest::bptest(
+  hawaii.m.quad, 
+  studentize = FALSE
+  ) %>% tidy
 ) %>% 
-  kable
+  kable %>% kable_styling(latex_options = "hold_position", full_width = TRUE)
 ```
 
 ## f
@@ -161,7 +170,7 @@ gfclocks.fitted %>%
   kable(
     caption = "Actual and Estimated Values",
     col.names = c("Estimate", "Residual")
-  )
+  ) %>% kable_styling(latex_options = "hold_position")
 ```
 
 ## b
@@ -177,7 +186,7 @@ gfclocks.fitted.sum %>%
     kable(
       caption = "Actual and Estimated Values",
       col.names = c("Residual Mean", "Residual Variance")
-    )
+    ) %>% kable_styling(latex_options = "hold_position")
 ```
 
 ## c
@@ -191,7 +200,7 @@ gfclocks.fitted %>%
     res.std = (res - gfclocks.fitted.sum$fn1) / sqrt(gfclocks.fitted.sum$fn2)
   ) %>% 
   filter(abs(res.std) > 2 & abs(res.std) <= 3) %>% 
-  kable
+  kable %>% kable_styling(latex_options = "hold_position")
 ```
 
 ## d
@@ -209,13 +218,14 @@ gfclocks.m.m1 <- lm(PRICE ~ AGE + NUMBIDS, data = gfclocks)
 augment(gfclocks.m.m1) %>% 
   mutate(
     dffit_val = dffits(gfclocks.m.m1),
+    # nrow == n, length == p
     f = pf(.cooksd, length(.), (nrow(.) - length(.))),
     is.influential.large = abs(dffit_val) > (2 * sqrt(length(.) / nrow(.))),
     is.influential.small = abs(dffit_val) > 1,
     is.influential.f = f > 0.5
   ) %>% 
   filter(is.influential.large | is.influential.small | is.influential.f) %>% 
-  kable
+  kable %>% kable_styling(latex_options = "hold_position")
 
 autoplot(gfclocks.m.m1)
 ```
