@@ -1,0 +1,167 @@
+#+TITLE:     Generalized Linear Models Notes
+#+AUTHOR:    Dustin Leatherman
+
+* Types of Regression
+** Logistic
+A measure of the relationship between categorical data using a Binary
+distribution. (Bernoulli for Logistic, Gaussian for OLS Regression).
+
+$E(y) = \frac{1}{1 + e^{-(a + \beta_k x_k)}}$
+
+- Deviance is used to measure lack-of-fit. (instead of Sum of Squares)
+- Likelihood Ratio Test (LRT) also used
+
+*** Examples
+- Predicting whether a political candidate wins an election
+- Predicting Admission into a Program
+** Poisson
+Used for Count data. Y refers to the *number of occurrences* of an event and is
+assumed to have a Poisson Distribution:
+
+$P(Y = k | x_1, x_2, ..., x_m) = \frac{e^{-\mu} \mu^k}{k!}$
+
+*Log Link*: $y = exp(\beta_0 + \Sigma \beta_i x_i)$
+
+The model is used for goodness-of-fit tests. Recall the following about the
+Poisson Distribution:
+
+\begin{equation}
+\begin{split}
+var(Y) = & \mu\\
+E(Y) = & \mu
+\end{split}
+\end{equation}
+
+*** Mean > Variance
+- Use Logistic Regression to adjust standard errors
+- Use Negative Binomial Regression
+
+*** Overdispersion
+This occurs when the observed variance is larger than the assumed (theoretical) variance.
+
+*** Interpretation
+Exponentiated coefficients are multiplicative analgous to odds ratios but called
+/incidence rate ratios/.
+
+For example, if $e^b = 2$, then rate doubles for each unit change in x. If $e^b
+= 0.5$, then rate halves. If $e^b = 5$ and x decreases, then $\frac{1}{5} = 0.2$
+
+*** Examples
+- Number of people in line in front of you at the grocery store
+- Number of awards earned by students at one High school
+
+** Negative Binomial
+Used for Count Data. Describes probabilities of the occurrence of whole numbers greater than or equal
+to zero. Y is the number of times an event has occurred. One parameterization
+is:
+
+$P(y) = P(Y | y) = \frac{\Gamma (y + \frac{1}{a})}{\Gamma (y + 1) \Gamma
+(\frac{1}{a})} (\frac{1}{1 + a \mu})^{\frac{1}{a}}$, $\mu > 0, a > 0$
+
+$a$ is the heterogeneity parameter.
+
+The traditional model is: $log(\mu) = \beta_0 + \Sigma \beta_i x_i$
+
+The response variable may be over or under-dispersed.
+The model models the log of expected count as a function of predictors.
+
+*** Model Fit Statistics
+- Log-likelihood
+- deviance
+- Pearson chi-square dispersion
+- AIC
+- BIC
+
+*** Interpretation
+For one unit of change in the predictor var, the difference in the logs of
+expected counts in the response is expected to change by $\beta_i$, given that
+all other predictors are held constant.
+
+*** Examples
+- Attendance behavior based on enrolled program and a standardized test score
+- Number of hospital visits by seniors based on characteristics and types of
+  health plans.
+** Gamma
+Used for continuous, positive, right-skewed data where the variance is nearly
+constant.
+
+*Log Link*: $\mu = exp(\beta_0 + \Sigma \beta_i x_i)$
+
+# TODO: Unclear about this based on the descriptions.
+*** Examples
+- Study of damage done to cars in an insurance claim/
+
+** Zero-Inflated Poisson (ZIP)
+Used to model count data with an excessive amount of zeros. There are two parts
+to this model.
+
+Both Poisson Count and Logit Zero models should have good predictors. They are
+not required to have the /same/ predictors.
+
+This should be used for large sample sizes.
+
+*** Poisson Count model
+Generates counts, some of which may be zero.
+
+$P(y_j = h_i) = (1 - \pi) \frac{\lambda^{h_i} e^{- \lambda}}{h_i !}$, $h_i \geq 1$
+
+- $y_j$: any non-negative integer value
+- $\lambda_i$: expected Poisson count for the ith individual
+- $\pi$: probability of extra zeros
+
+$E(Y) = (1 - \pi) \lambda$
+$var(Y) = \lambda (1 - \pi) (1 - \lambda \pi)$
+
+*** Logit "Zero" Model
+Used for predicting excess zeros. This is a binary distribution that generates zeros.
+
+$P(y_i = 0) = \pi + (- \pi) e^{- \lambda}$
+
+Issues that can occur
+- Perfect Prediction
+- Separation or Partial Separation
+
+** Zero-Inflated Negative Binomial
+Similar to ZIP. This is used for over-dispersed count response variables. The
+Count model in this case is *Negative Binomial* instead of Poisson.
+
+* Exponential Family of Distributions
+A distribution belongs to the exponential family if it can be written in the
+following form:
+\begin{equation}
+\begin{split}
+f(y : \theta) = & s(y) t(\theta) e^{a(y) b(\theta)}\\
+= & exp[a(y) b(\theta) + c(\theta) + d(y)]
+\end{split}
+\end{equation}
+
+| Distribution | Natural Parameter          | c                                                       | d                          |
+|--------------+----------------------------+---------------------------------------------------------+----------------------------|
+| Poisson      | log $\theta$               | $- \theta$                                              | $- log y!$                 |
+| Normal       | $\frac{\mu}{\sigma^2}$     | $\frac{- \mu^2}{2 \sigma^2} - 0.5 log (2 \pi \sigma^2)$ | $- \frac{y^2}{2 \sigma^2}$ |
+| Binomial     | $log(\frac{\pi}{1 - \pi})$ | $n log (1 - \pi)$                                       | $log (n choose y)$         |
+
+
+** Properties
+\begin{equation}
+\begin{split}
+E(a(Y)) = & - c'(\theta) / b' (\theta)\\
+var(a(Y)) = & \frac{b'' (\theta) c' (\theta) - c''(\theta) b' (\theta)}{[b' (\theta)]^3}
+\end{split}
+\end{equation}
+
+*** Score Statistic
+\begin{equation}
+\begin{split}
+l(\theta; y) = & a(y) b(\theta) + c(\theta) + d(y)\\
+U(\theta; y) = & \frac{dl(\theta; y)}{d \theta} = a(y) b' (\theta) + c' (\theta)\\
+E(U) = & b' (\theta) E[a(Y)] + c' (\theta)\\
+= & b' (\theta) \frac{- c' (\theta)}{b' (\theta)} + c' (\theta) = 0\\
+var(U) = & [b' (\theta)^2] var[ a(Y)]\\
+= & b'' \frac{(\theta) c' (\theta)}{b' (\theta)} - c'' (\theta)\\
+var(U) = & E(U^2) = - E(U')
+\end{split}
+\end{equation}
+
+- U: A random variable called the *Score Statistic*
+- var(U): Information Matrix
