@@ -1,0 +1,229 @@
+#+TITLE:     Homework #3
+#+AUTHOR:    Dustin Leatherman
+
+
+* 1
+** a
+#+begin_quote
+Estimate the dispersion parameter.
+#+end_quote
+For Binomial or Poisson distributions, the dispersion parameter can be estimated
+by the /Pearson Chi-Squared Statistic/
+
+\begin{equation}
+\begin{split}
+\hat \phi = \frac{X^2}{n - p} = 1.2927
+\end{split}
+\end{equation}
+
+** b
+#+begin_quote
+Compute Full Log Likelihood and BIC for the model (hint AIC is given)
+#+end_quote
+
+\begin{equation}
+\begin{split}
+AIC = & -2 l(\hat \pi; y) + 2p\\
+BIC = & -2 l(\hat \pi; y) + p \times log(n)
+\end{split}
+\end{equation}
+
+*Log Likelihood*
+
+\begin{equation}
+\begin{split}
+92.2094 = & -2 \ l(\hat \pi ; y) + 2p\\
+46.1047 = &  - l(\hat \pi; y) + 2\\
+-44.1047 = & l(\hat \pi; y)
+\end{split}
+\end{equation}
+
+*BIC*
+
+\begin{equation}
+\begin{split}
+-44.1047 \times -2 + 2 \times log(22) = 94.39148
+\end{split}
+\end{equation}
+* 2
+#+begin_quote
+Let Y = number of ACFs in the rat colons and x = sacrificed times (endtime, 6,
+12, and 18). Compute the predicted probabilities for Y = 2, 4, 8, and x = 12.
+
+|   | Y | P(y/ x = 12) |
+|---+---+--------------|
+| 1 | 2 |              |
+| 2 | 4 |              |
+| 3 | 8 |              |
+#+end_quote
+
+\begin{equation}
+\begin{split}
+P(y) = & \frac{e^\nu}{1 + e^\nu}\\
+\nu = & \beta_0 + \Sigma \beta_i x_i
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+P(y) = & 0.8807971, \ \nu = 2\\
+P(y) = & 0.9820138, \ \nu = 4\\
+P(y) = & 0.9996646, \ \nu = 8\\
+P(y) = & 0.8610574, \ \nu = -0.3215 + 0.1192 \times 12
+\end{split}
+\end{equation}
+
+
+** a
+#+begin_quote
+How do we interpret $\hat \beta_1 = 0.1192$?
+#+end_quote
+
+The log-odds of the number of ACFs in the rat colons increases by 0.1192 for
+each increase in sacrifice time.
+
+* 3
+#+begin_quote
+To study factors that affect the recurrence of heart attacks (HA), an
+investigator collected data from 20 HA victims. The investigator fit a logistic regression model with an indicator of a second
+HA within one year (1 = HA; 0 = no HA) as the binary outcome. There are two
+predictors: $x_1 = 1$ if the patient completed an anger management program; 0
+else. $x_2 =$ anxiety score (0 = low, 100 = high). Computer output is given
+below:
+
+|           | Estimate | Std Err | Z value | P Value |
+|-----------+----------+---------+---------+---------|
+| Intercept |    -6.36 |    3.21 |   -1.98 |    0.05 |
+| X1        |    -1.02 |    1.17 |   -0.88 |    0.38 |
+| X2        |     0.12 |    0.06 |    2.17 |    0.03 |
+#+end_quote
+
+** a
+#+begin_quote
+In terms of $x_1$ and $x_2$, what are the odds of a patient having a second
+heart attack?
+#+end_quote
+
+\begin{equation}
+\begin{split}
+\omega_{AB} = & \frac{\omega_A}{\omega_B}\\
+= & \frac{e^{X0 + X1 \times 1 + X2 \times A}}{e^{X0 + X1 \times 0 + X2 \times B}}\\
+= & e^{X1 (1 - 0) + X2(A = B)}\\
+= & e^{X1 + X2 (A - B)}
+\end{split}
+\end{equation}
+
+** b
+#+begin_quote
+What is the probability of a second heart attack for a patient that has
+completed an anger management program and scored a 100 on the anxiety test?
+#+end_quote
+
+\begin{equation}
+\begin{split}
+\pi = & \frac{e^\eta}{1 + e^\eta}\\
+= & \frac{e^{-6.36 - 1.02 \times 1 + 0.12 \times 100}}{1 + e^{-6.36 - 1.02 \times 1 + 0.12 \times 100}}\\
+= & 0.9902433
+\end{split}
+\end{equation}
+
+
+** c
+#+begin_quote
+For patients that have completed the anger management program, is high anxiety
+associated with an increased probability of a second heart attack?
+#+end_quote
+
+Regardless of whether or not a patient has completed the anger management
+program, there is moderate evidence that a higher anxiety score is associated with an
+increased risk of a second heart attack (p-value = 0.03).
+
+** d
+#+begin_quote
+Is there statistical evidence that an anger management program is associated
+with a reduction in the probability of a second heart attack? Explain.
+#+end_quote
+
+There is no evidence that completion of the anger management program is
+associated with reduced probability of a second heart attack (p-value = 0.38).
+The confidence interval for the anger management predictor encompasses 0
+indicating that there is no conclusive effect on the estimated predicted probability.
+
+** e
+#+begin_quote
+Explain why linear regression is in appropriate for modeling the probability of
+a second heart attack.
+#+end_quote
+
+Linear Regression may yield invalid values, in this case, an estimated
+probability using Linear Regression may be outside the interval of $[0,1]$.
+Linear Regression could be used to estimate a relative score or value that could
+be interpreted in a similar fashion but there would be no guarantee on the range
+of scores that would occur; whereas when modeling probabilities, the probability
+is guaranteed to be between 0 and 1.
+
+* 4
+#+begin_quote
+Let Y be a binomial distribution. Show taht Y has the exponential distribution
+of the form:
+
+$$
+f(y; \theta) = s(y) y(\theta) exp(a(y) b(\theta));
+$$
+
+this can be rewritten
+
+$$
+f(y; \theta) = exp(a(y) (\theta) + c(\theta) + d(y))
+$$
+#+end_quote
+
+
+** a
+#+begin_quote
+Clearly identify the link function, $b(\theta)$
+#+end_quote
+
+\begin{equation}
+\begin{split}
+f(y; \pi) = & {n \choose y} \pi^y (1 - \pi)^{n - y}\\
+= & exp(y \ log(\pi) + (n - y) log(1 - \pi) + log({n \choose y}))\\
+= & exp(y \ log (\pi) + n \ log(1 - \pi) - y \ log(1 - \pi) + log({n \choose y}))\\
+= & exp(y \ (log(\pi) - log(1 - \pi)) + n \ log (1 - \pi) + log({n \choose y}))\\
+= & exp(y \ log(\frac{\pi}{1 - \pi}) + n \ log (1 - \pi) + log({n \choose y}))\\
+\end{split}
+\end{equation}
+
+$a(y) = y$
+
+$b(\theta) = log(\frac{\pi}{1 - \pi})$
+
+$c(\theta) = n log(1 - \pi)$
+
+$d(y) = log({n \choose y})$
+
+* 5
+#+begin_quote
+For games in baseball's National League during nine decades: The following table
+shows the percentage of times that the starting pitcher pitched a complete game.
+
+|   | Decade_complete | Percent |
+|---+-----------------+---------|
+| 1 |       1900-1909 |    72.7 |
+| 2 |       1910-1919 |    63.4 |
+| 3 |       1920-1939 |      50 |
+| 4 |       1930-1939 |    44.3 |
+| 5 |       1940-1949 |    41.6 |
+| 6 |       1950-1959 |    32.8 |
+| 7 |       1960-1969 |    27.2 |
+| 8 |       1970-1979 |    22.5 |
+| 9 |       1980-1989 |    13.3 |
+
+#+end_quote
+
+** a
+#+begin_quote
+Treating the number of games as the same in each decade, the ML fit of the
+linear probability model is $\hat p = 0.7578 - 0.0694 x$, where x = decade
+[1:9]. Interpret
+#+end_quote
