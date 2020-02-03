@@ -227,3 +227,149 @@ Treating the number of games as the same in each decade, the ML fit of the
 linear probability model is $\hat p = 0.7578 - 0.0694 x$, where x = decade
 [1:9]. Interpret
 #+end_quote
+
+For each additional decade, the percentage of times that the starting pitcher
+pitched a complete game /decreases/ by 6.94%.
+
+** b
+#+begin_quote
+Substituting $x = 10,11,12$, predict the percentage of complete games for the
+next three decades. Are these predictions plausible? Why?
+#+end_quote
+
+\begin{equation}
+\begin{split}
+0.7578 - 0.0694 \times 11 = & -0.0056\\
+0.7578 - 0.0694 \times 12 = & -0.075\\
+0.7578 - 0.0694 \times 13 = & -0.1444\\
+\end{split}
+\end{equation}
+
+These predictions are not plausible because they fall outside the range between
+0 and 1. This is one of the reasons why linear regression is not suitable for
+predicting probabilities.
+
+** c
+#+begin_quote
+The ML Fit with logistic regression is
+
+$$
+\hat p = exp(1.148 - 0.315 x) /(1 + exp(1.148 - 0.315 x))
+$$
+
+Obtain for $x = 10,11,12$. Are these more plausible?
+#+end_quote
+
+\begin{equation}
+\begin{split}
+exp(1.148 - 0.315 \times 10) /(1 + exp(1.148 - 0.315 \times 10)) = & \ 0.1189931\\
+exp(1.148 - 0.315 \times 11) /(1 + exp(1.148 - 0.315 \times 11)) = & \ 0.08972478\\
+exp(1.148 - 0.315 \times 12) /(1 + exp(1.148 - 0.315 \times 12)) = & \ 0.06710713\\
+\end{split}
+\end{equation}
+
+These are more plausible since the values are valid (between 0 and 1) and still show a
+decreasing probability over time.
+
+* 6
+#+begin_quote
+Show that the following probability density functions belong to the exponential family:
+#+end_quote
+
+** a
+#+begin_quote
+Pareto distribution
+
+$$
+f(y: \theta) = \thetaY^{-\theta-1}
+$$
+#+end_quote
+
+\begin{equation}
+\begin{split}
+f(y; \theta) = & \ \theta Y^{-\theta - 1}\\
+= & \ exp((- \theta - 1) \ log(y) + log(\theta))\\
+= & \ exp(- \theta log(y) - log(y) + log(\theta))
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+a(y) = & \ log(\theta)\\
+b(\theta) = & \ - \theta\\
+c(\theta) = & \ log(\theta)\\
+d(y) = & \ - log(y)
+\end{split}
+\end{equation}
+
+** b
+#+begin_quote
+Exponential distribution
+
+$$
+f(y; \theta) = \theta \ exp(-y \theta)
+$$
+#+end_quote
+
+\begin{equation}
+\begin{split}
+f(y; \theta) = & \ \theta \ exp(-y \theta)\\
+= & \ exp(log(\theta) - y \theta)
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+a(y) = & \ -y\\
+b(\theta) = & \ \theta\\
+c(\theta) = & \ log(\theta)\\
+d(y) = & \ 0
+\end{split}
+\end{equation}
+
+* 7
+#+begin_quote
+The following associations can be described by generalized linear models. For
+each one:
+1. Identify the response variable and the explanatory variables
+2. Select a probability distribution for the response (justifying your choice)
+3. Write down the linear component
+#+end_quote
+
+** a
+#+begin_quote
+The effect of age, sex, height, mean daily food intake, and mean daily energy
+expenditure on a person's weight.
+#+end_quote
+
+1. A person's weight.
+2. t-distribution since weight is a nominal value with no inherent limitations
+   in terms of range of values.
+3. $\beta_0 + \beta_1 \ age + \beta_2 \ isMale + \beta_3 \ height + \beta_4 \ avgDailyFoodIntake + \beta_5 \ avgDailyEnergyExpend$
+
+** b
+#+begin_quote
+The proportion of laboratory mice that become infected after exposure to
+bacteria when five different exposure levels are used and 20 mice are exposed at
+each level.
+#+end_quote
+
+1. Proportion of infected laboratory mice
+2. Binomial Distribution since a mouse can either be infected or not infected.
+3. $\beta_0 + \beta_1 \ exp1 + \beta_2 \ exp2 + \beta_3 \ exp3 + \beta_4 \ exp4 + \beta_5 \ exp5$
+
+** c
+#+begin_quote
+The association between the number of trips per week to the supermarket for a
+household and the number of people in the household, the household income, and
+the distance of the supermarket.
+#+end_quote
+
+1. The number of trips per week to the supermarket.
+2. Poisson or Negative Binomial Distribution. If a Poisson model is fit and
+   there is over-dispersion, then a Negative Binomial Distribution may be a
+   better fit. Both Poisson and Negative Binomial are useful distributions for
+   modeling /count/ data, which this response variable is.
+3. $\beta_0 + \beta_1 \ numPeople + \beta_2 \ income + \beta_3 \ distance$
