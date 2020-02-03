@@ -228,8 +228,8 @@ linear probability model is $\hat p = 0.7578 - 0.0694 x$, where x = decade
 [1:9]. Interpret
 #+end_quote
 
-For each additional decade starting at 1900, the percentage of times that the starting pitcher
-pitched a complete game /decreases/ by 6.94%.
+Each additional decade starting at 1900 is associated with a 6.94% /decrease/ in
+the percentage of times that the starting pitcher pitched a complete game.
 
 ** b
 #+begin_quote
@@ -358,7 +358,8 @@ each level.
 
 1. Proportion of infected laboratory mice
 2. Binomial Distribution since a mouse can either be infected or not infected.
-3. $\hat{infected} = \beta_0 + \beta_1 \ exp1 + \beta_2 \ exp2 + \beta_3 \ exp3 + \beta_4 \ exp4 + \beta_5 \ exp5$
+3. $\hat{infected} = \beta_0 + \beta_1 \ exp1 + \beta_2 \ exp2 + \beta_3 \
+   exp3 + \beta_4 \ exp4 + \beta_5 \ exp5$ where exp1 through exp5 are indicator variables (1 when exposed at a given level; 0 otherwise).
 
 ** c
 #+begin_quote
