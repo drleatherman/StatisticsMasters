@@ -228,7 +228,7 @@ linear probability model is $\hat p = 0.7578 - 0.0694 x$, where x = decade
 [1:9]. Interpret
 #+end_quote
 
-For each additional decade, the percentage of times that the starting pitcher
+For each additional decade starting at 1900, the percentage of times that the starting pitcher
 pitched a complete game /decreases/ by 6.94%.
 
 ** b
@@ -296,8 +296,8 @@ f(y; \theta) = & \ \theta Y^{-\theta - 1}\\
 
 \begin{equation}
 \begin{split}
-a(y) = & \ log(\theta)\\
-b(\theta) = & \ - \theta\\
+a(y) = & \ - log(y)\\
+b(\theta) = & \ \theta\\
 c(\theta) = & \ log(\theta)\\
 d(y) = & \ - log(y)
 \end{split}
@@ -347,7 +347,7 @@ expenditure on a person's weight.
 1. A person's weight.
 2. t-distribution since weight is a nominal value with no inherent limitations
    in terms of range of values.
-3. $\beta_0 + \beta_1 \ age + \beta_2 \ isMale + \beta_3 \ height + \beta_4 \ avgDailyFoodIntake + \beta_5 \ avgDailyEnergyExpend$
+3. $\hat{weight} = \beta_0 + \beta_1 \ age + \beta_2 \ isMale + \beta_3 \ height + \beta_4 \ avgDailyFoodIntake + \beta_5 \ avgDailyEnergyExpend$
 
 ** b
 #+begin_quote
@@ -358,7 +358,7 @@ each level.
 
 1. Proportion of infected laboratory mice
 2. Binomial Distribution since a mouse can either be infected or not infected.
-3. $\beta_0 + \beta_1 \ exp1 + \beta_2 \ exp2 + \beta_3 \ exp3 + \beta_4 \ exp4 + \beta_5 \ exp5$
+3. $\hat{infected} = \beta_0 + \beta_1 \ exp1 + \beta_2 \ exp2 + \beta_3 \ exp3 + \beta_4 \ exp4 + \beta_5 \ exp5$
 
 ** c
 #+begin_quote
@@ -372,4 +372,4 @@ the distance of the supermarket.
    there is over-dispersion, then a Negative Binomial Distribution may be a
    better fit. Both Poisson and Negative Binomial are useful distributions for
    modeling /count/ data, which this response variable is.
-3. $\beta_0 + \beta_1 \ numPeople + \beta_2 \ income + \beta_3 \ distance$
+3. $\hat{tripsPerWeek} = \beta_0 + \beta_1 \ numPeople + \beta_2 \ income + \beta_3 \ distance$
