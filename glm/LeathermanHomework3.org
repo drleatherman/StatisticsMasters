@@ -50,37 +50,36 @@ BIC = & -2 l(\hat \pi; y) + p \times log(n)
 Let Y = number of ACFs in the rat colons and x = sacrificed times (endtime, 6,
 12, and 18). Compute the predicted probabilities for Y = 2, 4, 8, and x = 12.
 
-|   | Y | P(y/ x = 12) |
-|---+---+--------------|
-| 1 | 2 |              |
-| 2 | 4 |              |
-| 3 | 8 |              |
+
 #+end_quote
 
-\begin{equation}
-\begin{split}
-P(y) = & \frac{e^\nu}{1 + e^\nu}\\
-\nu = & \beta_0 + \Sigma \beta_i x_i
-\end{split}
-\end{equation}
 
 \begin{equation}
 \begin{split}
-P(y) = & 0.8807971, \ \nu = 2\\
-P(y) = & 0.9820138, \ \nu = 4\\
-P(y) = & 0.9996646, \ \nu = 8\\
-P(y) = & 0.8610574, \ \nu = -0.3215 + 0.1192 \times 12
+\lambda = & exp(-0.3215 + 0.1192 \times 12) = 3.031022\\
+P(y) = & \frac{e^{- \lambda} \lambda^y}{y!}\\
+= & \frac{e^{- 3.031022} 3.031022^y}{y!}\\
 \end{split}
 \end{equation}
 
-
+|   | Y | P(y/ x = 12) |
+|---+---+--------------|
+| 1 | 2 |    0.2217134 |
+| 2 | 4 |    0.1697419 |
+| 3 | 8 |    0.0085278 |
 ** a
 #+begin_quote
 How do we interpret $\hat \beta_1 = 0.1192$?
 #+end_quote
 
-The log-odds of the number of ACFs in the rat colons increases by 0.1192 for
-each increase in sacrifice time.
+\begin{equation}
+\begin{split}
+exp(0.1192) = 1.126595
+\end{split}
+\end{equation}
+
+The incident rate ratio increases by 120% for each one-unit increase in
+sacrifice time.
 
 * 3
 #+begin_quote
