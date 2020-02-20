@@ -1,0 +1,186 @@
+---
+title: "Prevalence of Heart Disease in Framington, MA"
+author: "Dustin Leatherman"
+date: "2/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10, warning = FALSE, message = FALSE)
+library(tidyverse)
+library(broom)
+library(ggplot2)
+library(GGally)
+library(mice)
+library(BaylorEdPsych)
+library(knitr)
+library(kableExtra)
+library(mvnmle)
+library(splitstackshape)
+
+heart <- read.csv("~/Downloads/framingham.csv")
+```
+
+# Introduction
+
+# Data Analysis
+
+```{r fig.height=11, results=FALSE}
+heart.clean <-
+  heart %>% 
+  # there are several discrete features with low cardinality so 
+  # treating them as factors
+  mutate(
+    isMale = factor(male),
+    education.factor = factor(education),
+    currentSmoker.factor = factor(currentSmoker),
+    prevalentStroke.factor = factor(prevalentStroke),
+    prevalentHyp.factor = factor(prevalentHyp),
+    diabetes.factor = factor(diabetes),
+    TenYearCHD.factor = factor(TenYearCHD),
+    BPMeds.factor = factor(BPMeds)
+  ) %>% 
+  select(-c(prevalentStroke, male, education, prevalentHyp, diabetes, currentSmoker, TenYearCHD, BPMeds))
+heart.clean %>% ggpairs(
+  aes(color = TenYearCHD.factor, alpha = 0.3),
+    # correlation text is off so this makes it readable
+   upper = list(continuous = wrap("cor", size = 3, hjust=0, alignPercent=1)),
+   title = c("Scatterplot by Ten Year CHD"),
+  ) + labs(caption = "Figure 1. Relationships between features are explored in regards to whether or not the patient was diagnosed with CHD within 10 years.")
+```
+
+**Observations**
+
+- The Age density chart indicates that a larger number of older patients were diagnosed than younger patients. The age in which both meet is around 50.
+- Cigs Per Day, total Cholesterol, Systolic BP, Diastolic BP, BMI, Heart Rate, and Glucose levels *all* appear to be right-skewed according to their Density Charts. Typically a log transformation is applied in such cases, but may not be the best choice since we will be applying Logistic Regression later on.
+- The only strong correlation present is between Diastolic BP and Systolic BP. These are similar for patients with and without CDH. Likely one of these variables can be discarded.
+- The scatterplots comparing Glucose vs Systolic BP, Diastolic BP, and BMI show that there appear to be higher glucose levels for those who have been diagnosed with CHD.
+- A similar pattern is seen in the Diabetes vs Glucose box plots. There is a wider range of Glucose levels between the 25th and 75th quantiles and a significantly higher median for those diagnosed with CDH. This indicates glucose levels may be a relevant predictor.
+- The prevalent Hypertension vs Age Boxplot indicates that the 25th, 50yh, and 75th quantile values are larger for older patients with prevalent Hypertension. The values are even larger for those who have been diagnosed with CHD indicating Prevalent Hypertension may be associated with CHD.
+- The Prevalent Stroke vs Age Boxplot shows similar characteristics to the Prevalent Hypertension vs Age Boxplot indicating that there may be a relationship with CHD.
+
+## Missing Data
+
+```{r fig.width=8, results=FALSE}
+# show missingness Graph
+md.pattern(heart.clean, rotate.names = TRUE)
+```
+
+There are 645 rows which contain missing data. The indicator graph shows that missing data typically falls into a select few fields. This indicates that the data is not Missing Completely at Random (MCAR).
+
+```{r}
+# Run Little's Test to determine if the data is Missing Completely at Random (MCAR)
+LittleMCAR(heart.clean)$p.value
+```
+
+There is convincing evidence that the missing data is not completely random (Little's Test). Thus, it is inappropriate to drop the data as it would be dropping meaningful patterns from the analysis. Therefore, the missing values will be imputed using Multiple Imputation with Markov Chain Monte Carlo simulations.
+
+# Analysis
+
+```{r}
+# create a 30% sample for training data. The 30% is arbitrary
+heart.samples <- 
+  stratified(heart.clean, c("TenYearCHD.factor"), .3, bothSets = TRUE)
+
+heart.testing <- heart.samples$SAMP1
+heart.training <- heart.samples$SAMP2
+```
+
+## Dropped Data
+
+```{r results=FALSE}
+heart.clean.w.TenYearCHD <-
+  heart.training %>% 
+    mutate(TenYearCHD = as.numeric(as.character(TenYearCHD.factor))) %>% 
+    select(-education.factor)
+# as.numeric(as.character(heart.clean$TenYearCHD.factor)): converts factor back to 0 and 1. Otherwise, it is converted to
+# 1 and 2.
+fit.reg <- glm(
+    TenYearCHD ~ age + sysBP + BMI + glucose +  prevalentHyp.factor + prevalentStroke.factor + BPMeds.factor + totChol + cigsPerDay + heartRate,
+    family = "binomial", 
+    data = heart.clean.w.TenYearCHD %>% drop_na()
+  )
+
+```
+
+```{r}
+tidy(fit.reg) %>% 
+  kable(
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+There are a handful of variables that are considered not significant in predicting risk for CHD.
+
+```{r}
+car::vif(fit.reg) %>% kable(
+  caption = "Variance Inflation Factors for CHD Predictors"
+)
+```
+
+The low Variance Inflation Factors indicate that multicollinearity between predictors is not significantly present. This indicates that the high p-values are likely related to being statistically insignificant opposed to its information already being included in the model via other predictors.
+
+## Reduced Model
+
+```{r}
+# calculate drop in deviance based on a full and reduced glm model
+dind <- function (glm.full, glm.reduced) {
+  lrt <- glm.reduced$deviance - glm.full$deviance
+  lrt.df <- glm.reduced$df.residual - glm.full$df.residual
+  1 - pchisq(lrt, lrt.df)
+}
+
+fit.reg.reduced <- glm(
+    TenYearCHD ~ age + sysBP + glucose +  prevalentHyp.factor + cigsPerDay,
+    family = "binomial", 
+    data = heart.clean.w.TenYearCHD %>% drop_na()
+  )
+
+dind(fit.reg, fit.reg.reduced)
+```
+
+Removing the insignificant parameters from the full model and comparing with the significant values in a reduced model shows that there is no evidence that the full model explains more deviance than the reduced model (Drop-in-Deviance Test. p-value = 0.2241). Going forward, this reduced model is what will be used.
+
+
+## Imputed Data
+
+```{r results=FALSE}
+
+
+plot(imp)
+```
+
+Over 10 iterations of imputed values, it is ideal to see that the lines in both the mean and standard deviation intermingle and be free of any trends as the number of iterations increase. A seed is used in order to provide reproducability in the generation of values. The lines appear to intermingle and no significant trends are visible. 
+
+```{r}
+# fit our logistic regression model on the imputed values
+fit.imp <- with(data = imp, glm(TenYearCHD ~ age + sysBP + glucose +  prevalentHyp.factor + cigsPerDay, family = "binomial"))
+
+# pool the imputations together
+fit.pool <- pool(fit.imp)
+
+fit.pool$pooled %>% as_tibble(rownames = "term") %>% 
+  kable(
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+The fractional information missing due to nonresponse (fmi) and the relative in crease in variance due to nonresponse are low which indicates the imputed data doesn't have a significant effect on the shape of the data itself.
+
+```{r}
+summary(fit.pool) %>% as_tibble(rownames = "term") %>% 
+  kable (
+    digits = 4
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+# Results
+
+
+```{r}
+pred <- predict(fit.reg.reduced, newdata = heart.testing.2 %>% drop_na(), type = "response")
+confusionMatrix(table(as.numeric(pred > 0.5), heart.testing.2 %>% drop_na() %>% select(TenYearCHD) %>% as_vector()))
+```
