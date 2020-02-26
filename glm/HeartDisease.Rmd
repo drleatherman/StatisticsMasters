@@ -2,7 +2,9 @@
 title: "Prevalence of Heart Disease in Framington, MA"
 author: "Dustin Leatherman"
 date: "2/15/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -17,6 +19,10 @@ library(knitr)
 library(kableExtra)
 library(mvnmle)
 library(splitstackshape)
+library(caret)
+library(grid)
+library(gridExtra)
+library(ROCR)
 
 heart <- read.csv("~/Downloads/framingham.csv")
 ```
@@ -41,6 +47,7 @@ heart.clean <-
     BPMeds.factor = factor(BPMeds)
   ) %>% 
   select(-c(prevalentStroke, male, education, prevalentHyp, diabetes, currentSmoker, TenYearCHD, BPMeds))
+
 heart.clean %>% ggpairs(
   aes(color = TenYearCHD.factor, alpha = 0.3),
     # correlation text is off so this makes it readable
@@ -77,33 +84,34 @@ There is convincing evidence that the missing data is not completely random (Lit
 
 # Analysis
 
-```{r}
+```{r results=FALSE}
 # create a 30% sample for training data. The 30% is arbitrary
 heart.samples <- 
   stratified(heart.clean, c("TenYearCHD.factor"), .3, bothSets = TRUE)
 
-heart.testing <- heart.samples$SAMP1
-heart.training <- heart.samples$SAMP2
-```
-
-## Dropped Data
-
-```{r results=FALSE}
-heart.clean.w.TenYearCHD <-
-  heart.training %>% 
-    mutate(TenYearCHD = as.numeric(as.character(TenYearCHD.factor))) %>% 
+heart.testing <- heart.samples$SAMP1  %>% 
+  mutate(TenYearCHD = as.numeric(as.character(TenYearCHD.factor))) %>% 
     select(-education.factor)
-# as.numeric(as.character(heart.clean$TenYearCHD.factor)): converts factor back to 0 and 1. Otherwise, it is converted to
-# 1 and 2.
-fit.reg <- glm(
-    TenYearCHD ~ age + sysBP + BMI + glucose +  prevalentHyp.factor + prevalentStroke.factor + BPMeds.factor + totChol + cigsPerDay + heartRate,
-    family = "binomial", 
-    data = heart.clean.w.TenYearCHD %>% drop_na()
-  )
 
+heart.training <- heart.samples$SAMP2  %>% 
+  mutate(TenYearCHD = as.numeric(as.character(TenYearCHD.factor))) %>% 
+    select(-education.factor)
+
+heart.impute.testing <- mice(heart.testing, m = 10, maxit = 50, seed = 123)
+heart.impute.testing.complete <- mice::complete(heart.impute.testing)
+
+heart.impute.training <- mice(heart.training, m = 10, maxit = 50, seed = 123)
+heart.impute.training.complete <- mice::complete(heart.impute.training)
 ```
+
 
 ```{r}
+fit.reg <- glm(
+    TenYearCHD ~ age + sysBP + BMI + glucose +  prevalentHyp.factor + prevalentStroke.factor + BPMeds.factor + totChol + cigsPerDay + heartRate + isMale,
+    family = "binomial", 
+    data = heart.impute.training.complete
+  )
+
 tidy(fit.reg) %>% 
   kable(
     digits = 4
@@ -116,49 +124,85 @@ There are a handful of variables that are considered not significant in predicti
 ```{r}
 car::vif(fit.reg) %>% kable(
   caption = "Variance Inflation Factors for CHD Predictors"
-)
+) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
 ```
 
 The low Variance Inflation Factors indicate that multicollinearity between predictors is not significantly present. This indicates that the high p-values are likely related to being statistically insignificant opposed to its information already being included in the model via other predictors.
 
-## Reduced Model
-
 ```{r}
-# calculate drop in deviance based on a full and reduced glm model
-dind <- function (glm.full, glm.reduced) {
-  lrt <- glm.reduced$deviance - glm.full$deviance
-  lrt.df <- glm.reduced$df.residual - glm.full$df.residual
-  1 - pchisq(lrt, lrt.df)
-}
-
 fit.reg.reduced <- glm(
-    TenYearCHD ~ age + sysBP + glucose +  prevalentHyp.factor + cigsPerDay,
+    TenYearCHD ~ age + sysBP + glucose + cigsPerDay + isMale + totChol,
     family = "binomial", 
-    data = heart.clean.w.TenYearCHD %>% drop_na()
+    data = heart.impute.training.complete
   )
 
-dind(fit.reg, fit.reg.reduced)
+lmtest::lrtest(fit.reg, fit.reg.reduced) %>% 
+  tidy %>% 
+  kable(
+    digits = 4,
+    caption = "Likelihood Ratio Test. Comparing Full vs Reduced Model"
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
 ```
 
-Removing the insignificant parameters from the full model and comparing with the significant values in a reduced model shows that there is no evidence that the full model explains more deviance than the reduced model (Drop-in-Deviance Test. p-value = 0.2241). Going forward, this reduced model is what will be used.
+Removing the insignificant parameters from the full model and comparing with the significant values in a reduced model shows that there is no evidence that the full model explains more deviance than the reduced model. Further model comparisons were conducted on interaction and quadratic terms with no differing results. Going forward, this reduced model is what will be used. 
 
+```{r}
+heart.evp <-
+  heart.impute.training.complete %>% 
+  select(TenYearCHD, age, sysBP, glucose, cigsPerDay, isMale, totChol) %>% 
+  group_by(age, sysBP, glucose, cigsPerDay, isMale, totChol) %>% 
+  summarize_all(
+    funs(
+      n = n(),
+      y = sum(TenYearCHD), 
+      fail = n - y
+    )
+  ) %>% ungroup
+
+fit.reg.reduced.evp <- glm(
+    y/n ~ age + sysBP + glucose + cigsPerDay + isMale + totChol,
+    family = "binomial", 
+    data = heart.evp,
+    weights = n
+  )
+
+values <- augment(fit.reg.reduced.evp, type.residuals = "pearson") %>% 
+  mutate(
+    e2 = .std.resid^2,
+    p = exp(.fitted)/(1 + exp(.fitted))
+  ) 
+
+values %>% head %>% kable(digits = 4)
+
+
+qplot(data = values, p, e2, xlab = "Estimated Probabilities") + 
+    geom_hline(yintercept = qchisq(0.95, 1), color = "red")
+
+qplot(data = values, 1:nrow(values), e2, xlab = "Observations", ylab = "Sq. Std. Resid.") + 
+    geom_hline(yintercept = qchisq(0.95, 1), color = "red")
+
+qplot(data = values, y.n, e2, xlab = "Proportion", ylab = "Sq. Std. Resid.") + 
+    geom_hline(yintercept = qchisq(0.95, 1), color = "red")
+
+```
 
 ## Imputed Data
 
 ```{r results=FALSE}
 
-
-plot(imp)
+plot(heart.impute.training)
 ```
 
-Over 10 iterations of imputed values, it is ideal to see that the lines in both the mean and standard deviation intermingle and be free of any trends as the number of iterations increase. A seed is used in order to provide reproducability in the generation of values. The lines appear to intermingle and no significant trends are visible. 
+Over 50 iterations of imputed values, it is ideal to see that the lines in both the mean and standard deviation intermingle and be free of any trends as the number of iterations increase. A seed is used in order to provide reproducability in the generation of values. The lines appear to intermingle and no significant trends are visible. 
 
 ```{r}
 # fit our logistic regression model on the imputed values
-fit.imp <- with(data = imp, glm(TenYearCHD ~ age + sysBP + glucose +  prevalentHyp.factor + cigsPerDay, family = "binomial"))
+fit.imp <- with(data = heart.impute.training, glm(TenYearCHD ~ age + sysBP + glucose + cigsPerDay + isMale + totChol, family = "binomial"))
 
 # pool the imputations together
-fit.pool <- pool(fit.imp)
+fit.pool <- mice::pool(fit.imp)
 
 fit.pool$pooled %>% as_tibble(rownames = "term") %>% 
   kable(
@@ -179,8 +223,199 @@ summary(fit.pool) %>% as_tibble(rownames = "term") %>%
 
 # Results
 
+## Single Data Imputed Model
 
 ```{r}
-pred <- predict(fit.reg.reduced, newdata = heart.testing.2 %>% drop_na(), type = "response")
-confusionMatrix(table(as.numeric(pred > 0.5), heart.testing.2 %>% drop_na() %>% select(TenYearCHD) %>% as_vector()))
+pred <- predict(fit.reg.reduced, newdata = heart.impute.testing.complete, type = "response")
+confusionMatrix(table(as.numeric(pred > 0.5), heart.testing %>% select(TenYearCHD) %>% as_vector()))
 ```
+
+The Predictive power is approximately 85%, with the dropped data being slightly better than the imputed data model. The above matrix uses 0.5 as the cutoff threshold. Due to the gravity of a False Negative for detecting disease, the threshold can be adjusted as needed.
+
+```{r}
+pred2 <- prediction(pred, heart.testing$TenYearCHD)
+perf <- performance(pred2, "acc")
+plot(perf, title = "ROC Curve")
+
+
+perf2 <- performance(pred2, "tpr", "fpr")
+plot(perf2, colorize = T, lwd = 2)
+```
+
+For the model against dropped data, the highest accuracy occurs levels off with a cutoff greater than 0.5. The ideal AUC curve would be in the upper left area of the graph. The initial take on using 0.5 as the cutoff is likely the correct choice
+
+
+```{r}
+auc <- performance(pred2, "auc")
+print(auc@y.values[[1]])
+```
+
+An AUC as close to 1 is preferred. The above value is not bad but could be better.
+
+```{r}
+plot.fit.reg.age <-
+  fit.reg.reduced %>% 
+    ggplot(aes(x = age, y = exp(.fitted)/(1 + exp(.fitted)))) + 
+      geom_point() +
+      geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.fit.reg.glucose <-
+  fit.reg.reduced %>% 
+    ggplot(aes(x = glucose, y = exp(.fitted)/(1 + exp(.fitted)))) + 
+      geom_point() + 
+      geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.fit.reg.sysBP <-
+  fit.reg.reduced %>% 
+    ggplot(aes(x = sysBP, y = exp(.fitted)/(1 + exp(.fitted)))) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.fit.reg.cigsPerDay <-
+  fit.reg.reduced %>% 
+    ggplot(aes(x = cigsPerDay, y = exp(.fitted)/(1 + exp(.fitted)))) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.fit.reg.isMale <-
+  fit.reg.reduced %>% 
+    ggplot(aes(x = isMale, y = exp(.fitted)/(1 + exp(.fitted)))) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.fit.reg.totChol <-
+  fit.reg.reduced %>% 
+    ggplot(aes(x = totChol, y = exp(.fitted)/(1 + exp(.fitted)))) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+grid.arrange(
+  plot.fit.reg.cigsPerDay,
+  plot.fit.reg.age,
+  plot.fit.reg.glucose,
+  plot.fit.reg.sysBP,
+  plot.fit.reg.isMale,
+  plot.fit.reg.totChol,
+  ncol = 2,
+  top = textGrob("Estimated Probabilities for Logistic Model against Dropped Data", 
+          gp=gpar(fontsize=14,font=1),just=c("center"))
+  )
+```
+
+The strongest predictors for determining whether an individual is at risk for CHD are Systolic BP and Glucose. Initial analysis of the data showed Age being an obvious factor but the model does not seem to agree.
+
+## Imputed Pooled Data Model
+
+```{r}
+# A good way doesnt exist to use predict() with a pooled model from mice.
+# this predicts by doing the logistic calculation
+dataToPredict <- heart.impute.testing.complete %>%
+  mutate(intercept = 1) %>% 
+  select(intercept, age, sysBP, glucose, cigsPerDay, isMale, totChol)
+
+# get our predicted estimates
+nu <- summary(fit.pool)$estimate 
+
+# calculate the preducted values
+predVals <- as.matrix(sapply(dataToPredict, as.numeric)) %*% nu
+
+# calculate probabilites
+confusion.pool <-
+  predVals %>% 
+    as_tibble() %>%  
+    bind_cols(dataToPredict) %>% 
+    mutate(p = exp(V1) / (1 + exp(V1)))
+
+confusionMatrix(
+  table(
+    as.numeric(confusion.pool %>% select(p) > 0.6), 
+    mice::complete(heart.impute.testing) 
+    %>% select(TenYearCHD) %>% as_vector()
+  )
+)
+```
+
+
+```{r}
+pred2 <- prediction(confusion.pool %>% select(p), heart.testing$TenYearCHD)
+perf <- performance(pred2, "acc")
+plot(perf, title = "ROC Curve")
+
+
+perf2 <- performance(pred2, "tpr", "fpr")
+plot(perf2, colorize = T, lwd = 2)
+
+auc <- performance(pred2, "auc")
+print(auc@y.values[[1]])
+```
+
+The confusion matrix for the imputed data is similar to the dropped data model, as well as the Performance and AUC plots. 
+
+
+```{r}
+plot.pool.age <-
+  confusion.pool %>% 
+    ggplot(aes(x = age, y = p)) + 
+      geom_point() +
+      geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.pool.glucose <-
+   confusion.pool %>% 
+    ggplot(aes(x = glucose, y = p)) + 
+      geom_point() + 
+      geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.pool.sysBP <-
+  confusion.pool %>% 
+    ggplot(aes(x = sysBP, y =p )) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.pool.cigsPerDay <-
+  confusion.pool %>% 
+    ggplot(aes(x = cigsPerDay, y = p)) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.pool.isMale <-
+  confusion.pool %>% 
+    ggplot(aes(x = isMale, y = p)) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+plot.pool.totChol <-
+  confusion.pool %>% 
+    ggplot(aes(x = totChol, y =p)) + 
+    geom_point() + 
+    geom_smooth(method = glm, method.args = list(family = "binomial")) +
+      ylab("Estimated Probabilities")
+
+grid.arrange(
+  plot.pool.cigsPerDay,
+  plot.pool.age,
+  plot.pool.glucose,
+  plot.pool.sysBP,
+  plot.pool.isMale,
+  plot.pool.totChol,
+  ncol = 2,
+  top = textGrob("Estimated Probabilities for Logistic Model against Imputed Data", 
+          gp=gpar(fontsize=14,font=1),just=c("center"))
+  )
+```
+
+Again, similar behavior though less extreme is found with this one.
+
+## Conclusion
+
+The pooled model against the imputed data proves to be similar as the one against the a single set of imputed data. A prediction rate of 85% is decent. 

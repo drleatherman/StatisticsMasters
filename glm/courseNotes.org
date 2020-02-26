@@ -36,7 +36,7 @@ E(Y) = & \mu
 - Use Logistic Regression to adjust standard errors
 - Use Negative Binomial Regression
 
-*** Overdispersion
+*** Over dispersion
 This occurs when the observed variance is larger than the assumed (theoretical) variance.
 
 *** Interpretation
@@ -165,3 +165,90 @@ var(U) = & E(U^2) = - E(U')
 
 - U: A random variable called the *Score Statistic*
 - var(U): Information Matrix
+* Outliers & Influential Obs
+** Explanatory Variable Pattern (EVP)
+Sometimes, converting bernoulli random variables to binomial is helpful for
+running goodness-of-fit measures and residuals.
+
+This format has one row for each unique set of explanatory variables. Suppose
+there are 6 observations with a bernoulli RV value of 1 and an Age of 30. This
+would be converted to a single row with (age=30, n=6, fail=5, y=1)
+
+When fitting models in this form, use
+#+begin_R options
+mod.fit <- glm(y/n ~ B1, data = ...)
+#+end_R
+** Pearson Residual
+Pearson Residual: $e_j = \frac{\text{observed -
+predicted}}{\sqrt{\hat{Var}(Observed)}} = \frac{y_j - n_j \hat \pi_j}{\sqrt{n_j
+\hat \pi_j (1 - \hat \pi_j)}}$
+with a binomial version of the data, there's a possibility the sample size is
+large enough for normal approximation to work. With continuous variables, this
+is not the case and this residual should be interpreted with caution.
+
+Outliers: $\pm 2.576$ though the effect on the model should be examined.
+
+Standardized Pearson Residual: $e_j = \frac{e_j}{\sqrt{1 - h_j}} = \frac{y_j -
+n_j \hat \pi_j}{\sqrt{n_j \hat \pi_j (1 - \hat \pi_j)(1 - h_j)}}$
+
+where $h_j$ is the jth diagonal of the hat matrix.
+** Pearson Statistic
+
+$\chi^2 = \sum_{j = 1}^{J} e_j^2$
+J: num of explanatory variable patterns.
+
+Can be approximated by $\chi_{J - (k + 1)}^2$ distribution where k + 1 is the
+num of parameters estimating.
+
+\begin{equation}
+\begin{split}
+H_0: & logit(\pi) \alpha + \beta_1 x_1 + ... + \beta_k x_k \ \text{k + 1 parameters}\\
+H_A: & \text{Saturated Model (J parameters)}
+\end{split}
+\end{equation}
+
+The "saturated" model contains an estimate per explanatory variable pattern.
+
+*** Influential Obs
+
+$\chi^2 \approx e_j^2$ (squared standardized residual) is used to calculate the
+influence. The same statistic is used for outliers.
+
+$e_j^2 > \chi_{0.95,1}^2 = 3.84$ or $e_j^2 > \chi_{0.99,1}^2 = 6.63$ may
+indicate an outlier or influential EVP.
+
+A measure similar to Cook's distance can also be used.
+
+$\Delta \hat \beta_j = \frac{e_j^2 h_j}{(1 - h_j)}$
+
+Large values indicate an explanatory variable pattern may be influential. Its
+effect on the $\hat \beta$'s can be seen by temporarily removing the variable
+from the dataset and refitting the model.
+
+** Diagnostic Plots
+- When there is one explanatory var, plotting $e_j$, $e_j^2$ and/or $\Delta \hat
+  \beta_j$ is helpful. Doesnt work if the explanatory variable is binary.
+- $e_j$, $e_j^2$ and/or $\Delta \hat \beta_j$ vs the observation number
+- $e_j^2$ and $\Delta \hat \beta$ vs the estimated probabilities *or* proportion
+  to $n_j$.
+- $e_j^2$ vs estimated probabilities with the plotting point proportional to
+  $\Delta \hat \beta$ can help combine different influence measures.
+** Model Selection Process
+
+What explanatory variables should be in the model? Should interactions or
+quadratic terms be included?
+
+1. Find all possible one variable logistic regression models.
+   LRT is preferred to test model parameters with Logistic Regression due to the
+   $\chi^2$ approximation for the LRT statistic.
+2. Put all variables found in 1 in a logistic regression model. Perform
+   backwards elimination.
+3. Determine if the quadratic or interaction terms are needed in the model. The
+   best way is to add them and see if they are significant.
+4. Convert data to explanatory variable pattern
+5. Examine how well the model fits the data. Make any changes necessary.
+
+   Calculate Pearson residuals, standardized residuals, Pearson Statistic,
+   $\Delta \hat \beta$'s and LRT. Construct diagnostic plots and determine if
+   changes need to be made.
+6. Use the model.

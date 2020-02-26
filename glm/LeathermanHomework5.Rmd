@@ -1,0 +1,168 @@
+---
+title: 'Homework #5'
+author: "Dustin Leatherman"
+date: "2/24/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(broom)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(knitr)
+library(kableExtra)
+library(MASS)
+library(pscl)
+
+knitr::opts_chunk$set(echo = TRUE)
+fish <- read.table("~/Downloads/fishdata.txt", header = TRUE) %>% as_tibble
+```
+
+The California state wildlife biologists want to model how many fish are being caught by fishermen at a state park. Visitors are asked how long they stayed, how many people were in the group, were there children in the group and how many fish were caught. Some visitors do not fish, but there is no data on whether a person fished or not. Some visitors who did fish did not catch any fish so there are excess zeros in the data because of the people that did not fish.
+
+There were 250 groups that went to a park. each group ws questioned about how many fish they acught (count), how many children were in the group (child), how many people wer ein the group (persons), and whether or not they brought a camper to the part (camper). 
+
+# a
+> Use Poisson regression to model how many fish they caught (count) using person and camper as independent variables Interpret the effect of the significant independent variables.
+
+```{r}
+fish.m.poisson <- glm(count ~ persons + camper, family = "poisson", data = fish)
+
+tidy(fish.m.poisson) %>% 
+  mutate_at(c("estimate", "std.error"), exp) %>% 
+  kable(
+    caption = "Estimated Incident Effects for Predictors"
+  ) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+
+confint(fish.m.poisson) %>% 
+  exp %>% 
+  kable(
+    caption = "Estimated Incident Effects C.I"
+  ) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+There is convincing evidence that the number of group members and whether or not they had a camper significantly affect the number of fish caught (two-tailed t-test).
+
+It is estimated that for each additional person in the group, the number of fish caught increases 2.371 times. With 95% confidence, the number of fish caught increases by 2.191 to 2.571 times for each additional person in the group.
+
+It is estimated that if a group brought a camper, the number of fish caught increases by 3.299 times. With 95% confidence, the number of fish caught increases by 2.78 to 3.939 times when the group has a camper.
+
+# b
+> Use Negative Binomial regression to model how many fish they caught (count) using person and camper as independent variables Interpret the effect of the significant independent variables.
+
+```{r}
+fish.m.negbin <- glm.nb(count ~ persons + camper, data = fish)
+
+tidy(fish.m.negbin) %>% 
+  mutate_at(c("estimate", "std.error"), exp) %>% 
+  kable(
+    caption = "Estimated Incident Effects for Predictors"
+  ) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+
+confint(fish.m.negbin) %>% 
+  exp %>% 
+  kable(
+    caption = "Estimated Incident Effects C.I"
+  ) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+There is convincing evidence that the number of group members and whether or not they had a camper significantly affect the number of fish caught (two-tailed t-test).
+
+It is estimated that for each additional person in the group, the number of fish caught increases 2.12 times. With 95% confidence, the number of fish caught increases by 1.662 to 2.707 times for each additional person in the group.
+
+It is estimated that if a group brought a camper, the number of fish caught increases by 2.34 times. With 95% confidence, the number of fish caught increases by 1.338 to 4.022 times when the group has a camper.
+
+# c
+> Use Zero-Inflated Poisson regression to model how many fish they caught (count) using person and camper as independent variables. Interpret the effect of the significant independent variables.
+
+```{r}
+fish.m.zip <- zeroinfl(count ~ persons + camper, data = fish)
+
+summary(fish.m.zip)$coefficients$count %>% 
+  as_tibble %>% 
+  mutate_at(c("Estimate", "Std. Error"), exp) %>% 
+  kable(
+    caption = "Estimated Incident Effects for Predictors"
+  ) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+
+confint(fish.m.zip) %>% 
+  exp %>% 
+  kable(
+    caption = "Estimated Incident Effects C.I"
+  ) %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+There is convincing evidence that the number of group members and whether or not they had a camper significantly affect the number of fish caught.
+
+It is estimated that for each additional person in the group, the number of fish caught increases 2.07 times. With 95% confidence, the number of fish caught increases by 1.898 to 2.247 times for each additional person in the group.
+
+It is estimated that if a group brought a camper, the number of fish caught increases by 1.81 times. With 95% confidence, the number of fish caught increases by 1.511 to 2.161 times when the group has a camper.
+
+
+# d
+> Use Zero-Inflated Negative Binomial regression to model how many fish they caught (count) using person and camper as independent variables. Interpret the effect of the significant independent variables.
+
+```{r}
+fish.m.zinb <- zeroinfl(count ~ persons + camper, data = fish, dist = "negbin")
+
+summary(fish.m.zinb)$coefficients$count %>% 
+  as_tibble(rownames = "term") %>% 
+  mutate_at(c("Estimate", "Std. Error"), exp) %>% 
+  kable(
+    caption = "Estimated Incident Effects for Predictors"
+  )
+
+confint(fish.m.zinb) %>% 
+  exp %>% 
+  kable(
+    caption = "Estimated Incident Effects C.I"
+  )
+```
+
+Given the low p-value for Log(theta), there is convincing evidence that this model is **not** a Poisson Model. There is no evidence that the true model is a zero-inflated Negative Binomial model. 
+
+It is estimated that for each additional person in the group, the number of fish caught increases 2.34 times. With 95% confidence, the number of fish caught increases by 1.843 to 2.969 times for each additional person in the group.
+
+It is estimated that if a group brought a camper, the number of fish caught increases by 1.75 times. With 95% confidence, the number of fish caught increases by 0.964 to 3.176 times when the group has a camper.
+
+# e
+> Which of the above models is best?
+
+```{r}
+fish %>% dplyr::select(count) %>% filter(count == 0) %>% count/250
+```
+
+56.8% of the data contains 0 counts making a zero inflated model more likely.
+
+```{r}
+pscl::odTest(fish.m.negbin)
+```
+
+Using the Liklihood Ratio Test, there is convincing evidence that the negative binomial model is a better fit than the poisson model (p.value < 2.2e-16). This is futher confirmed since by the significance of Log(theta) in the Negative Binomial model. This narrows down our choice between the Negative Binomial and Zero-Inflated Negative Binomial model.
+
+```{r}
+data.frame(
+  model = c("ZINB", "ZIP", "NegBin", "Poisson"),
+  aic = c(
+    AIC(fish.m.zinb),
+    AIC(fish.m.zip),
+    AIC(fish.m.negbin),
+    AIC(fish.m.poisson)
+  )
+) %>% 
+  arrange(aic) %>% 
+  kable %>% 
+  kableExtra::kable_styling(latex_options = "hold_position")
+```
+
+Going by AIC, the Zero-Inflated Negaitve Binomial model is the best among the four. Despite the coefficients for the zero-generation component being non-significant, it appears that it's a slightly better fit. It would seem that the Zero-Inflated model is marginally better so there is not a strong argument against using the negative binomial model.
