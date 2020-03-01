@@ -1,0 +1,103 @@
+---
+title: "FinalProject"
+author: "Dustin Leatherman"
+date: "2/29/2020"
+output: html_document
+bibliography: FinalProject.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10)
+library(tidyverse)
+library(ggplot2)
+library(zoo)
+library(knitr)
+library(kableExtra)
+library(grid)
+library(gridExtra)
+library(tibbletime)
+library(ggfortify)
+
+temps <- read.csv("~/projects/StatisticsMasters/TimeSeries/chicago_weather.csv")
+```
+
+# Climate in Chicago
+
+Climate is defined as the long-term average of weather, typically over a period of 30 years [@IPCC]. Anthropogenic Climate Change is a well-known phenomenon that has captivated regional and national politics. This begs the obvious question, how has Chicago's local climate changed over the past 30 years? Observations over a 30 year period from O'Hare International Airport have been collected and freely distributed by the NOAA. O'Hare's position makes it ideal for weather data since it is far enough away from Lake Michigan to be free from the Lake Effect. 
+
+The questions at hand are:
+- Have Chicago Winters gotten warmer over the last 30 years?
+- Have Chicago Summers gotten warmer over the last 30 years?
+- What will the next 10 years look like for Chicago based on the past 30?
+
+# Dataset
+
+> Local Climatological Data (LCD) are summaries of climatological conditions from airport and other prominent weather stations managed by NWS, FAA, and DOD. The product includes hourly observations and associated remarks, and a record of hourly precipitation for the entire month. Also included are daily summaries summarizing temperature extremes, degree days, precipitation amounts and winds [@NOAA].
+
+While there are many variables of interest in this dataset, the one most relevant to the questions at hand is Average Dry Bulb Temperature. The Dry Bulb Temperature is the temperature of air measured by a thermometer freely exposed to the air, but shielded from radiation and moisture. This is considered one of the most important climate variables for human comfort [@DryBulb]. This is in direct comparison to the Wet Bulb Temperature which is measured on a thermometer wrapped in a damp cloth to mimic the temperature at 100% humidity. While Chicago can experience extreme bouts of humidity, that measure will not be taken into consideration.
+
+```{r fig.height=6}
+temps.date <- temps %>% as_tibble %>% mutate_at("dateYYYYMMDD", as.Date) %>% as_tbl_time(index = dateYYYYMMDD)
+temps.zoo.avg <- zoo(temps.date$DailyAverageDryBulbTemperature, order.by = temps.date$dateYYYYMMDD)
+temps.zoo.max <- zoo(temps.date$DailyMaximumDryBulbTemperature, order.by = temps.date$dateYYYYMMDD)
+temps.zoo.min <- zoo(temps.date$DailyMinimumDryBulbTemperature, order.by = temps.date$dateYYYYMMDD)
+
+plot.data.avg <- 
+  autoplot(temps.zoo.avg) + 
+    ylab("Temperature (F)") + 
+    xlab("Year") + 
+    ggtitle("Average Daily Temperature at O'Hare Intl Airport")
+
+plot.data.max <-
+  autoplot(temps.zoo.max) + 
+    ylab("Temperature (F)") + 
+    xlab("Year") + 
+    ggtitle("High Daily Temperature at O'Hare Intl Airport")
+
+plot.data.min <-
+  autoplot(temps.zoo.min) + 
+    ylab("Temperature (F)") + 
+    xlab("Year") + 
+    ggtitle("Low Daily Temperature at O'Hare Intl Airport")
+
+grid.arrange(
+  plot.data.avg,
+  plot.data.max,
+  plot.data.min,
+  ncol = 1
+)
+```
+
+The peaks represent the summers and the valleys represent the winters. There doesn't appear to be a trend with the trend year over year but there does appear to be more outliers with regards to extreme cold temperatures compared to extreme warm temperatures. Comparing the timeseries with Minimum and Maximum Dry Bulb Temperature show similar patterns. This graph highlights that Dry Bulb Temperature data is missing data for November and December of 2000.
+
+
+```{r}
+autoplot(acf(coredata(temps.zoo.avg), na.action = na.pass, lag.max = 1825, plot = FALSE)) +
+  ggtitle("ACF Over 5 Years")
+autoplot(acf(coredata(temps.zoo.avg), na.action = na.pass, lag.max = 3650, plot = FALSE)) +
+  ggtitle("ACF Over 10 Years")
+```
+
+As expected, there is obvious seasonal correlation with the previous year.
+
+```{r}
+temps.zoo.avg.diff <- zoo(diff(temps.date$DailyAverageDryBulbTemperature), order.by = temps.date$dateYYYYMMDD)
+autoplot(temps.zoo.avg.diff)
+autoplot(acf(coredata(temps.zoo.avg.diff), na.action = na.pass, lag.max = 730, plot = FALSE))
+autoplot(acf(coredata(temps.zoo.avg.diff), na.action = na.pass, lag.max = 50, plot = FALSE))
+
+```
+
+When differenced over one year, much of the seasonality is reduced. Since there doesnt appear to be a quadratic trend, a second difference is not needed. This indicates that a Seasonal Differencing of 1 is a potential parameter. The ACF plot trails off to zero after the third lag indicating that an MA(3) model may be a possibility. The first lag is not significant but these models can still be run as options.
+
+
+```{r}
+autoplot(pacf(coredata(temps.zoo.avg), na.action = na.pass, lag.max = 730, plot = FALSE))
+```
+
+There doesn't appear to be any seasonality issues in the PACF plot. Some possible orders include AR(1) - AR(5). 
+
+# Analysis
+
+Potential Models include:
+- ARIMA(1-5,1,1-3)[0,1,1]

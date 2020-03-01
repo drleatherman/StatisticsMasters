@@ -708,7 +708,7 @@ Predicting $x_{1 - m}$ for $m = 1,2,...$ based on the data $[x_1, x_n]$
 
 $x_{1 - m}^n = \sum_{j = 1}^{n} \alpha_j x_j$
 
-** Estimatation
+** Estimation
 
 Goal is to estimate $[\phi_1, \phi_p]$ and $\theta_1, \theta_q$ and $\sigma_w^2$
 for an ARMA model.

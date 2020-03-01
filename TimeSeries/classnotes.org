@@ -412,3 +412,186 @@ $\psi (B)$ is a *constant*.
 \end{cases}
 \end{split}
 \end{equation}
+* ARIMA Models (2020/02/06)
+What if $x_t$ is not stationary in the mean? Difference!
+
+*ARIMA(p,d,q)*: $\phi (B) (1 - B)^d x_t = \theta (B) w_t, \ w_t \sim ind. N(0, \sigma_w^2)$
+
+*ARIMA(1,1,1)*
+\begin{equation}
+\begin{split}
+(1 - \phi_1 B) (1 - B) x_t = (1 + \theta_1 B) w_t\\
+(1 - \phi_1 B) (x_t - x_{t - 1}) = (1 + \theta_1 B) w_t\\
+x_t = (1 + \phi_1)x_{t - 1} - \phi_1 x_{t- 2} + w_t + \theta_1 w_{t -1}
+\end{split}
+\end{equation}
+
+*Note*: Delete initial 0 for generated data sets for ARIMA(1,1,1). Because there
+ is a difference, that means that there's an empty value at first which can be
+ discarded.
+
+ Iterative method called /Newton Raphson/ to estimate parameters. ARMA(1,1) has
+ 4 parameters: $\phi, \theta, \mu, \sigma_w^2$
+
+If $\alpha \neq 0$ for AR(1):
+
+\begin{equation}
+\begin{split}
+x_t = & \alpha + \phi x_{t - 1} + w_t\\
+= & \mu (1 - \phi) + \phi x_{t - 1} + w_t
+\end{split}
+\end{equation}
+
+*WARNING*: sarima()$merman estimates $\mu$, not $\alpha$
+
+** Forecasting
+*** Minimum Mean Square Error Predictor
+$x_{n + m} = E(e_{n + m} | x_n, x_{n - 1}, ..., x_1)$
+
+This is a conditional expectation which denotes the expected value of x at m
+time points into the future, conditional on the time series observed.
+
+*** AR(1)
+
+for m = 1,
+\begin{equation}
+\begin{split}
+x_{n + 1}^n = & E(x_{n + 1} | x_n, ..., x_1)\\
+=& E(\phi_1 x_n + w_{n + 1}| x_n, ..., x_1)\\
+=& E(\phi_1 x_n | x_n, ..., x_1) + E(w_{n + 1}| x_n, ..., x_1)\\
+=& \phi_1 E(x_n| x_n, ..., x_1)\\
+=& \phi_1 x_n
+\end{split}
+\end{equation}
+
+for m = 2,
+\begin{equation}
+\begin{split}
+x_{n + 2}^n = & E(x_{n + 2} | x_n, ..., x_1)\\
+=& E(\phi_1 x_{n + 1} + w_{n + 2}| x_n, ..., x_1)\\
+=& E(\phi_1 x_{n + 1} | x_n, ..., x_1) + E(w_{n + 2}| x_n, ..., x_1)\\
+=& \phi_1 E(x_{n + 1}| x_n, ..., x_1)\\
+=& \phi_1 x_{n + 1}^n\\
+= & \phi_1^2 x_n
+\end{split}
+\end{equation}
+
+*Summary*
+
+|   m | $x_{n + m}^n$                         |
+|-----+---------------------------------------|
+|   1 | $\mu(1 - \phi_1) + \phi_1 x_n$        |
+|   2 | $\mu(1 - \phi_1) +\phi_1 x_{n + 1}^n$ |
+|   3 | $\mu(1 - \phi_1) +\phi_1 x_{n + 2}^n$ |
+|   4 | $\mu(1 - \phi_1) +\phi_1 x_{n + 3}^n$ |
+| ... | ...                                   |
+
+*** MA(1)
+
+for m = 1,
+\begin{equation}
+\begin{split}
+s_{n + 1}^n = & E(x_{n + 1}| x_n,...,x_1)\\
+=& E(\theta_1 w_n + w_{n + 1}| x_n,...,x_1)\\
+= & \theta_1 E(w_n| x_n,...,x_1) + E(w_{n + 1}| x_n,...,x_1)\\
+= & \theta_1 w_n
+\end{split}
+\end{equation}
+
+
+for m = 2,
+\begin{equation}
+\begin{split}
+s_{n + 2}^n = & E(x_{n + 2}| x_n,...,x_1)\\
+=& E(\theta_1 w_{n + 1} + w_{n + 2}| x_n,...,x_1)\\
+= & \theta_1 E(w_{n + 1}| x_n,...,x_1) + E(w_{n + 2}| x_n,...,x_1)\\
+= & 0
+\end{split}
+\end{equation}
+
+It tails off to 0 quickly. Since parameters are not known, they are replaced
+with estimates:
+
+$x_{n + 1}^n = \hat \theta_1 w_n^n$
+
+$w_n^n$: Residual for the nth parameter
+
+$w_0 = 0$
+$w_n = x_n - \theta_1 w_{n - 1} \to w_n^n = x_n - \hat \theta_1 w_{n - 1}^n$
+*** ARIMA(1,1,1)
+
+$\phi (B) (1 - B) x_t = \theta(B) w_t, \ w_t \sim ind. N(0, \sigma_w^2$
+
+$x_t = (1 + \phi_1) x_{t - 1} - \phi_1 x_{t - 2} + \theta_1 w_{t - 1} + w_t$
+
+$x_{n + m} = (1 + \phi_1) x_{n + m - 1} - \phi_1 x_{n + m - 2} + \theta_1 w_{n + m - 1} + w_{n + m}$
+
+m = 1,
+\begin{equation}
+\begin{split}
+x_{n + 1}^n = & E(x_{n + 1} | x_n,...,x_1)\\
+= & E[(1 + \phi_1) x_n - \phi_1 x_{n - 1} + \theta_1 w_n + w_{n + 1}| x_n,...,x_1]\\
+= & (1 + \phi_1) E(x_n| x_n,...,x_1) - \phi_1  E(x_{n - 1}| x_n,...,x_1) + \theta_1 E(w_n| x_n,...,x_1) + E(w_{n + 1}| x_n,...,x_1)\\
+= & (1 + \phi_1) x_n - \phi_1 x_{n - 1} + \theta_1 w_n
+\end{split}
+\end{equation}
+
+m = 2,
+
+\begin{equation}
+\begin{split}
+x_{n + 2}^n = & E(x_{n + 2} | x_n,...,x_1)\\
+= & E[(1 + \phi_1) x_{n + 1} - \phi_1 x_{n} + \theta_1 w_{n + 1} + w_{n + 2}| x_n,...,x_1]\\
+= & (1 + \phi_1) E(x_{n + 1}| x_n,...,x_1) - \phi_1  E(x_{n}| x_n,...,x_1) + \theta_1 E(w_{n + 1}| x_n,...,x_1) + E(w_{n + 2}| x_n,...,x_1)\\
+= & (1 + \phi_1) x_{n + 1}^n - \phi_1 x_{n}
+\end{split}
+\end{equation}
+
+*Summary*
+
+|   m | $x_{n + m}^n$                                        |
+|-----+------------------------------------------------------|
+|   1 | $(1 + \phi_1) x_n - \phi_1 x_{n - 1} + \theta_1 w_n$ |
+|   2 | $(1 + \phi_1) x_{n + 1}^n - \phi_1 x_{n}$            |
+|   3 | $(1 + \phi_1) x_{n + 2}^n - \phi_1 x_{n + 1}^n$      |
+|   4 | $(1 + \phi_1) x_{n + 3}^n - \phi_1 x_{n + 2}^n$      |
+| ... | ...                                                  |
+
+Since parameters are not known, estimates replace the appropriate variables.
+$w_n^n$ replace $w_n$
+
+*** Error
+$x_{n + m} - x_{n + m}^n$: observed - forecast
+
+$var(x_{n + m} - x_{n + m}^n)$: Mean Square Prediction Error (MS PE) - $P_{n+m}^n$
+
+**** Confidence Interval
+
+$X_{n + m}^n \pm Z_{1 - \alpha/2} \sqrt{\hat var(x_{n + m} - x_{n + m}^n)}$
+* Building ARIMA Models (2020/02/13)
+1. Construct $x_t$ vs t plots. Estimated ACF plot. /Is Time Series appropriate?/
+   - Determine stationarity
+     - examine difference if needed
+       - *Note*: second differencing makes models more complicated.
+         Transformations are preferred for resolving quadratic trends.
+     - apply transformations if needed
+2. Construct ACF/PACF plots of stationary series. Match patterns to determine
+   some example models. /What options do we have?/
+3. Find estimated models using MLE.
+4. Investigate Residuals. /Examine Models/
+   Assumptions
+   - Independent. ACF plot shows no correlation between obs.
+   - $E(w_t) = 0$
+   - No Outliers: No values > |3|. Otherwise we have outliers. Transformations
+     can be used to help reduce outliers.
+   - Ljung-Box-Pierce Test. No values should fall _below_ the line.
+     \begin{equation}
+     \begin{split}
+        H_0: & P(1) = P(2) = ... = P(H) = 0\\
+        H_A: & \text{at least one is non-zero}
+    \end{split}
+    \end{equation}
+5. Pick Best Model using AIC, AICc, BIC, MSE.
+   $k = \phi + \theta + 2 = \text{number of parameters}$
+   $AICc = AIC + \frac{2k^2 + 2k}{n - k - 1}$
+6. Forecasting
