@@ -252,3 +252,102 @@ quadratic terms be included?
    $\Delta \hat \beta$'s and LRT. Construct diagnostic plots and determine if
    changes need to be made.
 6. Use the model.
+* Linear Mixed Models (LMM)
+Mixed Modeling is a model with both /random/ and /fixed/ effects.
+
+- It is often found in Physical, Biological, Medicine, and Social Sciences.
+- Can be used in Longitudinal Studies
+- Can be used for clusters where there is staggered entry, dropout, missing
+  data, and mistime visits.
+
+*Example Study*
+
+Suppose a study involving different treatments (A, B, Control) to groups of rats
+were conducted.
+** Fixed Effect
+An effect which is generally being tested for. Characteristics such as Gender, Age, and Blood Type would be
+considered fixed effects if they are used as independent variables.
+
+$Y_i = \beta_0 + \beta_1 Age + \beta_2 Gender + \beta_3 BloodType + \epsilon_i$
+
+Helps explain the variance of Y at each level of the data.
+
+** Random Effect
+An effect which is being considered a sample from a much larger distribution.
+Values for these are treated as /random samples/.
+
+They are variables specific to the data sample.
+- Allow us to account for correlation among observations within the same level-2
+  or higher units.
+  - correlations among observations within the same school
+- Allow us to partition the total variance of Y into levels that correspond with
+  the multilevel structure of the data.
+  - How much of the variation in student math scores can be attributed to
+    student-level variability (level 1) vs school-level variability (level 2)?
+
+$Y_i = \beta_0 + \beta_1 Age + \beta_2 Gender + \beta_3 BloodType + b_{0j} + \epsilon_{ij}$
+
+$b_{0j}$: Cluster-specific random deviations
+$\epsilon_{ij}$: Subject-within-cluster-specific errors
+
+This LMM is referred to as the *Variance Components* model because it partitions
+the total variation in the outcome into between-cluster variation and
+within-cluster variation.
+- variance of the random intercepts is the between-cluster variation. Also
+  referred to as the Level 2 variance.
+- Variance of the residuals is the within-cluster variation, known as the Level
+  1 variance.
+Introduction of a /Random Effect/ creates a variance component.
+
+$Var(ij) = \sigma_p^2 + \sigma_r^2$
+
+Random effects usually include a random intercept for each level of clustering
+to account for possible correlation within clusters, and to make inference to
+the larger population of clusters.
+** Multi-Level Data
+
+Level 1 is the smallest grain of data where the outcome variable of interest is
+measured.
+
+Levels 2+ capture higher level information.
+- cluster-levels for Clustered Data
+- Subject-level for Longitudinal Data
+- Subject and cluster levels for clustered-longitudinal data
+
+*Questions to Drive Analysis*
+- Is the data "clustered", "longitudinal", or "clustered-longitudinal"?
+- How many levels are there? 2, 3, or more?
+- What defines each level?
+- What is the outcome of interest and is it measured at Level 1?
+- What other variables are of interest at each level?
+
+  Using single-level (OLS, GLM) analysis leads to:
+  - Unit of Analysis problem
+    - School or child?
+  - Aggregation Bias
+    - School SES or child SES?
+  - Incorrectly estimated precision or standard errors
+    - incorrect p-values and thus conclusions
+
+*** Clustered Data
+An outcome is measured once for each subject, and subjects "belong to" clusters,
+such as families, schools, or neighborhoods. These outcomes are likely to be
+correlated with other members of the "cluster".
+
+Each "Level" represents a factor that can be thought of as a random sample from
+a larger population.
+- students in a two-level clustered dataset can be thought of as a random sample
+  of students within each school.
+
+*** Repeated Measures
+Multiple observations for one treatment level *or* the same subject.
+
+*** Examples
+
+| Level 3 | Level 2   | Level 1                                          |
+|---------+-----------+--------------------------------------------------|
+|         | School    | [Student 1, Student 2, Student 3]                |
+|         | Child     | [MeasurementTime 1, MeasurementTime 2]           |
+|         | Rat       | [Treatment A (Region 1), Treatment A (Region 2)] |
+| School  | Classroom | [Student 1, Student 2, ...]                      |
+| School  | Student   | [Score Grade 1, Score Grade 2, ...]              |
