@@ -1,0 +1,268 @@
+---
+title: 'Homework #6'
+author: "Dustin Leatherman"
+date: "3/11/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10)
+library(GGally)
+library(tidyverse)
+library(ggplot2)
+library(nlme)
+library(knitr)
+library(kableExtra)
+library(lawstat)
+library(broom)
+library(grid)
+library(gridExtra)
+```
+
+# 1
+
+> The Proactive Kids Foundation was founded in 2008 by Tony Burke as an early intervention and nonprofit organization with the mission of improving body composition, physical strength, body image and self-esteem in children. According to Burke, “kids alone can’t turn their lives around,” so it is necessary to involve the family as part of the intervention to change the child’s environment. 
+>
+> The PAK Program utilizes a three-tiered approach to make changes in the child’s environment; fitness, nutrition and lifestyle coaching with the goal of educating parents or caregivers along with the child on the topics of mental health coaching (i.e., lifestyle), fitness, and nutrition to impact variables affecting body composition for long-term sustainability. The ProActive kids data consists of 884 children. The data was collected between 2010 to 2017. All children were between 5 to 17 years of age and resided in four Illinois counties.
+
+**Body Composition**: Height (inches), weight (pounds), body fat (percent), fat free mass (FFM) and BMI and were obtained during week 1 and week 8.
+
+## a
+> Does the program designed by the ProActive Kids Foundation improve the body composition of the children?
+
+In order to visualize the change, the difference of week 8 to week 1 can be computed. Values that fall around 0 indicate that there was little or no change in measurements. Values less than 1 indicate that the Week 8 value was greater than Week 1, and vice versa.
+
+```{r}
+kids <- read.csv("~/Downloads/kid_PAK.csv")
+kids.plus <-
+  kids %>% 
+  as_tibble() %>% 
+  mutate(
+    WeightDiff = Week_8_Weight - Week_1_Weight,
+    BodyFatDiff = Week_8_Body_Fat - Week_1_Body_Fat,
+    FatFreeMassDiff = Week_8_Fat_Free_Mass - Week_1_Fat_Free_Mass,
+    WaistDiff = Week_8_Waist - Week_1Waist,
+    HipDiff = Week_8_Hip - Week_1_Hip,
+    WaistHipDiff = Week_8_Waist_Hip_Ratio - Week_1_Waist_Hip_Ratio,
+    BMIDiff = Ending_BMI - Starting_BMI,
+    Sex = toupper(Sex)
+  )
+
+kids.plus %>% 
+  select(WeightDiff, BodyFatDiff, FatFreeMassDiff, WaistDiff, HipDiff, WaistHipDiff, BMIDiff) %>% 
+  ggpairs()
+```
+
+The scatterplots generally appear clustered around 0 with Body Fat differences having the largest variability. The cluster of observations appears to be generally evenly distributed around 0. The shifts in the density plots as well as the scatterplots show that there are a handful of outliers for each value in this dataset.
+
+```{r fig.height=8}
+# boxplots for each difference variable
+kids.plus %>% 
+  select(WeightDiff, BodyFatDiff, FatFreeMassDiff, WaistDiff, HipDiff, WaistHipDiff, BMIDiff, Sex, County_in_IL) %>% 
+  gather(c(-Sex, -County_in_IL), key = "variable", value = "value") %>% 
+  ggplot(aes(y = value, x = County_in_IL, color = Sex)) +
+    geom_boxplot() + 
+    facet_wrap(~ variable , ncol = 3, scales = "free") +
+    ylab("") +
+    xlab("County") +
+    ggtitle("Body Composition Difference between Week 8 & Week 1 by County")
+
+kids.plus %>% 
+  select(WeightDiff, BodyFatDiff, FatFreeMassDiff, WaistDiff, HipDiff, WaistHipDiff, BMIDiff, Sex, age_group) %>% 
+  gather(c(-Sex, -age_group), key = "variable", value = "value") %>% 
+  ggplot(aes(y = value, x = factor(age_group), color = Sex)) +
+    geom_boxplot() + 
+    facet_wrap(~ variable , ncol = 3, scales = "free") +
+    ylab("") +
+    xlab("County") +
+    ggtitle("Body Composition Difference between Week 8 & Week 1 by Age Group") + 
+    labs(caption = "1 = [2, 9), 2 = (9, 13), 3 = (13, 18]")
+```
+
+By county, males have a larger range of composition differences compared to Females for Body Fat, Fat Free Mass, and Hip. The genders are similar in spread for Waist, Waist Hip, BMI, and Weight differences. The counties don't appear to have any noticable effect on body composition differences. 
+
+By Age Group, Males have a larger spread in Body Fat change compared to females. However, the spread and center values appear to be similar across age ranges. This indicates that Age Group is likely not a significant contributing factor to body composition loss.
+
+Based on the above graphs, I suspect that the program does not have a significant effect on body composition for most individuals.
+
+### Assumptions
+
+The data are multi-level. One level was removed by calculating the difference between Week 1 and Week 8 (thus removing the longitidunal portion of the model). The levels are as follows:
+
+**Level 1**
+
+- Body Composition Differences
+- Gender
+- Age
+
+**Level 2**
+
+- County
+- age_group
+
+The boxplots hint at the variances between genders differing but it can be confirmed with Levene's Test.
+
+```{r}
+levene.test(kids.plus$BodyFatDiff, group = kids.plus$Sex)
+```
+
+While only one variable is shown, all body composition differences result in heteroscedascity. When modeling, Sex will modeled with heroscedastic variances.
+
+Since each participant comes from a county, this will be represented as a *Random Effect* within the models. Age, Sex, and their interaction will be treated as *Fixed Effects* as those are the primary independent variables of interest.
+
+### Weight
+
+```{r}
+kids.m.weight1 <- lme(WeightDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.weight1 %>% summary
+kids.m.weight2 <- lme(WeightDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML")
+
+anova(kids.m.weight1, kids.m.weight2) %>% as_tibble() %>% select(-call) %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+
+intervals(kids.m.weight1)
+```
+
+The model accounting for heroscedasticity in Sex and without. The AIC and BIC values indicate that accounting the heterosceastic model is a better fit. County doesnt appear to affect the model due to its small intercept value but the fixed effects are all signficant. 
+
+
+### Body Fat
+
+```{r}
+kids.m.bfat1 <- lme(BodyFatDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.bfat1 %>% summary
+
+kids.m.bfat2 <- lme(BodyFatDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML")
+
+anova(kids.m.bfat1, kids.m.bfat2) %>% as_tibble() %>% select(-call) %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+
+intervals(kids.m.bfat1)
+```
+
+Again the model accounting for variance is superior. Going forward only this model will be used. None of the fixed terms are signficant in this context so theres nothing that can be gleaned from this model.
+
+### Fat Free Mass
+```{r}
+kids.m.ffreemass1 <- lme(FatFreeMassDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.ffreemass1 %>% summary
+intervals(kids.m.ffreemass1, which = "fixed")
+
+```
+
+The fixed effects are not significant and the standard error of the random effects is very small.
+
+### Waist
+
+```{r}
+kids.m.waist1 <- lme(WaistDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.waist1 %>% summary
+
+intervals(kids.m.waist1)
+```
+
+The fixed effects are not significant and the standard error of the random effects is very small.
+
+### Hip
+```{r}
+kids.m.hip1 <- lme(HipDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.hip1 %>% summary
+
+intervals(kids.m.hip1)
+```
+
+Sex is the only parameter that is considered moderately significant. 
+
+### Waist-Hip Ratio
+
+```{r}
+kids.m.waisthip1 <- lme(WaistHipDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.waisthip1 %>% summary
+
+intervals(kids.m.waisthip1, which = "fixed")
+```
+
+There are no signifcant parameters.
+
+### BMI
+
+```{r}
+kids.m.bmi1 <- lme(BMIDiff ~ Age * Sex, random = ~1 | County_in_IL, kids.plus, method = "REML", weights = varIdent(form = ~1 | Sex))
+kids.m.bmi1 %>% summary
+
+intervals(kids.m.bmi1, which = "fixed")
+```
+
+The interaction between Age and Sex is significant, as well as Sex. The standard error associated with the Random Effect of County is small indicating that it hardly effects the model.
+
+### Conclusion
+
+There is evidence that given a childs age and gender, the PAK program does improve both BMI and Weight. A majority of the differences are negative indicating that there was a decrease between Week 1 and Week 8. This dataset contains many outliers and they were not dealt with in this case. Further analysis should mitigate them. 
+
+
+```{r}
+kids.m.bmi1$fitted[,2] %>% enframe() %>% mutate(is_effective = value <= 0) %>% group_by(is_effective) %>% tally() %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+
+plot1 <- qplot(kids.m.bmi1$data$BMIDiff, kids.m.bmi1$fitted[,1]) + xlab("Actual BMI Difference") + ylab("Fitted BMI")
+
+kids.m.weight1$fitted[,2] %>% enframe() %>% mutate(is_effective = value <= 0) %>% group_by(is_effective) %>% tally() %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+
+plot2 <- qplot(kids.m.weight1$data$WeightDiff, kids.m.weight1$fitted[,1]) + xlab("Actual Weight Difference") + ylab("Fitted Weight Difference")
+
+grid.arrange(plot1, plot2, ncol = 2)
+```
+
+## b
+> Is there any significant difference among the four counties?
+
+There is no significant difference between the four counties. The Boxplots show them to be fairly similar and all models showed that the coefficients associated with the four counties were very small.
+
+# II
+
+> The data used in this exercise were originally reported by Douglas et al (2004) and the data was reproduced by West et al (2012). The main goal of their experiment was to examine nucleotide activation (guanine nucleotide bonding) in seven different brain nuclei (i.e . brain regions)  among five adults male rats The basal nucleotide activation, measured after treatment with saline solution, was compared to activation in the same region after treatment with the drug carbachol. Activation was measured as the mean optical density produced  by autoradiography. 
+>
+> We want to  compare activation in a subset of three of the original seven brain regions studied by the authors: the bed nucleus of the stria terminals (BST), the lateral septum (LS) , and the diagonal band of Broca (VDB). The original data layout for this study is shown below. Use an appropriate statistical model to  examine the nucleotide activation.
+
+```{r}
+activate <- read.table("~/Downloads/ratbrain.txt", header = TRUE)
+
+activate %>% head %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+This is a Multi-level dataset with three levels: Region, Treatment, and animal respectively.
+
+```{r}
+activate %>% 
+  ggplot(aes(y = activate, x = factor(region), color = factor(treatment))) +
+    geom_boxplot() + 
+    ylab("Activation") +
+    xlab("Region") +
+    ggtitle("Activation for Region By Treatment") + 
+    # This is strange but it changes the legend text
+    labs(color = "Treatment")
+```
+
+Activation is higher in all regions in Treatment 2 compared to Treatment 1. Treatment 2 also seems to have a greater spread than Treatment 1. Thus the treatments can be treated as separate variances. Though this should be compared to a model where region is treated with separate variances. Region, Treatment, and their interaction will be treated as fixed effects since we most interested in them. The animal itself should be treated as a random effect since there will be some measure of correlation between observations on the same animal.
+
+```{r}
+activate.m.t1 <- lme(activate ~ factor(region) * factor(treatment), random = ~1 | animal, activate, method = "REML", weights = varIdent(form = ~1 | factor(treatment)))
+summary(activate.m.t1)
+```
+
+All the variables are considered signficant except for the interaction between treatment 2 and region 2. The standard error associated with the animal ranges between 18.7665 and 85.7607 with 95% confidence. This indicates that the animal a treatment is applied may have a noticable effect on the level of activation.
+
+```{r}
+activate.m.t2 <- lme(activate ~ factor(region) * factor(treatment), random = ~1 | animal, activate, method = "REML", weights = varIdent(form = ~1 | factor(region)))
+
+anova(activate.m.t1, activate.m.t2) %>% as_tibble %>% select(-call) %>% kable %>% kable_styling(full_width = F, bootstrap_options = "striped", latex_options = "hold_position")
+
+
+intervals(activate.m.t1)
+```
+
+There is convincing evidence that the first model is a better fit.
+
+## Conclusion
+
+Region 2 is estimated to be 190.762 points lower compared to Region 1. Region 3 is estimated to be 216.212 points lower than Region 1. Treatment 2 is estimated to increase activation by 98.204 assuming that all other variables are held constant. When Treatment 2 is applied to Region 2 and 3, there is an estimated increase in activation by 99.322 and 261.822 respectively.
+
