@@ -9,7 +9,7 @@ bibliography: FinalProject.bib
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width = 10)
+knitr::opts_chunk$set(echo = FALSE, fig.width = 10)
 library(tidyverse)
 library(ggplot2)
 library(zoo)
@@ -210,6 +210,7 @@ fit.m810.013
 
 
 ```{r}
+
   data.frame(
   MODEL = c(
     "SARIMA(14,1,0)x(0,1,1)",
