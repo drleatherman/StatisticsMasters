@@ -2,7 +2,12 @@
 
 ** Course Description
 
-Development of the Box-Jenkins methodology for the identification, estimation and fitting of ARIMA, and transfer-function stochastic models for the purpose of analyzing and forecasting stationary, non-stationary, and seasonal time series data. The course emphasizes practical time series data analysis, using computer packages and includes applications to economic, business and industrial forecasting.
+Development of the Box-Jenkins methodology for the identification, estimation
+and fitting of ARIMA, and transfer-function stochastic models for the purpose of
+analyzing and forecasting stationary, non-stationary, and seasonal time series
+data. The course emphasizes practical time series data analysis, using computer
+packages and includes applications to economic, business and industrial
+forecasting. f
 
 
 ** Course Goals
