@@ -16,4 +16,77 @@ Minimize $f_0(x)$
 With constraints $f_i(x) \leq b_i$
 
 For a consistent framework, even if the optimization problem requires the
-/maximum/ value, this can still be accomplished by minimizing the negative.
+/maximum/ value, this can still be accomplished by minimizing the negative. It
+is true that *everything* can be boiled down to an optimization problem, but it
+is more important to know /which/ optimization problem since a majority of them
+are not solvable.
+
+** Solvable classes of Problems
+
+Most optimization problems do not have a known or feasible solution but there
+are some classes that do.
+
+- Least Squares
+- Linear Programming
+- Convex Optimization
+
+*** Least Squares
+
+Widely used in Regression Analysis for Statistics, Least Squares optimizes model
+parameters ($\beta_i$) for the smallest SSE or Likelihood. This is an
+optimization problem with /no/ constraints.
+
+
+\begin{equation}
+  \begin{split}
+    \text{minimize} \ f_0(x) = {||Ax - b||}_2^2 = \sum_{i = 1}^{k} (a_i^T x - b_i)^2 \\
+    \\
+    A \in R^{k \times n}, k \geq n
+  \end{split}
+\end{equation}
+
+- $\Sigma (a_i^T x - b_i)^2$: Sum of Squares
+- $a_i^T$: rows of A
+- $x \in R^n$: Optimization Variable
+
+*** Linear Programming
+
+A linear programming problem takes the exact form of an optimization problem.
+
+\begin{equation}
+  \begin{split}
+    \text{minimize} \ c^T x\\
+    \\
+    \text{subject to} \ a_i^T x \leq b_i, i = 1,...,m
+  \end{split}
+\end{equation}
+
+No analytical formula exists but there are efficient implementations of
+algorithms for LP problems.
+
+
+*** Convex Optimization
+
+\begin{equation}
+  \begin{split}
+    \text{minimize} \ f_0 (x)\\
+    \\
+    \text{subject to} \ f_i (x) \leq b_i, i = 1,...,m
+  \end{split}
+\end{equation}
+
+where functions $f_0,...,f_m \colon R^n \to R$ are convex. i.e. satisfy
+
+\begin{equation}
+  \begin{split}
+    f_i(\alpha x + \beta y) \leq \alpha f_i(x) + \beta f_i(y)
+  \end{split}
+\end{equation}
+
+for all $x, y \in R^n$ and all $\alpha, \beta \in R$ with $\alpha + \beta = 1, \beta \geq 0, \beta \geq 0$
+
+
+Least Squares and Linear Programming are special cases of Convex Optimization.
+This is a burgeoning field and much of this backs Machine Learning algorithms.
+
+No analytical formula exists but there are effective methods for solving them.
