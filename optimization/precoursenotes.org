@@ -1,0 +1,19 @@
+#+TITLE:     Pre-Course Notes
+#+AUTHOR:    Dustin Leatherman
+
+This is a place where miscellaneous notes for the Optimization course are kept.
+These mostly include notes that were taken prior to the start of the course as
+an independent study in an effort to get familiar with *Convex Optimization*.
+
+* High Level Overview (Convex Optimization)
+
+** Optimization
+
+A class of problems where an Objective is to be optimized based on a series of
+Constraints.
+
+Minimize $f_0(x)$
+With constraints $f_i(x) \leq b_i$
+
+For a consistent framework, even if the optimization problem requires the
+/maximum/ value, this can still be accomplished by minimizing the negative.
