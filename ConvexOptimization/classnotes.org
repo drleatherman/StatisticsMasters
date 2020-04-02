@@ -1,0 +1,242 @@
+#+TITLE:     Class Notes
+#+AUTHOR:    Dustin Leatherman
+
+* Review & Introduction (2020/03/31)
+** Review
+*Orthogonal*: Vectors are orthogonal when the dot product = 0.
+*** Basis
+
+\begin{equation}
+\begin{split}
+\underset{(n \times 1)}{\vec{y}} = & \underset{(n \times p)}{A} \underset{(p \times 1)}{\vec{x}}\\
+= & B \vec{c} \\
+= & \Sigma c_i \vec{b_i} \ \text{(most $c_i$ = 0)}
+\end{split}
+\end{equation}
+
+*A*: Basis Matrix
+
+*Properties of a Good Basis*
+- not all are orthogonal
+- Allows for a sparse vector to be used ad the constant vector $\vec{c}$
+
+Identity Matrices are the /worst/ basis because most coefficients are non-zero.
+
+*2-Sparse Vector*
+\begin{equation}
+\begin{split}
+\vec{c} = \begin{bmatrix}
+0\\
+0\\
+0\\
+0\\
+3\\
+0\\
+0\\
+4
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+
+Very important!
+#+begin_quote
+When dealing with Natural images and a good basis, there is a sparse vector.
+#+end_quote
+
+*** Kernel
+*A* must not be in Ker(A) (Kernel). The kernel of a linear mapping is the set of
+vectors mapped to the 0 vector. The kernel is often referred to as the *null space*
+
+\begin{equation}
+\begin{split}
+Ker(A) = { \vec{x} \in \mathbb{R}^n \colon A \vec{x} = \vec{0}}
+\end{split}
+\end{equation}
+
+*Main Idea*: For (1), reduce $\vec{y}$ to a K-Sparse matrix to reduce the amount
+of non-zero numbers.
+
+** Linear Algebra Review
+\begin{equation}
+\begin{split}
+\vec{u} = \begin{bmatrix}
+1\\
+2\\
+-1
+\end{bmatrix},
+\vec{v} = \begin{bmatrix}
+1\\
+1\\
+2
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\underset{(1 \times 3)(3 \times 1)}{\vec{u}^T \vec{v}} = & \begin{bmatrix}
+1 & 2 & -1
+\end{bmatrix}\begin{bmatrix}
+1\\
+1\\
+2
+\end{bmatrix} = 1 + 2 - 2 = 1\\
+= & \vec{u} \cdot \vec{v}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\underset{(3 \times 1)(1 \times 3)}{\vec{u} \ \vec{v}^T} = \begin{bmatrix}
+1\\
+2\\
+-1
+\end{bmatrix}\begin{bmatrix}
+1 & 1 & 2
+\end{bmatrix} = \begin{bmatrix}
+1 & 1 & 2\\
+2 & 2 & 4\\
+-1 & -1 & -2
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+$\vec{u} \ \vec{v}^T \neq \vec{u}^T \ \vec{v}$
+
+*** Inner Product
+
+\begin{equation}
+\begin{split}
+<\vec{a}, \vec{b}> = & \vec{a} \cdot \vec{b}\\
+= & \vec{a}^T \vec{b}
+\end{split}
+\end{equation}
+
+*** Cauchy-Schwartz Inequality
+
+\begin{equation}
+\begin{split}
+\vec{a} = \begin{bmatrix}
+1\\
+2\\
+-1
+\end{bmatrix}, \begin{bmatrix}
+1\\
+1\\
+2
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+& |<\vec{a}, \vec{b}>| \leq \sqrt{1^2 + 2^2 + (-1)^2} \times \sqrt{1^2 + 1^2 + 2^2} \\
+& |<\vec{a}, \vec{b}>| \leq ||\vec{a}||_2 \ ||\vec{b}||_2 \ \text{(euclidean/l2-norm)}
+\end{split}
+\end{equation}
+
+*** Norms
+
+Why is the l1 norm preferred for ML opposed to the classic l2 norm?
+
+Philosophically,
+
+If we looked at a sphere in l2 norm, the shadow casted would be a circle
+regardless of the direction of the light.
+
+Looking at a sphere in the l1 norm is shaped as a tetrahedron. The shadow cast
+by a tetrahedron is different for different angles so observing the shadow
+provides a lot more context about the sphere.
+
+**** Euclidean/l2
+
+*Sphere*: $||\vec{x}||_2 = \sqrt{(-4)^2 + 3^2} = \sqrt{25} = 5$
+
+***** FOIL
+Given 2 fixed vectors x,y. Consider the l2-norm squared:
+
+$$
+f(t) = ||x + ty||_2^2
+$$
+
+
+\begin{equation}
+\begin{split}
+f(t) = & ||x + ty||_2^2\\
+= & <x + ty, x+ ty>\\
+= & <x,x> + t <x, y> + t <y, x> + t^2 <y, y>\\
+= & ||x||_2^2 + 2t<x,y> + t^2 ||y||_2^2
+\end{split}
+\end{equation}
+
+#+begin_quote
+Note: t<x,y> and t<y,x> can be combined because their dot-products are
+equivalent. $\vec{x} \cdot \vec{y} = \vec{y} \cdot \vec{x}$
+#+end_quote
+
+#+begin_quote
+When using Machine Learning, don't use l2 norms. Use l1
+#+end_quote
+
+***** Derivative
+
+\begin{equation}
+\begin{split}
+\frac{d}{dt}(||x + ty||_2^2) = & 2<x, y> + 2t ||y||_2^2\\
+= & 2 x^T y + 2t y^T y
+\end{split}
+\end{equation}
+
+**** Simplex/l1
+
+*Sphere*: $||\vec{x}||_1 = |-4| + |3| = 7$
+
+**** Infinity
+
+*Sphere*: $||\vec{x}||_\infty = Max{|-4|, |3|} = 4$
+** Optimization
+
+Why is Machine Learning Possible? Is there a theoretical guarantee?
+
+#+ATTR_LaTeX: scale=0.5
+[[./resources/convex2.jpg]]
+
+Imagine A is the set of all dogs and B is the set of all Cats
+
+If the sets are convex and do not overlap, there exists a line between them
+which acts as a divider for determining whether a new pic belongs in A or B.
+
+** Convex Set
+
+A set is convex if whenever X and Y are in the set, then for $0 \leq t \leq 1$
+the points $(1 - t)x + ty$ must also be in the set.
+
+- #+ATTR_LaTeX: scale=0.5
+[[./resources/convex1.jpg]]
+
+** Separating Hyper-plane Theorem
+
+Let C and D be 2 convex sets that do not intersect. i.e. the sets are
+*disjoint*.
+
+Then there _exists_ a vector $\vec{a} \neq 0$ and a number _b_ such that.
+
+$$
+a^Tx \leq b \forall x \in C
+$$
+
+and
+
+$$
+a^T x \geq b \forall x \in D
+$$
+
+The Separating Hyper-plane is defined as ${x \colon a^T x = b}$ for sets C, D.
+
+*This is the theoretical guarantee for ML*
+
+
+#+begin_quote
+vector a is perpendicular to the plane b.
+#+end_quote
