@@ -1,0 +1,20 @@
+#+TITLE:     Generalized Linear Models
+#+AUTHOR:    Dustin Leatherman
+
+* Course Description
+
+Applications of generalized linear models. Topics include generalized linear
+models for non-normal continuous response, models for binary and multinomial
+response data, models for count data, and analysis of variance and covariance.
+The class of generalized linear models contains the models most commonly used in
+statistical practice.
+
+* Course Goals
+- Understand and apply GLMs appropriately
+  - Logistic/Binomial
+  - Poisson (Zero-Inflated)
+  - Negative Binomial (Zero-Inflated)
+  - Gamma
+- Discover and appropriately model Multi-level Data
+  - Fixed vs Random Variables
+- Model comparison via Likelihood-based methods

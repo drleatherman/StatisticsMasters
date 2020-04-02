@@ -1,0 +1,22 @@
+* Applied Time Series Analysis
+
+** Course Description
+
+Development of the Box-Jenkins methodology for the identification, estimation
+and fitting of ARIMA, and transfer-function stochastic models for the purpose of
+analyzing and forecasting stationary, non-stationary, and seasonal time series
+data. The course emphasizes practical time series data analysis, using computer
+packages and includes applications to economic, business and industrial
+forecasting. f
+
+
+** Course Goals
+- Understand Foundational Time Series Concepts
+  - Stationarity (Strict vs Weak)
+  - Signal and Signal-to-Noise Ratio
+  - Differencing
+  - Autocorrelation and Autocovariance functions
+  - AR and MA
+- Summary Analysis to Determine AR and MA parameters
+  - ACF + PACF plots
+- ARIMA Modeling for non-seasonal and seasonal data

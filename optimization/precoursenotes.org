@@ -1,0 +1,140 @@
+#+TITLE:     Pre-Course Notes
+#+AUTHOR:    Dustin Leatherman
+
+This is a place where miscellaneous notes for the Optimization course are kept.
+These mostly include notes that were taken prior to the start of the course as
+an independent study in an effort to get familiar with *Convex Optimization*.
+
+* High Level Overview (Convex Optimization)
+
+** Optimization
+
+A class of problems where an Objective is to be optimized based on a series of
+Constraints.
+
+Minimize $f_0(x)$
+With constraints $f_i(x) \leq b_i$
+
+For a consistent framework, even if the optimization problem requires the
+/maximum/ value, this can still be accomplished by minimizing the negative. It
+is true that *everything* can be boiled down to an optimization problem, but it
+is more important to know /which/ optimization problem since a majority of them
+are not solvable.
+
+** Solvable classes of Problems
+
+Most optimization problems do not have a known or feasible solution but there
+are some classes that do.
+
+- Least Squares
+- Linear Programming
+- Convex Optimization
+
+*** Least Squares
+
+Widely used in Regression Analysis for Statistics, Least Squares optimizes model
+parameters ($\beta_i$) for the smallest SSE or Likelihood. This is an
+optimization problem with /no/ constraints.
+
+
+\begin{equation}
+  \begin{split}
+    \text{minimize} \ f_0(x) = {||Ax - b||}_2^2 = \sum_{i = 1}^{k} (a_i^T x - b_i)^2 \\
+    \\
+    A \in R^{k \times n}, k \geq n
+  \end{split}
+\end{equation}
+
+- $\Sigma (a_i^T x - b_i)^2$: Sum of Squares
+- $a_i^T$: rows of A
+- $x \in R^n$: Optimization Variable
+
+*** Linear Programming
+
+A linear programming problem takes the exact form of an optimization problem.
+
+\begin{equation}
+  \begin{split}
+    \text{minimize} \ c^T x\\
+    \\
+    \text{subject to} \ a_i^T x \leq b_i, i = 1,...,m
+  \end{split}
+\end{equation}
+
+No analytical formula exists but there are efficient implementations of
+algorithms for LP problems. These algorithms are called interior-point methods.
+
+
+*** Convex Optimization
+
+\begin{equation}
+  \begin{split}
+    \text{minimize} \ f_0 (x)\\
+    \\
+    \text{subject to} \ f_i (x) \leq b_i, i = 1,...,m
+  \end{split}
+\end{equation}
+
+where functions $f_0,...,f_m \colon R^n \to R$ are convex. i.e. satisfy
+
+\begin{equation}
+  \begin{split}
+    f_i(\alpha x + \beta y) \leq \alpha f_i(x) + \beta f_i(y)
+  \end{split}
+\end{equation}
+
+for all $x, y \in R^n$ and all $\alpha, \beta \in R$ with $\alpha + \beta = 1, \beta \geq 0, \beta \geq 0$
+
+
+Least Squares and Linear Programming are special cases of Convex Optimization.
+This is a burgeoning field and much of this backs Machine Learning algorithms.
+
+No analytical formula exists but there are effective methods for solving them.
+These methods are called interior-point methods.
+
+** Non-linear optimization
+
+Optimization Problems where the objective or constraint functions are not linear
+and not convex.
+
+These problems are generally difficult or impossible to solve but there are a
+few methods.
+
+*** Local Optimization
+
+A solution for an optimization problem which works on a subset of points. There
+is no guarantee that a better solution doesn't exist.
+
+This is often used when finding a /good/ point is acceptable opposed to finding
+the /best/.
+
+*** Global Optimization
+
+The true solution is the global solution. This often takes a lot of compute or
+time to find a solution. Best for problems with a small number of variables.
+* Convex Sets (Chapter 2)
+
+Given two points $x_1, x_2$ inside $R^n$,
+
+\begin{equation}
+  \begin{split}
+    y = \theta x_1 + (1  - \theta) x_2, \ \theta \in R
+  \end{split}
+\end{equation}
+
+where y forms a line passing through x1 and x2. This can also be represented as
+
+\begin{equation}
+  \begin{split}
+    y = x_2 + \theta (x_1 - x_2)
+  \end{split}
+\end{equation}
+
+with
+- *base point*: $x_2$
+- *direction*: $x_1 - x_2$
+ 
+** Affine Sets
+
+A set is affine if the line drawn between two points in the set contains /all/ elements of
+the set. i.e. if the two distinct points in C = C.
