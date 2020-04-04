@@ -1,0 +1,193 @@
+#+TITLE:     Class Notes
+#+AUTHOR:    Dustin Leatherman
+
+* Review & Introduction (2020/04/02)
+
+*Monte Carlo Simulations*: A family of computational algorithms using repeated
+ sampling to get numerical results.
+
+
+ *Applications*
+ - get deterministic results
+ - Approximate High Dimension Integration
+
+** Review
+
+Note that since every class has a review period for the first lecture, the notes
+documented here represent points that were either stressed or that I found
+particularly interesting
+*** Distributions by Question
+
+*Binomial*
+- How /many/ basketball free throws do you make out of a given number of attempts?
+- How /many/ people prefer the iPhone to other smart phones?
+
+*Poisson*
+- How /many/ taxis pass by your corner in a given time?
+- How /many/ servers crash in a given time?
+
+*Gamma Distribution*
+- How /long/ does it take for the next /several/ taxis to pass by your corner?
+- How /long/ does it take for the next /several/ servers to crash in a given time?
+
+*Gaussian*
+- How /far/ does a stock price move in a given period of time?
+- Describe averages
+
+**** Gamma
+
+Time it takes for the next several taxis to pass by.
+
+$T ~ Gamma(\alpha, \beta)$
+
+$\beta$: Average waiting between taxis
+
+$\alpha$: number of taxis
+
+#+begin_quote
+I noted this because I haven't used the Gamma distribution too much and I
+thought this was an intuitive way to describe it.
+#+end_quote
+
+*** Independence
+
+If $Y_1 \sim N, Y_2 \sim N$, they are Bivariate Normal
+
+If $\sigma_{12} = 0$, $Y_1, Y_2$ are independent since $\sigma_{12} = cov(Y_1,
+Y_2) = 0$.
+
+**** Proof
+
+Any Bivariate Normal Random Var can be written as a linear function of two
+independent Normal R.V.s.
+
+\begin{equation}
+\begin{split}
+x_1 = & z_1\\
+x_2 = & \sigma_{12} z_1 \pm z_2 \sqrt{1 - \sigma_{12}^2}
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+cov(x_1, x_2) = \ & cov(z_1, \sigma_{12} z_1 \pm z_2 \sqrt{1 - \sigma_{12}^2})\\
+= \ & cov(z_1, \sigma_{12} z_1 \pm z_2 \sqrt{1 - \sigma_{12}^2})\\
+= \ & cov(z_1, \sigma_{12} z_1) + cov(z_1, z_2 \sqrt{1 - \sigma_{12}^2})\\
+= \ & \sigma_{12} V(z_1) + 0\\
+= \ & \sigma_{12}
+\end{split}
+\end{equation}
+
+if $\sigma_{12} \new 0$, x,y are *not* independent
+
+if $\sigma_{12} = 0$,
+    - $x_1 = z_1$
+    - $x_2 = z_2$
+
+This implies that $x_1$ and $x_2$ are independent.
+
+** Introduction
+
+#+begin_quote
+Metropolis Sampling - important method in Bayesian Statistics
+#+end_quote
+
+Y represents some interesting quantity
+- result of a game
+- payoff of a derivative option
+- daily profit
+- time taken to travel by car to work
+
+Compute the mean, $E(Y) = \mu$
+- probability of winning
+- fair price of a derivative option purchased today
+- average daily profit
+
+Or Y can be a percentile
+
+The idea is to generate samples of Y with the /same/ distribution to compute the
+sample mean, percentile as estimates of the true quantities.
+
+** Big Questions
+
+- How do we generate the $Y_i$ with a complicated distribution? Often $Y_i =
+  f(X)$, where $X = (X_{i1}, ..., X_{id})$ is easy to generate and $f$ is known.
+- How do we generate $X_i$ above?
+- How large does /n/ need to be?
+- Can we reduce n(time, cost) by being clever?
+    Yes, by choosing $Y_i$ more carefully?
+
+if $cov(Y_i, Y_j) = \rho$:
+
+\begin{equation}
+\begin{split}
+V(\bar{Y}) = & \frac{\sigma^2}{n} + \frac{2n(n - 1)}{n^2} cov(Y_i, Y_j)\\
+= & \frac{\sigma^2}{n} + \frac{n(n - 1)}{n^2} \rho \sigma^2
+\end{split}
+\end{equation}
+
+** Example: Interest Rate
+
+k = number of times per year interest is compounded
+$r_k$ = interest rate per year compounded k times per year
+$r_1$ = annualized percentage rate (APR)
+$r$ = interest rate per year compounded continuously
+
+\begin{equation}
+\begin{split}
+r_1 = & (1 + \frac{r_k}{k})^k - 1 = e^r - 1\\
+r = & k ln(1 + \frac{r_k}{k}) = ln(1 + r_1)
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+    \underset{n \to \infty}{lim} (1 + \frac{1}{n})^n = & e\\
+    \underset{n \to \infty}{lim} (1 + \frac{0.05}{n})^n = & \underset{n \to \infty}{lim} (1 + \frac{0.05}{n})^{\frac{n}{0.05}} = e^{0.05}
+\end{split}
+\end{equation}
+
+** Example: Estimating Pi
+
+Assume the following:
+- a piece of 1 x 1 square wood with a circle in it
+- infinite darts
+
+
+How to estimate the value of $\pi$?
+
+Area of square: 1
+$r = 0.5$
+Area of a circle: $\pi r^2 = \frac{\pi}{4}$
+
+$\hat \pi = 4 \times \frac{\text{\# of darts in circle}}{\text{\# of darts in square}}$
+
+** Example: Sandwich Shop Profit
+
+$D_{ij} \sim U(5, ..., 35), i = 1,...,n, j = 1,...,d$
+
+j: day
+i: random variable
+
+profit: $P_{ij} = min(D_{ij}, O) R - OW$
+
+average daily profit over d days: $\bar{P_i} = \frac{1}{d}(P_{i1} + ... + P_{id}), i = 1, ..., n$
+
+\begin{equation}
+\begin{split}
+\hat \mu = & \frac{1}{n}(\bar{P_1} + ... + \bar{P_n}) = \frac{1}{nd} \sum_{i,j = 1}^{n, d} P_{ij}\\
+\hat \sigma^2 = & \frac{1}{n - 1} \sum_{i = 1}^{n} (\bar{P_i} - \hat \mu)^2\\
+\hat \mu \pm & 2.58 \frac{\hat \sigma}{\sqrt{n}}
+\end{split}
+\end{equation}
+
+2.58 is p = 0.005 for a 99% C.I.
+
+*** Questions
+- What size order gives the maximum average daily profit? Why? Have you tried
+  other order sizes?
+- How accurately can you know the average daily profit from the simulation? How
+  does this depend on the number of days for your simulation?
+- How does the answer vary as you change your model assumptions?
+- Plot daily profit and average daily profit with the number of days
