@@ -1,0 +1,43 @@
+#+TITLE:     Monte Carlo - Homework 1
+#+AUTHOR:    Dustin Leatherman
+
+* 1
+
+#+begin_quote
+The savings account offered by Bank of Bridgeport earns 1.00% per quarter while
+the savings account offered by Lake Michigan Bank earns 0.01% per day. What are
+the annualized rates of return assuming four quarters per year and 365 days per
+year for each savings account? Which has a better return?
+#+end_quote
+
+*Bank of Bridgeport*
+
+$$
+r_1 = (1 + 0.01)^4 - 1 = 0.04060401 = 4.0604%
+$$
+
+
+*Lake Michigan Bank*
+
+$$
+r_1 = (1 + 0.0001)^365 - 1 = 0.03717241 = 3.7172%
+$$
+
+The bank of Bridgeport offers a better return by 0.3432%.
+
+* 2
+
+#+begin_quote
+Consider a lottery with 5 tickets and only one ticket is the winning ticket.
+Five people take turns to randomly choose a ticket from the lottery. Assume that
+you know little about probability knowledge. How can you use the Monte Carlo
+method to estimate the chance of winning for the third person? Briefly describe.
+#+end_quote
+
+The probability of choosing a winning ticket is 0.2 and the probability of choosing a
+losing ticket is 0.8. Since the probability to win is equal for all tickets, the
+arbitrary ticket number W will represent the "winning" ticket number. Assuming
+that a ticket number is unique, the Monte Carlo method could be applied by
+simulating all $5! = 120$ combinations and the winning percentage for the third
+person would be the combinations where W is the third value in an ordered list.
+The ratio of combinations where W is the third value and the total combinations.

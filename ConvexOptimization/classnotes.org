@@ -45,7 +45,7 @@ When dealing with Natural images and a good basis, there is a sparse vector.
 #+end_quote
 
 *** Kernel
-*A* must not be in Ker(A) (Kernel). The kernel of a linear mapping is the set of
+The kernel of a linear mapping is the set of
 vectors mapped to the 0 vector. The kernel is often referred to as the *null space*
 
 \begin{equation}
@@ -53,6 +53,9 @@ vectors mapped to the 0 vector. The kernel is often referred to as the *null spa
 Ker(A) = { \vec{x} \in \mathbb{R}^n \colon A \vec{x} = \vec{0}}
 \end{split}
 \end{equation}
+
+A must be designed such that the Kernel of A does not contain any s-sparse
+vector other than $\vec 0$
 
 *Main Idea*: For (1), reduce $\vec{y}$ to a K-Sparse matrix to reduce the amount
 of non-zero numbers.
