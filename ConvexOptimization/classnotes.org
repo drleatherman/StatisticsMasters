@@ -46,7 +46,8 @@ When dealing with Natural images and a good basis, there is a sparse vector.
 
 *** Kernel
 The kernel of a linear mapping is the set of
-vectors mapped to the 0 vector. The kernel is often referred to as the *null space*
+vectors mapped to the 0 vector. The kernel is often referred to as the *null
+space*. Vectors should be linearly independent.
 
 \begin{equation}
 \begin{split}
