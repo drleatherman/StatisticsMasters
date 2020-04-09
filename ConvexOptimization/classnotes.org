@@ -244,3 +244,252 @@ The Separating Hyper-plane is defined as ${x \colon a^T x = b}$ for sets C, D.
 #+begin_quote
 vector a is perpendicular to the plane b.
 #+end_quote
+* Why Separating Hyperplane Theorem & Subspace Segmentation Example (2020/04/07)
+
+** Why is Separating Hyper-plane Theorem true?
+*** Math Background
+
+Let $x = d - c, \  y = u - d$
+**** Square of the $l_2$-norm is the inner product
+$$
+\| x \|_2^2 = \langle x, x \rangle = x^T x
+$$
+
+
+$$
+(d - c)^T (d - c) = \| d - c \|_2^2
+$$
+**** Expansion of Vectors
+
+\begin{equation}
+\begin{split}
+& \| x + ty \|_2^2\\
+= & \langle x + ty, x + ty \rangle\\
+= & \| x\|_2^2 + 2t \langle x, y \rangle + t^2 \| y \|_2^2
+\end{split}
+\end{equation}
+**** Derivative of vector products
+
+$$
+\frac{d}{dt}(\| x + ty \|_2^2) = 2 x^T y + 2t  y^T y
+$$
+
+$$
+\frac{d}{dt}(\| x + ty \|_2^2)|_{t = 0 } = 2 x^T y
+$$
+
+$$
+\frac{d}{dt} (\| d + t(u - d) - c \|_2^2) |_{t = 0} = 2 (d - c)^T (u - d)
+$$
+
+*** Separating Hyper-plane Theorem
+
+C, D are convex disjoint sets. Thus there exists a vecto $\vec a \neq 0$ and a
+number $b$ such that
+
+$$
+a^T x \leq b, \forall x \in C
+$$
+
+and
+
+$$
+a^T x \geq b, \forall x \in D
+$$
+
+${x: a^T x = b}$ is the separating hyper-plane for C,D.
+
+
+When $b = 0$, then inconclusive answer.
+
+*** Why is it true?
+
+
+[[./resources/convex3.jpg]]
+
+\begin{equation}
+\begin{split}
+\vec a^T \vec{x} \leq b \ \text{on side C}\\
+\vec{a^T} \vec{x} \geq \ \text{on side D}
+\end{split}
+\end{equation}
+
+*Goal*: Prove $\vec a$ exists as that means a separating hyperplane exists.
+
+
+$$
+dist(C, D) = min{ \| \vec{u} - \vec{v} \|_2 | \vec{u} \in C, \vec{v} \in D} = \|
+\vec{c} - \vec{d} \|_2
+$$
+
+where $\| \vec u - \vec v\|_2$ is the euclidean distance.
+
+
+Let $\vec a = \vec d - \vec c, \ b = \frac{1}{2}(\| \vec d \|_2^2 - \| \vec c \|_2^2)$
+
+We will show that
+
+$$
+f(\vec x) = a^T x - b
+$$
+
+has the property that
+
+$$
+f(\vec x) \leq 0, \ \forall \vec x \in C
+$$
+
+and
+
+$$
+f(\vec x) \geq 0, \ \forall \vec x \in D
+$$
+
+Note: $(\vec d - \vec c)^T \frac{1}{2}(\vec d + \vec c) = \frac{1}{2}(\| \vec d
+\|_2^2 - \| \vec c \|_2^2)$
+
+What does showing something mean?
+
+Let us show that $F(\vec x) \geq 0, \ \forall \vec x \in D$ (Argue by
+Contradiction)
+
+
+Suppose $\exists \vec{u} \in D$ such that $f(\vec{x}) < 0$
+
+$$f(\vec{u}) = (\vec{d} - \vec{c})^T [\vec{u} - \frac{1}{2} (\vec{d} +
+\vec{c})]\\
+= (\vec{d} - \vec{c})^T \vec{u} - \frac{1}{2}(\| \vec{d}\|_2^2 - \| \vec{c}\|_2^2)$$
+
+*Subtract 0*
+
+$$
+f(u) = (d - c)^T [u - d + \frac{1}{2} \| d - c\|]
+$$
+
+$u - \frac{1}{2}d + \frac{1}{2} c$
+
+$u - d + \frac{1}{2} d - \frac{1}{2} c$
+
+$$
+f(u) = (d - c)^T (u - d) + \frac{1}{2} \| d - c \|_2^2
+$$
+
+Now we observe that
+
+$$
+\frac{d}{dt}(\| d + t (u - d) - c \|_2^2) |_{t = 0} = 2 (d - c)^T (u - d) < 0
+$$
+
+and so for some small $t > 0$,
+
+$$
+ \| d + t(u - d) - c \|_2^2 < \| d - c\|_2^2
+$$
+
+$g'(t) < 0$ means decreasing. Thus $g(t) < g(0)$.
+
+Let's call point $p = d + t (u - d)$
+
+Then
+
+$$
+\| p - c\|_2^2 < \| d - c\|_2^2
+$$
+
+This is a contradiction. Both $d$ and $u$ are in set D. Thus by the definition
+of convexity, $p = (1 - t) d + tu$
+
+D is a convex set so p must also be in D. This situation is impossible since d
+is the point in D that is closest to c.
+
+*** Example
+
+Let $f(\vec x) = a^T x - b$
+
+[[./resources/convex4.jpg]]
+
+** Subspace Segmentation Example
+
+Machine Learning is learning the Basis A. If we can deduce that a vector $\vec
+x$ is a linear combination of A, then a vector is a subspace of Basis A and we
+know that it belongs to A.
+
+$$
+V_1 = {(x, y, z) \in R^3 : z = 0}
+$$
+$$
+V_2 = {(x, y, z) \in R^3 : x = 0, y = 0}
+$$
+
+$V_i$ is the affine variety (it is also a Ring, Module)
+
+Apply a Veronase map with degree 2 to lift up from 3 to 6 dimensions.
+
+$\nu_n \begin{bmatrix} x\\ y\\ z \end{bmatrix} = \begin{bmatrix} x^2\\ y^2\\ z^2\\ xy\\ xz\\ yz \end{bmatrix}, \nu_n: R^3 \to R^6$
+
+\begin{equation}
+\begin{split}
+z_1 = (3,4,0), z_2 = (4,3,0),\\
+z_3 = (2, 1, 0), z_4 = (1, 2, 0),\\
+z_5 = (0, 0, 1), z_6 = (0, 0, 3), z_7 = (0, 0, 4)
+\end{split}
+\end{equation}
+
+Plug the sample points into the Veronase map to produce a matrix L
+
+$$
+L = \begin{bmatrix}
+9 & 16 & 4 & 1 & 0 & 0 & 0\\
+16 & 9 & 1 & 4 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 1 & 9 & 6\\
+12 & 12 & 2 & 2 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 0 & 0\\
+\end{bmatrix} \in R^{6 \times 7}
+$$
+
+solve for $\vec c$, where $\vec c^T L = \vec 0$
+
+$\vec c_1 = \begin{bmatrix} 0\\ 0\\ 0\\ 0\\ 1\\ 0 \end{bmatrix}, \vec c_2 = \begin{bmatrix} 0\\ 0\\ 0\\ 0\\ 0\\ 1 \end{bmatrix}$
+
+Rank(L) = 4 (since there are 4 linearly independent rows)
+
+\begin{equation}
+\begin{split}
+q_1(X) = & \vec c^T \nu_n (X)\\
+= & xz\\
+q_2(X) = & \vec c_2^T \nu_n (X)\\
+= & yz
+\end{split}
+\end{equation}
+
+We have:
+
+\begin{equation}
+\begin{split}
+q_1(X) = xz & \ \ \ V_1 = (z = 0)\\
+q_2(X) = yz & \ \ \ V_2 = (x = 0, y = 0)
+\end{split}
+\end{equation}
+
+Observe:
+
+$V_1 \cup V_2 = ((x,y,z) \in R^3: q_1(X) = 0, q_2(X) = 0)$
+
+Construct the Jacobian matrix
+
+J(Q)(X) = $\begin{bmatrix} \frac{\partial q_1}{\partial x} & \frac{\partial q_1}{\partial y} & \frac{\partial q_1}{\partial z}\\ \frac{\partial q_2}{\partial x} & \frac{\partial q_2}{\partial y} & \frac{\partial q_2}{\partial z}\end{bmatrix} = \begin{bmatrix} z & 0 & x\\ 0 & z & y \end{bmatrix}$
+
+1. When $z = z_1 = (3, 4, 0), J(Q)(z_1) = \begin{bmatrix} 0 & 0 & 3\\ 0 & 0 & 4 \end{bmatrix}$
+
+   When $z = z_3 = (2, 1, 0)$, $J(Q)(z_3) = \begin{bmatrix} 0 & 0 & 2\\ 0 & 0 & 1 \end{bmatrix}$
+
+   The right null space of $J(Q)(z_1)$ has basis $\vec b_1 = \begin{bmatrix} 1\\ 0\\ 0 \end{bmatrix}$, $\vec b_2 = \begin{bmatrix} 0\\ 1\\ 0 \end{bmatrix}$
+
+2. When $z = z_5 = (0,0,1)$, $J(Q)(z_5) = \begin{bmatrix} 1 & 0 & 0\\ 0 & 1 & 0
+   \end{bmatrix}$
+
+   When $z = z_7 = (0, 0, 4)$, $J(Q)(z_7) = \begin{bmatrix} 4 & 0 & 0\\ 0 & 4 & 0 \end{bmatrix}$
+   The right null space of $J(Q)(z_5)$ has basis $\vec b = \begin{bmatrix} 0\\ 0\\ 1 \end{bmatrix}$
+
+$C = [\vec c_1 | \vec c_2]$
