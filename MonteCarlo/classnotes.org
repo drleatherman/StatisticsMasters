@@ -191,3 +191,169 @@ average daily profit over d days: $\bar{P_i} = \frac{1}{d}(P_{i1} + ... + P_{id}
   does this depend on the number of days for your simulation?
 - How does the answer vary as you change your model assumptions?
 - Plot daily profit and average daily profit with the number of days
+* Review & Estimating Integrals (2020/04/09)
+** Review
+
+$MSE(\hat \mu) = Var(\hat \mu) + [bias(\hat \mu)]^2$
+
+$bias(\hat \mu) = E(\hat \mu) - \mu$
+
+*Simple Monte Carlo Simulator*: $\hat \mu = \bar Y = \frac{1}{n} (\Sigma Y_i)$
+
+*** Chebyshev Inequality
+
+When working with an unknown distribute, the Chebyshev inequality can
+be used to construct Confidence Intervals (albeit wide).
+
+$$
+P(|Y - \mu| < k \sigma) \geq 1 - \frac{1}{k^2}
+$$
+
+$$
+P(|Y - \mu| > k \sigma) \leq \frac{1}{k^2}
+$$
+
+*** Determining N
+
+\begin{equation}
+\begin{split}
+|\frac{Z_{1 - \alpha/2} \hat \sigma}{\sqrt{n}}| \leq \epsilon \to n \geq (\frac{Z_{1 - \alpha/2}\hat \sigma}{\alpha})^2
+\end{split}
+\end{equation}
+
+$\hat \sigma$: Unbiased estimate of $\sigma$
+
+$\alpha$: Error tolerance.
+
+In this class so far, $\alpha = 0.01$
+
+**** Steps
+
+1. Choose a small sample size ($n_0 = 1000$). Then generate $n_0$ random samples
+   from an underlying probability distribution
+2. Calculate $\hat \sigma$
+3. Calculate $n$
+4. Generate another sample of size $n$ from the underlying probability
+   distribution.
+5. Compute $\hat \mu$ with error $\pm Z_{1 - \alpha/2} \frac{\hat \sigma_n}{\sqrt{n}}$
+
+** Estimating Integrals
+
+$$
+\mu = \int_{R^d} g(x)dx = ?
+$$
+
+Let $f(x) = \frac{g(x)}{\rho(x)}$ where $\rho(x)$ is a probability density
+function (PDF) and $g(x)$ is the function of interest to be estimated.
+
+Then,
+$$
+\mu = \int_{R^d} f(x) \rho(x) dx = E(Y)
+$$
+
+where $Y = f(X)$
+
+*** Example - Normal Probability
+
+$$
+\mu = \int_0^1 \frac{1}{\sqrt{2 \pi}} exp(\frac{-x^2}{2}) dx = \Phi(1) - \Phi(0)
+$$
+
+$$
+RMSE(\hat \mu) = \sqrt{Var(\hat \mu) + [bias(\hat \mu)]^2}
+$$
+
+Summary
+| Estimator($\hat{\mu}$) | bias($\hat \mu$) | Var($\hat \mu$)  | RMSE($\hat \mu$)          |
+|------------------------+------------------+------------------+---------------------------|
+| $\hat \mu_{MC1}$       |                0 | 0.0023345 n^{-1} | 0.048420 n^{-\frac{1}{2}} |
+| $\hat \mu_{MC2}$       |                0 | 0.22483 n^{-1}   | 0.47416 n^{\frac{-1}{2}}  |
+| $\hat \mu_{MC3}$       |      O($n^{-1}$) | 0                | O($n^{-1}$)               |
+| $\hat \mu_{MC4}$       |                0 | O($n^{-3}$)      | O($n^{\frac{-3}{2}}$)     |
+
+
+**** First Estimator - Simple Monte Carlo Estimator
+
+$f(x) = \frac{1}{\sqrt{2 \pi}} exp(\frac{-x^2}{2})$
+
+$X_i \sim U[0,1]$
+
+$Y = f(X)$
+
+$$
+\hat \mu_{MC1} = E(Y) = \frac{1}{n} \Sigma f(X_i) = \frac{1}{n} \Sigma
+\frac{1}{\sqrt{2 \pi}} exp(\frac{- X_i^2}{2})
+$$
+
+
+\begin{equation}
+\begin{split}
+MSE_{MC1} = Var(\hat \mu_{MC1}) + 0 = \frac{Var(Y)}{N} = n^{1} Var(Y) \propto n^{-1} = O(n^{-1})
+\end{split}
+\end{equation}
+**** Second Estimator - Standard Normal R.V.
+
+$$
+f(x) = 1_{[0,1]}(x) = \begin{cases}
+1, & x \in [0,1]\\
+0, & else
+\end{cases}
+$$
+
+$\mu = E(Y), Y = f(X), X_i \sim N(0,1)$
+
+
+$$
+\hat \mu_{MC2} = \frac{1}{n} \Sigma Y_i = \frac{1}{n} f(X_i) = \frac{1}{n} 1_{[0,1]}(X_i)
+$$
+
+In this case, $Y \sim Bernoulli(p)$. Thus $E(Y) = p$ and $\bar Y = \hat p$
+
+
+\begin{equation}
+\begin{split}
+Var(Y) = & p(1 - p)\\
+= & (\Phi(1) - \Phi(0))(1 - (\Phi(1) - \Phi(0)))\\
+= & 0.2248
+\end{split}
+\end{equation}
+
+$MSE_{MC2} = Var(\bar Y) = n^{-1} Var(Y) = 0.2248 n^{-1}$
+
+**** Third Estimator - Left Rectangle Rule
+
+Let $x_i = \frac{i - 1}{n}$
+
+
+$$
+\hat \mu_{Rect} = \frac{1}{n} \Sigma \frac{1}{\sqrt{2 \pi}} exp(\frac{-x_i^2}{2})
+$$
+
+Deterministic, thus $Var(\hat \mu) = 0$. Not a R.V.
+
+$MSE_{MC3} = (\hat \mu - \mu)^2 + 0$
+
+Let error $\epsilon = |\int_0^1 \frac{1}{\sqrt{2 \pi}} exp(\frac{-x^2}{2}) - \hat \mu|$
+
+Let $k = max |f(x)|$ for $x \in [0, 1]$
+
+$\epsilon \leq \frac{k(1 - 0)}{2n}$
+
+\begin{equation}
+\begin{split}
+\mu - \hat \mu \leq \frac{k}{2n} = & O(n^{-1})\\
+MSE_{\hat \mu} = & O(n^{-2})
+\end{split}
+\end{equation}
+
+**** Fourth Estimator - Stratified Sampling Estimator
+
+Simulates a random sample for each stratum.
+
+Let $x_i = \frac{(i - 1 + U_i)}{n}, \ U_i iid U[0,1]$
+
+$$
+\hat \mu_{MC4} = \frac{1}{n} \Sigma \frac{1}{\sqrt{2 \pi}} exp(\frac{-x^2}{2})
+$$
+
+$MSE = Bias^2 + Var(\hat \mu) = 0 + O(n^{-3})$

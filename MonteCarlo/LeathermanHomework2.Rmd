@@ -1,0 +1,103 @@
+---
+title: "Homework 2"
+author: "Dustin Leatherman"
+date: "4/12/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+> A $100 battery is guaranteed to last 5 years. If it fails to last 5 yeras, the customer received a ful lrefund. It is found that battery life is in fact an exponentional random variable, X, with mean of 30 years. i.e., X has a probability density function,
+> 
+> $$f(x) = \begin{cases}0, & -\infty < x < 0\\ \frac{1}{30} e^{-x/30}, & 0 \leq x < \infty \end{cases}$$
+
+# a
+
+> Compute the expected refund amount for a battery by analytic means.
+
+Let $X_i \sim Exp(\beta = \frac{1}{30})$ and Y be a function of $X_i$ Random Variable.
+
+$$
+Y_i = f(X_i) = 100 \begin{cases}
+1, & 0 \leq x \leq 5\\
+0, & \text{else}
+\end{cases}
+$$
+Since $Y_i \sim Bern(p)$, then $E(Y) = 100 \times E(Y) = 100p$
+
+Let $g(x) = \frac{1}{30} e^{-x/30}$ where $g(x)$ is the density function for the aforementioned exponential distribution. Thus $G(x) = 1 - e^{-x/30}$ where $G(x)$ is the Cumulative Distribution Function i.e. integration of $g(x)$. 
+
+$p = G(5) = 1 - e^{-1/6} = 0.1535183$
+
+Thus, the expected refund for a given battery is $0.1535183 \times 100 = \$15.35$
+
+# b
+
+> Assume you don't know the true answer from the above qusetion, and you would use a Monte Carlo method to estimate the expected refund amount. What should be the sumulation size with an error tolerance as 50 cents?
+
+```{r}
+# ratio of acceptable "error" cents to total dollars
+init.n <- 1000
+rate <- 1/30
+cost <- function(x, rate) ifelse(x >= 0 & x <= 5, 100, 0)
+
+init.sample <- rexp(init.n, rate)
+init.sample.cost <- cost(init.sample, rate)
+init.sample.cost.sigma <- sd(init.sample.cost)
+
+est.n <- floor((2.58 * 1.1 * init.sample.cost.sigma / 0.50)^2)
+```
+
+There needs to be `r as.integer(est.n)` simulations in order to have the estimated value within 50 cents of the true value.
+
+# c
+
+> Compute the expected refund amount by using a Monte Carlo method with $n = 10^4$ and $n = 10^6$ samples. What is the error in your method compared to the true answer computed analytically? How much smaller is the error for $n = 10^6$ than $n = 10^4$?
+
+```{r}
+refund <- 15.35
+
+est.refund.10000 <- cost(rexp(10^4, rate), rate)
+est.refund.10000.mean <- est.refund.10000 %>% mean
+est.refund.10000.error <- abs(est.refund.10000.mean - refund)
+
+est.refund.1000000 <- cost(rexp(10^6, rate), rate)
+est.refund.1000000.mean <- est.refund.1000000 %>% mean
+est.refund.1000000.error <- abs(est.refund.1000000.mean - refund)
+```
+
+The expected refund amount with $n = 10^4$ is $`r est.refund.10000.mean`. The error is `r est.refund.10000.error`.
+
+The expected refund amount with $n = 10^6$ is $`r est.refund.1000000.mean`. The error is `r est.refund.1000000.error`.
+
+The error for $n = 10^6$ is `r est.refund.10000.error / est.refund.1000000.error` times smaller than the error for $n = 10^4$
+
+# d
+
+
+```{r}
+lcl.10000 <- est.refund.10000.mean - 1.96 * sd(est.refund.10000) / sqrt(10^4)
+ucl.10000 <- est.refund.10000.mean + 1.96 * sd(est.refund.10000) / sqrt(10^4)
+
+lcl.1000000 <- est.refund.1000000.mean - 1.96 * sd(est.refund.1000000) / sqrt(10^6)
+ucl.1000000 <- est.refund.1000000.mean + 1.96 * sd(est.refund.1000000) / sqrt(10^6)
+```
+
+95% Confidence Interval for the Average Refund per Battery ($n = 10^4$)
+
+**Lower Limit**: `r lcl.10000`
+
+**Upper Limit**: `r ucl.10000`
+
+95% Confidence Interval for the Average Refund per Battery ($n = 10^6$)
+
+**Lower Limit**: `r lcl.1000000`
+
+**Upper Limit**: `r ucl.1000000`
+
+With 95% confidence, each of these intervals contains the true solution. Since the values are randomly generated, there may be realizations of these confidence intervals that do not contain the true value. 
