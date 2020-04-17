@@ -805,3 +805,52 @@ $$
 
 Since $\mu_1 (s - 1) + \mu_1 (s) < 1$ by hypothesis, so $1 - \mu_1 (s - 1) \geq
 \mu_1 (s)$  and hence $\|\vec v_S\|_1 < \|\vec v_{\bar S}\|_1$
+
+** Ways to Solve P1
+
+There are 8 algos to solve P1. The worst performing one is Linear programming.
+
+This is one of the Algos
+
+*** Algos
+
+$A = \begin{bmatrix}1 & 1\end{bmatrix}$
+$\vec x = \begin{bmatrix} x_1\\ x_2 \end{bmatrix}$
+
+$a_{11} = a_{12} = 1$
+
+$Q = \begin{bmatrix} \frac{1}{w_1} & 1\\ 0 & \frac{1}{w_2}\end{bmatrix}$
+1. Minimize $\|\vec x_1\|$ subject to $\vec y = A \vec x$
+
+\begin{equation}
+\begin{split}
+\vec y = & (A A^T) (A A^T)^{-1} \vec y\\
+\vec y = & A (A^T (A A^T)^{-1} \vec y)
+\end{split}
+\end{equation}
+
+Why not let $\vec x = (A^T (A A^T)^{-1} \vec y)$
+
+maybe we can do better.
+
+$\vec y = A Q A^T (A Q A^T) \vec y$
+
+Why not let $\vec x = (Q A^T (A Q A^T)^{-1} \vec y)$
+
+How to choose Q?
+
+2. $min \sum_{i = 1}^{N} W_i x_i^2$ subject to $\vec y = A \vec x$
+
+   This is not the $l_1$-norm but it would be if $w_i = \frac{1}{|x_i|}$.
+
+   solve 2. then substitute $w_i$
+
+3. min: $w_1 x_1^2 + w_2 + x_2^2$ subject to $y = a_{11} x_1 + a_{12} x_2$
+
+   $f(x_1) = w_1 x_1^2 + w_2 (y - x_1)^2$
+
+   $f'(x_1) = 0$ solve for x_1
+
+   $2 w_1 x_1 + 2 (y - x_1)(-1)w_2 = 0$
+
+   $x_1 = \frac{w_2}{w_1 + w_2} y, \ x_2 = \frac{w_1}{w_1 + w_2}v$
