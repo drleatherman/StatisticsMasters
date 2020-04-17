@@ -83,7 +83,7 @@ $\epsilon_i$: random error term of the ith observation
 *** Alternative forms of SLR
 1. $Y_i = \beta_0 X_0 + \beta_1 X_i + \epsilon_i$, where $X_0 = 1$
 2. $Y_i = \beta_0 + \beta_1 (X_i - \bar{x}) + \beta_1 \bar{x} + \epsilon_i$
-   $\to (\beta_0 + \beta_1 \bar{x}) + \beta_1 (x_i - \bar{x}) \epsilon_i$)$
+   $\to (\beta_0 + \beta_1 \bar{x}) + \beta_1 (x_i - \bar{x}) \epsilon_i$)
    $\to \beta_0^* + \beta_1(x_i - \bar{x}) + \epsilon_i$
 *** Method of Least Squares
 **** Goal
@@ -105,7 +105,7 @@ Q = \sum_{1}^{n} [Y_i - \beta_{0} - \beta_{1}X_i ]^2\\
 \frac{dQ}{d \beta_{1}} = -2 \sum_{1}^{n} X_i [Y_i - \beta_{0} - \beta_{1} X_i]\\
 \to \sum_{1}^{n} X_i (Y_i - b0 -b1 X_i) = 0\\
 \to \sum_{1}^{n} X_i Y_i - b_0 \sum_{1}^{n} x_i - b_1 \sum_{1}^{n} x_i^2 = 0\\
-\to \sum_{1}^{n} Y-i - n b_0 - b_1 \sum_{1}^{n} x_i = 0\\
+\to \sum_{1}^{n} Y_i - n b_0 - b_1 \sum_{1}^{n} x_i = 0\\
 \to \sum_{1}^{n} Y_i - b_1 \sum_{1}^{n} x_i = nb_0\\
 \to \bar{Y} - b_1 \bar{x} = b_0\\
 \end{split}
@@ -183,15 +183,15 @@ $b_1 = \frac{\Sigma((x_i - \bar{x})(y_i - \bar{y} ))}{\Sigma(x_i - \bar{x})^2}$
 - $Var(b_1) = \frac{\sigma^2}{\Sigma(x_i - \bar{x})^2}$
 
 *** PROOF: $b_1$ is a linear combination of Y's
-- $b_1 = \frac{\Sigma((x_i - \bar{x})(y_i - \bar{y} ))}{\Sigma(x_i - \bar{x})^2}$
-- $b_1 = \frac{\Sigma((x_i - \bar{x}) y_i - \bar{y} \Sigma(x_i - \bar{x})}{\Sigma(x_i - \bar{x})^2}$
-- $b_1 = \frac{\Sigma((x_i - \bar{x}) y_i}{\Sigma(x_i - \bar{x})^2}$
+- $b_1 = \frac{\Sigma((x_i - \bar{x})(y_i - \bar{y}))}{\Sigma(x_i - \bar{x})^2}$
+- $b_1 = \frac{\Sigma(x_i - \bar{x}) y_i - \bar{y} \Sigma(x_i - \bar{x})}{\Sigma(x_i - \bar{x})^2}$
+- $b_1 = \frac{\Sigma(x_i - \bar{x}) y_i}{\Sigma(x_i - \bar{x})^2}$
 
 Let $K_i = \frac{x_i - \bar{x}}{\Sigma(x_i - \bar{x})^2}$
 
 *Facts about $K_i$*
 - $\Sigma{K_i} = \Sigma \frac{x_i - \bar{x}}{\Sigma (X_i - \bar{x})^2} = 0$
-- $\Sigma K_i^2 = \Sigma (\frac{x_i - \bar{x}}{\Sigma (X_i - \bar{x})^2)^2} = \frac{1}{\Sigma{(x_i - \bar{x})^2}}$
+- $\Sigma K_i^2 = \Sigma (\frac{x_i - \bar{x}}{\Sigma (X_i - \bar{x})^2})^2 = \frac{1}{\Sigma{(x_i - \bar{x})^2}}$
 
 - $b_1 = \Sigma K-i Y_i$
 
@@ -471,9 +471,9 @@ Residual Plot Form
      #+LABEL: fig:label
      [[./images/resplot_5-1.jpg]]
 6. Omission of Important Predictors?
-   A Pattern indicates that there might be a relationshup between the residuals
+   A Pattern indicates that there might be a relationship between the residuals
    and some other predictor. This can be used to determine whether a predictor
-   shoudl be used _before_ modeling it. Probably not as necessary anymore since
+   should be used _before_ modeling it. Probably not as necessary anymore since
    it is easy to run and compare models.
 *** Test of Randomness
 **** Durbin-Watson Test
@@ -975,7 +975,7 @@ This is estimated by: $MSE (I - H)$
 
 \begin{equation}
 \begin{split}
-\underset{(1 \times n)(n \ times 1)}{\vec{Y}^T \vec{Y}} = \Sigma Y_i^2
+\underset{(1 \times n)(n \times 1)}{\vec{Y}^T \vec{Y}} = \Sigma Y_i^2
 \end{split}
 \end{equation}
 
@@ -1307,12 +1307,12 @@ Why do this? Solving a regression model with a non-linear $E(Y_i)$
 E(Y) = \sum_{i = 1}^{p - 1} f_K(x_k)
 \end{split}
 \end{equation}
-*but* $E(Y) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 \ \beta_3 X_1 X_2$ is *not*
+*but* $E(Y) = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1 X_2$ is *not*
  additive since $X_1 X_2$ is an interaction term
 
 Consider the following:
 
-$Y_i = \beta_0 + \beta_1 X_1 + \beta_2 X_2 \ \beta_3 X_1 X_2 + \epsilon_i$ where
+$Y_i = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1 X_2 + \epsilon_i$ where
 $\epsilon_i \sim iid N(0, \sigma^2)$
 
 A one-unit *increase* in $X_2$ for a fixed value of $X_1$, results in an
@@ -1447,9 +1447,11 @@ MSE = & \frac{SSE}{n - p}\\
 Recall $MSE(Y) = Bias^2(Y) + Var(Y)$
 
 1. $AIC_p$ or $SBC_p$ Criterion
-   - $AIC_p$: Akaike's Information Criterion - $n ln(SSE_p) - n ln(n) + 2p$
+   - $AIC_p$: Akaike's Information Criterion:  $n ln(SSE_p) - n ln(n) + 2p$
+     - $-2 loglik + 2p$
    - $SBC_p$: Schwartz' Bayesian Information Criterion - $n ln(SSE_p) - n
      ln(n) + p ln(n)$
+     - $-2 loglik + 2 ln(p)$
 
    *Look for*
    - /Small/ $SSE_p$
@@ -1624,7 +1626,9 @@ rstandard(model)
 - Use Studentized Deleted Residuals to identify /outlying Y Observations/
 
 *Residuals*: $e_i = Y_i - \hat{Y_i}$
+
 *Semi-studentized Residuals*: $e_i^* = \frac{e_i}{\sqrt{MSE}}$
+
 *Studentized Residuals*: $r_i =\frac{e_i}{\sqrt{MSE(1 - h_{ii})}}$
 
 $h_{ii}$: Standard Error of $e_i$. aka Standard Error of the ith residual
@@ -1824,7 +1828,9 @@ Recall $MSE = Var(Y) + (Bias(Y))^2$
 $E(b^R - \beta)^2 = \sigma^2(b^R) + (E(b^R) - \beta)^2$ where $b^R$: biased estimator
 
 Least Squares Normal Equations given by: $r_{XX} b = r_{XY}$
+
 $r_{XX}$: correlation matrix of X variables
+
 $r_{XY}$: Vector of coefficients of simple correlation variables between Y and
 each X Variable
 
