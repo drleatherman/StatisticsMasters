@@ -493,3 +493,315 @@ J(Q)(X) = $\begin{bmatrix} \frac{\partial q_1}{\partial x} & \frac{\partial q_1}
    The right null space of $J(Q)(z_5)$ has basis $\vec b = \begin{bmatrix} 0\\ 0\\ 1 \end{bmatrix}$
 
 $C = [\vec c_1 | \vec c_2]$
+* Sparse Representation & Problem P0 . P1 (2020/04/14)
+** Big Idea
+
+Your Data is a vector $x \in R^N$ where all vectors are column
+vectors. Each x is s-sparse i.e. each vector has at *most* _s_ non-zero entries. Let s
+= 5000. We don't know where the non-zero entries are located.
+
+Let $\underset{(m \times N)}{A}, \ m < N$
+
+$N = 100,000, \ m = 20,000$
+
+Short + Wide Matrix
+
+#+begin_quote
+This is the opposite of the kinds of matrices seen in Linear Regression which
+are tall and skinny.
+#+end_quote
+
+What if we can design a matrix $A \in R^{m \times N}$ so that for each s-sparse
+$\vec x \in R^N$, you can store $\vec y$ instead? ($A \vec x = \vec y$)
+
+Q: Is there a way to get back $\vec x$ from $\vec y$? We observe $\vec y$.
+
+A: Yes!
+
+*Properties of $A$*
+- A cannot be the 0 matrix.
+- if $\vec x_1$ is s-sparse and $\vec x \neq 0$, what if $\vec x_1$ is in
+  $ker(A)$? No! that would return $\vec 0$ which means we cannot reconstruct the
+  original matrix since there are multiple vectors in Ker(A).
+
+
+*Using Techniques from 1955*
+
+1. Is $\vec x$ the inverse of $\vec y$ or psuedo-inverse, or Moore-Penrose
+  inverse, or...?
+
+\begin{equation}
+\begin{split}
+\vec y = & A \vec x\\
+A^{\#} \vec y = & A^{\#} A \vec x \ \text{where} \ $A^{\#} A = I$
+\end{split}
+\end{equation}
+
+Doesn't work! This is because there is no way to guarantee that $\vec x$ is a
+s-sparse vector.
+
+2. Can we use gradient descent to solve for $\vec x$ to minimize $\| \vec y - A \vec x \|_2$
+
+   No! Why?
+
+   pick any vector $\vec v \in Ker(A)$. $\vec y = A (\vec x + \vec v)$ however,
+   $(\vec x + \vec v)$ may not be sparse.
+
+
+New math was needed to solve this problem so it was created in 2005 by Donoho,
+Candes, and Tao using the $l_1$-norm instead of the euclidean norm ($l_2$).
+
+** Background
+
+*$l_1$-norm*: $\|x\|_1 = |x_1| + |x_2| + |x_3|$
+
+*$l_2$-norm*: $\|x\| = \sqrt{|x_1|^2 + |x_2|^2 + |x_3|^2}$
+
+For $\vec x \in R^n, \ \vec y \in R^N$, then
+
+$$
+\| \vec x + \vec y \| \leq \| x \|_1 + \| y \|_1
+$$
+
+For a norm to be valid, it must uphold the *Triangle Inequality*.
+
+$\vec a$ is one side of a triangle, $\vec b$ is a second side, third side, ...
+
+\begin{equation}
+\begin{split}
+|\vec a + \vec b | \leq |\vec{a}| + |\vec{b}|\\
+\| \vec{x} + \vec{y} \|_1 \leq \|\vec{x}\|_1 + \|\vec{y}\|_1\\
+\| \vec{x} + \vec{y} \|_2 \leq \|\vec{x}\|_2 + \|\vec{y}\|_2\\
+\| \vec{x} + \vec{y} \|_2 \leq \|\vec{x}\|_\infty + \|\vec{y}\|_\infty\\
+\end{split}
+\end{equation}
+
+
+It also must be distributive:
+
+If $\vec x_1 + \vec x_2 = \vec y$, then $(\vec x_1 + \vec x_2) \cdot \vec a =
+\vec{y} \cdot \vec{a}$ for any $\vec a$
+
+$$
+\langle \vec x_1 + \vec x_2, \vec a \rangle = \langle \vec y, \vec a \rangle
+\to\\
+\langle \vec x_1, \vec a \rangle + \langle \vec x_2, \vec a \rangle = \langle
+\vec y, \vec a \rangle
+$$
+
+** Warm-up
+
+$A = [\vec a_1 | ... | \vec a_N]$
+
+$\| \vec a_j \|_2 = 1 = \langle \vec a_j, \vec a_j \rangle$
+
+
+Let $\vec v \in Ker(A), \ \vec{v} \neq \vec 0, \ \vec v = \begin{bmatrix} v_1 \\ v_2 \\ ... \\ v_N \end{bmatrix}$
+
+Assume $\vec a_j$ are unit vectors.
+
+Pick $i = 3$ observations.
+
+1. Multiply by 1. Be Sneaky.
+
+   $v_i = v_i \langle \vec a_i, \vec a_i \rangle$
+
+2. $\vec v \in Ker(A)$
+
+\begin{equation}
+\begin{split}
+& v_1 a_1 + v_2 a_2 + ... + v_n a_n = \vec 0\\
+\to & \langle v_1 a_1 + ... + v_N a_N, a_i \rangle = \langle \vec 0, a_i \rangle\\
+\to & \langle v_1 a_1, a_i \rangle + ... + \langle v_N a_N, a_i \rangle = \langle \vec 0, a_i \rangle
+\end{split}
+\end{equation}
+
+Keep $v_3 \langle a_3, a_i \rangle$ on the left side. Move everything to the
+other side. Thus,
+
+$$
+v_i = \langle v_i a_i, a_i \rangle = - \sum_{j = 1, j \neq i}^{} v_j \langle a_j, a_i \rangle
+$$
+
+Since $i = 3$, $v_3 \langle a_3, a_i \rangle = v_i$
+
+$$| v_i | \leq \sum_{j = 1, j \new i} | v_j | \cdot | \langle a_j, a_i \rangle |$$
+
+What is the absolute value of a single number in $Ker(A)$? There is a relation
+between $v_i$ and the rest of the entries in $\vec v$.
+
+#+begin_quote
+Why "=" becomes $\leq$
+
+For example,
+if -2 = 3 + (- 5), then
+|-2| leq |3| + |-5| 
+#+end_quote
+
+** Getting Ready to Formulate the Problem
+
+*** Problem P0
+
+Find the s-sparse $\vec x \in R^N$ such that $\vec y = A \vec x$.
+
+Ex. Problem 1 HW 1.
+
+Find a 2-sparse vector $\vec x \in R^8$ such that $\vec y = A \vec x$.
+
+There are $8 \choose{2}$ 2-sparse vectors. (28).
+
+Imagine N = 100,000 and s = 5000. Not feasible to try all sparse-vectors.
+
+*** Problem P1 (Convex Optimization)
+
+Given $A \in R^{m \times N}$ and measurement $\vec y = R^m$, solve the
+optimization problem,
+
+$$
+\underset{x \in R^N}{min} \| x\|_1
+$$
+
+subject to constraint $y = A \vec x$
+
+Find a condition on matrix A, so that solving P1 will recover the s-sparse
+vector $x \in R^N$
+
+** Null Space Property of Order s
+*** Setting up Notation
+Let $\vec v \in Ker(A), \ \vec v \neq \vec 0$
+
+Let the set of indices , where $\vec v [j] \neq 0$ to be S.
+
+e.g. $\vec x = \begin{bmatrix} 0\\ 0\\ 2\\ 2\\ 3\\ 0\\ 4 \end{bmatrix}$
+
+$S = \{3, 5, 7\}$ (non-zero indices. Also called the support vector of $\vec v$).
+
+$|S| = s$ (number of elements. i.e. sparsity)
+
+$\bar S = \{1, 2, 4, 6\}$ (complement. i.e zero indices)
+
+
+$$
+\vec v = \begin{bmatrix}1\\ 1\\ 1\\ 1\\ 2\\ -2\\ 2\end{bmatrix}, \vec v_S
+= \begin{bmatrix} 0\\ 0\\ 1\\ 0\\ 2\\ 0\\ 2 \end{bmatrix}, \ \vec v_{\bar S}
+= \begin{bmatrix} 1\\ 1\\ 0\\ 1\\ 0\\ -2\\ 0 \end{bmatrix}
+$$
+
+$\vec v = \vec v_S + \vec v_{\bar S}$
+
+*** Definition
+
+Let A be a $m \times N$ matrix.
+
+Let S be a subset or $\{1,2,3,...,N\}$. Suppose $N = 50$, and $S = \{3,5,7\}$
+
+1. We say that a matrix A satisfies the null space property with respect to a
+   set S if
+   $$
+   \| \vec v_S \|_1 < \| \vec_{\bar S} \|, | \forall \vec v \in Ker(A)
+   $$
+2. If it satisfies the null space property with respect to any set S of size s
+   where S is a subset of $\{1,2,3,...,N\}$. $s < N$
+
+If a matrix satisfies this property, what does it buy us?
+
+If a matrix A satisfies the Null Space property of order s, then solving problem
+P1 will solve P0. i.e. you can recover any s-sparse vector $\vec x$ from the
+measurement $y$ where $\vec y = A \vec x$
+
+#+begin_quote
+If A has a small coherence, then it satisfies the Null Space Property of order s.
+#+end_quote
+
+Let $A = [\vec a_1| ... | \vec a_N]$
+
+$$
+\mu_1 = \underset{j \neq k}{max} |\langle \vec a_j, \vec a_k \rangle|
+$$
+
+Assume $\vec a_j$ has $l_2$-norm equal to 1.
+
+*** Theorem
+
+Same assumptions as above.
+
+Suppose $\mu_1 \cdot s + \mu_1 \cdot (s - 1) < 1$
+
+The matrix satisfies the Null Space property of order s.
+
+*Remarks*
+1. $\mu_1 (2s - 1) < 1$ if true, then A satisfies NSP of order s. It is not a
+   necessary condition. It is a sufficient condition.
+2. From the warm up, if we fix an index i, then for $\vec v \in Ker(A)$,
+\begin{equation}
+\begin{split}
+|v_i| \leq \sum_{j = 1, j \neq i}^{} |v_j| \cdot |\langle \vec a_j, \vec a_i \rangle|
+\end{split}
+\end{equation}
+3. Note that $|v_i|$ is just one term in $\|v\|_1$ because
+
+   $$
+   \|v\|_1 = |v_1| + |v_2| + ...
+   $$
+
+*** Proof
+
+Given A is an $m \times N$ matrix. $A = [\vec a_1 | ... | \vec a_N]$.
+
+Suppose $\|\vec a_j\| = 1, \ \mu_1 \cdot s + \mu_1 \cdot (s - 1) < 1$
+
+Show that NSP of order s holds.
+
+i.e.
+$$
+\|\vec v_S \| < \| \vec v_{\bar S}\|, \forall \vec v \in ker(A)| \{\vec 0\}
+$$
+
+and for every set
+
+$$
+S \subset \{1,2,3,...,N\} \text{with} |S| = s
+$$
+
+Let $\vec v = Ker(A)$
+
+$\vec v = \begin{bmatrix} v_1\\ v_2\\ ...\\ v_n \end{bmatrix}$
+
+$A \vec v = v_1 \vec a_1 + ... + v_N \vec a_N = \vec 0$
+
+Let $S \subset \{1,2,...,N\}, \ |S| = s$. Pick any $\vec a_i, i \in S$
+
+Then $v_i = v_i \langle \vec a_i, \vec a_i \rangle$. Also, $v_1 \langle \vec a_i, \vec a_i \rangle + ... + v_N \langle \vec a_N, \vec a_i \rangle = 0$
+
+\begin{equation}
+\begin{split}
+\to v_i = v_i \langle \vec a_i, \vec a_i \rangle = - \sum_{j = 1, j \neq i}^{}  v_i \langle \vec a_j, \vec a_i \rangle\\
+\to v_i = - \sum_{l \in S}^{} v_l \langle \vec a_l, \vec a_i \rangle - \sum_{j \in S, j \neq i}^{} v_j \langle \vec a_j, \vec a_i \rangle\\
+\to |v_i| \leq \sum_{l \in S}^{} |v_l| |\langle \vec a_l, \vec a_i \rangle| + \sum_{j \in S, j \neq i}^{} |v_j| |\langle \vec a_j, \vec a_i \rangle|
+\end{split}
+\end{equation}
+
+sum over all $i \in S$ to get
+
+$\|\vec v_S\|_1 = \sum_{i \in S}^{} |v_i|$
+
+#+begin_quote
+This adds up all the inequalities for one inequality to rule them all.
+#+end_quote
+
+\begin{equation}
+\begin{split}
+\leq & \sum_{i \in S}^{} \sum_{l \in \bar S}^{} |v_l| \cdot |\langle \vec a_l, \vec a_i \rangle| + \sum_{i \in S}^{} \sum_{j \in S, j \neq i}^{} |v_j| \cdot |\langle \vec a_j, \vec a_i \rangle| \\
+= & \sum_{l \in \bar S}^{} |v_l| \sum_{i \in S}^{} |\langle \vec a_l, \vec a_i \rangle| + \sum_{j \in S}^{} |v_j| \sum_{i \in S, i \neq j}^{} |\langle \vec a_j, \vec a_i \rangle|\\
+\leq & \sum_{l \in S}^{} |v_l| \mu_1 \cdot s + \sum_{j \in S}^{} |v_j| \mu_1 (s - 1)\\
+\|\vec v_S\|_1 \leq & \mu_1 \cdot s \|\vec v_{\bar S}\| + \mu_1 (s - 1) \|\vec v_\S\|
+\end{split}
+\end{equation}
+
+$$
+(1 - \mu_1 (s - 1)) \|\vec v_{\bar S}|\ \leq \mu_1 \cdot s \|\vec v_S\|
+$$
+
+
+Since $\mu_1 (s - 1) + \mu_1 (s) < 1$ by hypothesis, so $1 - \mu_1 (s - 1) \geq
+\mu_1 (s)$  and hence $\|\vec v_S\|_1 < \|\vec v_{\bar S}\|_1$

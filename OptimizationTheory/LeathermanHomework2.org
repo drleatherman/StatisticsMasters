@@ -117,27 +117,61 @@ z - 4 = & z \lambda\\
 \end{split}
 \end{equation}
 
-Using $\eqref{first:main}$, let point P be a point on $g(x,y,z) = 9$ where
-
 For (2,3,4) and $\lambda = 1 - \frac{\sqrt{29}}{3}$,
 
 \begin{equation}
 \begin{split}
-& P(2x \lambda, 2y \lambda, 2z \lambda)\\
-& = P(2(2)(1 - \frac{\sqrt{29}}{3}), 2(3)(1 - \frac{\sqrt{29}}{3}), 2(4)(1 - \frac{\sqrt{29}}{3}))\\
-& = P(4 - \frac{4 \sqrt{29}}{3}, 6 - 2 \sqrt{29}, 8 - \frac{8 \sqrt{29}}{3})
+\frac{2}{1 - \lambda} = & x\\
+\frac{2}{1 - (1 + \frac{\sqrt{29}}{3})} = & x\\
+\frac{-6}{\sqrt{29}} = & x
 \end{split}
 \end{equation}
-
-For (2,3,4) and $\lambda = 1 + \frac{\sqrt{29}}{3}$,
 
 \begin{equation}
 \begin{split}
-& Q(2x \lambda, 2y \lambda, 2z \lambda)\\
-& = Q(2(2)(1 + \frac{\sqrt{29}}{3}), 2(3)(1 + \frac{\sqrt{29}}{3}), 2(4)(1 + \frac{\sqrt{29}}{3}))\\
-& = Q(4 + \frac{4 \sqrt{29}}{3}, 6 + 2 \sqrt{29}, 8 + \frac{8 \sqrt{29}}{3})
+\frac{2}{1 - \lambda} = & x\\
+\frac{2}{1 - (1 - \frac{\sqrt{29}}{3})} = & x\\
+\frac{6}{\sqrt{29}} = & x
 \end{split}
 \end{equation}
 
-Since P is smaller than Q, P is the closest point to (2,3,4) on the circle
+
+\begin{equation}
+\begin{split}
+\frac{3}{1 - \lambda} = & y\\
+\frac{3}{1 - (1 + \frac{\sqrt{29}}{3})} = & y\\
+\frac{-9}{\sqrt{29}} = & y
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\frac{3}{1 - \lambda} = & y\\
+\frac{3}{1 - (1 - \frac{\sqrt{29}}{3})} = & y\\
+\frac{9}{\sqrt{29}} = & y
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+\frac{4}{1 - \lambda} = & z\\
+\frac{4}{1 - (1 + \frac{\sqrt{29}}{3})} = & z\\
+\frac{-12}{\sqrt{29}} = & z
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\frac{4}{1 - \lambda} = & z\\
+\frac{4}{1 - (1 - \frac{\sqrt{29}}{3})} = & z\\
+\frac{12}{\sqrt{29}} = & z
+\end{split}
+\end{equation}
+
+Let P be the point when $\lambda = 1 - \frac{\sqrt{29}}{3}$, then  $P(\frac{6}{\sqrt{29}}, \frac{9}{\sqrt{29}}, \frac{12}{\sqrt{29}}))$
+
+Let Q be the point when $\lambda = 1 + \frac{\sqrt{29}}{3}$, then $Q(\frac{-6}{\sqrt{29}}, \frac{-9}{\sqrt{29}}, \frac{-12}{\sqrt{29}}))$
+
+Since all values for P are positive and all values of Q are negative, it follows that P is the closest point to (2,3,4) on the sphere
 $x^2 + y^2 + z^2 = 9$ and Q is the furthest.
