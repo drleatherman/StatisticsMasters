@@ -854,3 +854,17 @@ How to choose Q?
    $2 w_1 x_1 + 2 (y - x_1)(-1)w_2 = 0$
 
    $x_1 = \frac{w_2}{w_1 + w_2} y, \ x_2 = \frac{w_1}{w_1 + w_2}v$
+
+
+\begin{equation}
+\begin{split}
+AQA^T = & \begin{bmatrix}1 & 1 \end{bmatrix} \begin{bmatrix} \frac{1}{w_1} & 0 \\ 0 & \frac{1}{w_2} \end{bmatrix} \begin{bmatrix}1\\ 1 \end{bmatrix}\\
+= & \frac{w_1 + w_2}{w_1 w_2}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+QA^T(AQA^T)^{-1} y = \begin{bmatrix} \frac{1}{w_1}\\ \frac{1}{w_2} \end{bmatrix} \frac{w_1 w_2}{w_1 + w_2} y
+\end{split}
+\end{equation}
