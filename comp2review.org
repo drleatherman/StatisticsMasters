@@ -1,0 +1,149 @@
+#+TITLE:     Comprehensive Exam 2 Review
+#+AUTHOR:    Dustin Leatherman
+
+* Inferences in Regression Analysis
+Given the MLR equation: $\hat y = \beta_0 + \beta_1 x_1 + \beta_2 x_2$
+
+$Y = X \beta$
+
+$\hat Y = X (X^T X)^{-1} X^T y$
+** $\beta_1$
+
+A one unit increase in $\x_1$ increases the average response ($y$) by $\beta_1$
+given all other variables are fixed..
+
+** $\beta_0$
+
+The intercept of a model. When all predictor variables are 0, $\beta_0$ is the
+value of the response.
+
+** Interval Estimation
+
+$\hat Y \pm t_{1 - \alpha/2g, \ n - 1} \ SE_{Y}$
+
+** Prediction of a new observation
+
+$y = X \beta$
+
+$y = X_0^T \beta$ where $X_0^T$ is a vector representing the new observation.
+
+** ANOVA Approach
+
+Test whether all means are equal using omnibus F-Test.
+
+\begin{equation}
+\begin{split}
+H_0: & \mu_1 = \mu_2 = ... = \mu_k\\
+H_A: & \ \text{at least one mean is not equal}
+\end{split}
+\end{equation}
+
+** General Linear Test Approach
+
+Define a Full and Reduced model, use sum of squares F-test to determine whether
+the reduced model is better than the full. A significant p-value indicates the
+full model explains more error than the reduced.
+
+| Name       | SS                           | DF    | MS                                        | F                  |
+|------------+------------------------------+-------+-------------------------------------------+--------------------|
+| Regression | $\Sigma (\hat Y - \bar Y)^2$ | p - 1 | $\frac{\Sigma (\hat Y - \bar Y)^2}{p- 1}$ | $\frac{MSR}{MSE$}$ |
+| Error      | $\Sigma (Y - \hat{Y})^2$     | n - p | $\frac{\Sigma{(Y - \hat Y)^2}}{n - p}$    |                    |
+| Total      | $\Sigma{(Y - \bar Y)^2}$     | n - 1 |                                           |                    |
+
+** Descriptive Measures of Association between X and Y in the regression model
+
+- Correlation
+
+  $4 = \pm \sqrt{R^2}$
+
+  $-1 < r < 1$
+Sign of correlation matches the slope
+
+- Coefficients of Determination
+
+  $R^2 = 1 - \frac{SSE}{SSTo}$
+
+  $0 \leq R^2 \leq 1$
+
+  High $R^2$ value means that more variance is explained. $R^2 = 1$ indicates a
+  perfect fit which means that the model is likely overfitted.
+
+* Diagnostics and Remedial Measures
+** Diagnostics for Predictor variables
+- Dot Plot
+- Sequence Plot
+- Stem-and-Leaf Plot
+- Box Plot
+- Histogram
+
+** Residuals
+
+Regular: :$\epsilon_i = Y - \hat Y$
+
+Standardized: $\frac{Y_i - \bar y}{\sigma}$
+
+Studentized: $\frac{Y_i - \mu}{\sigma/n}$
+
+Semi-studentized: $e_i* = \frac{e_i}{\sqrt{MSE}}$
+
+Studentized Deleted Residuals: $\frac{e_i}{\sqrt{MSE(1 - h_{ii})}}$
+** Diagnostics for Residuals and transformations
+
+if nonconstant variance or non-normal
+- transform x
+- transform y
+
+if non-linear
+- transform y
+
+- non constant error terms
+- Independence
+- non-normality
+- non-linear
+- Outliers
+
+
+** Tests for constancy of error variance
+Brown-Forsyth Levene's Test
+- uses median so robust to outliers
+
+Breusch-Pagan Test
+- not robust to significant departures from normality
+* Joint Estimation of $\beta_0$ and $\beta_1$
+** Simultaneous estimation of mean responses
+Bonferroni Adjustment
+
+$$
+B \sim t_{1 - \alpha/2g, n - 2}
+$$
+
+g: number of simultaneous predictions
+
+$Y_h \pm B \sqrt{MSE(1 + \frac{1}{n} + \frac{(x_h - \bar X)^2}{\Sigma(x_i - \bar X)^2})}$
+
+Good for small g (< 10)
+
+Scheffe
+
+$S \sim \sqrt{gF_{1 - \alpha, g, n - 2}}$
+
+$Y_h \pm S \sqrt{MSE(1 + \frac{1}{n} + \frac{(x_h - \bar x)^2}{\Sigma(x_i - \bar x)^2})}$
+
+Good for large g
+
+** Calibration
+
+Use a value $\hat y$ to predict the original x
+
+Let $\hat y = b_0 + b_1 x$
+
+$x_h(new) = \frac{Y_h(new) - b_0}{b_1}$
+
+$X_h(new) \pm t_{a - \alpha/2, n - 2} \sqrt{\frac{MSE}{b_1^2} (1 + \frac{1}{n} +
+\frac{(x_h(new) - \bar x)^2}{\Sigma(x_i - \bar x)^2})}$
+* Multiple Regression I
+** Residuals
+
+$E_i = Y_i - \hat Y_i = (I - H)Y \to \sigma^2(\vec e) = \sigma^2 (I - H)$
+
+Estimated by MSE(I - H)

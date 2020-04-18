@@ -350,10 +350,137 @@ MSE_{\hat \mu} = & O(n^{-2})
 
 Simulates a random sample for each stratum.
 
-Let $x_i = \frac{(i - 1 + U_i)}{n}, \ U_i iid U[0,1]$
+Let $x_i = \frac{(i - 1 + U_i)}{n}, \ U_i \ \text{iid} \ U[0,1]$
 
 $$
 \hat \mu_{MC4} = \frac{1}{n} \Sigma \frac{1}{\sqrt{2 \pi}} exp(\frac{-x^2}{2})
 $$
 
 $MSE = Bias^2 + Var(\hat \mu) = 0 + O(n^{-3})$
+
+* European Call/Put Options & Brownian Motion
+** Options
+
+*Call Option*: Contract that gives the buyer of the option the right to buy an
+ asset at a specific price at a specific time.
+
+*Put Option*: Contract that gives the buyer the right to sell an asset at a
+ specific price at a specific time.
+
+*European Option*: This is a type of option that allows execution time to be at
+ the expiration/maturity date.
+
+*Strike Price*: The predetermined price that the holder can buy or sell.
+
+*Premium*: Expected value of the return at maturity.
+
+*** Examples
+**** Call Option
+
+Premium: $4
+Strike price: $50
+Expiration: 3 Months
+
+*Three month*
+1. Stock Market Price = $100
+   pay $4, then can buy for $50 when its 100
+
+   |---------------------------------------|
+   50                                     100
+
+   The buyer executes. The return is 100 - 50 - 4 = $46 dollars
+
+2. Stock market price is $20
+
+   |---------------------------------------|
+  50                                       20
+
+  The buyer does *not* execute. Buyer loses $4.
+
+**** Put Option
+
+1. Stock Price is $100
+
+   |---------------------------------------|
+   50                                     100
+
+   The buyer does *not* execute because selling for $50 is a loss. Loses $4.
+
+2. Stock price is $20
+
+   |--------------------------------------|
+   50                                     20
+
+   The buyer executes. The return is 50 - 20 - 4 = $26
+
+*** European Options
+
+t = time in years
+S(t) = the price of the asset at time t
+T = time to expiry (maturity) of the contract
+K = strike price (the price decided at t = 0)
+r = risk-neutral interest rate
+
+*Discounted Euro Call payoff*: $max(S(T) - K, 0)e^{-rT}$
+
+*Discounted Euro Put payoff*: $max(K - S(T), 0)e^{-rT}$
+
+We only need to model $S(T)$ not $S(.)$. The fair call/put option prices are
+$\mu = E(Y)$, where Y is the discounted call/put payoff.
+
+** Geometric Brownian Motion
+
+A simple model for asset prices
+
+$S(t) = S(0) exp((r - \sigma^2/2)t + \sigma B(t)), \ t \geq 0$
+
+$B_t \sim N(0, t)$: Brownian Motion. This produces wave-like noise that fans
+wider as t increases.
+
+$\sigma$: volatility. Measure the spread of an asset. Determined by no arbitrary
+principle. i.e. the return cannot be greater than the interest rate if there is
+no risk.
+
+*** Properties
+
+- $B(0) = 0$ with probability one
+- $B(\tau)$ and $B(t) - B(\tau)$ independent for $0 \leq \tau \leq t$
+- $B(t) - B(\tau) \sim N(0, t - \tau) \forall 0 \leq \tau \leq t$
+- $cov(B(t), B(\tau)) = min(t, \tau)$ for $0 \leq t, \tau$
+
+** Black-Sholes Formula for Option Prices
+
+*Fair European Call Price*:
+$$
+S(0) \Phi(\frac{ln(S(0)/K) + (r + \sigma^2/2)T}{\sigma \sqrt{T}}) - Ke^{-rT}
+\Phi(\frac{ln(S(0)/K) + (r - \sigma^2/2)T}{\sigma \sqrt{T}})
+$$
+
+$$
+Ke^{-rT} \Phi(\frac{ln(K/S(0)) - (r - \sigma^2/2)T}{\sigma \sqrt{T}}) - S(0) \Phi(\frac{ln(K/S(0)) - (r + \sigma^2/2)T}{\sigma \sqrt{T}})
+$$
+
+*** Assumptions
+1. The stock underlying call/put options provides no dividends during the
+   call/put lifetime.
+2. There are no transaction costs for the sale/purchase of stock.
+3. Risk free interest rate (r) is constant during the option time
+
+Put-call parity: Fair European call price - fair European put price = $S(0) - k
+\ exp(-rT)$
+
+** Monte Carlo Computation of European Put
+
+1. Generate $X_1, ..., X_n$ by a normal pseudo-random number generator.
+2. Compute the sample ending stock prices: $S_i(T) = S(0) \ exp((r -
+   \sigma^2/2)T + \sigma \sqrt{T} X_i)$
+3. Compute sample discounted payoffs, $Y_i = max(K - S_i(T), 0) e^{-r T}$
+4. Average the discounted payoffs,
+
+   Fair European Put Price
+   $$
+   \mu = E(Y) \approx \frac{1}{n} \sum_{i = 1}^{n} max(K - S_i(T), 0) e^{-r T}
+   $$
+
+   Estimated error = $\pm \frac{2.58 \hat \sigma}{\sqrt{n}}$ where $\hat \sigma$
+   is the sample standard deviation of the discounted payoffs.
