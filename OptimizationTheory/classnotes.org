@@ -868,3 +868,261 @@ AQA^T = & \begin{bmatrix}1 & 1 \end{bmatrix} \begin{bmatrix} \frac{1}{w_1} & 0 \
 QA^T(AQA^T)^{-1} y = \begin{bmatrix} \frac{1}{w_1}\\ \frac{1}{w_2} \end{bmatrix} \frac{w_1 w_2}{w_1 + w_2} y
 \end{split}
 \end{equation}
+* Sparse Representation pt 2 (2020/04/21)
+** Historical Perspective
+Why is the visual system so powerful? Hypothesis is our brain uses sparse
+representation of Visual Data.
+
+Let a picture $\vec y = c_1 \vec b_1 + ... + c_n \vec b_n$
+
+so that most $c_j$ are zero.
+
+Sparse representation used to be called Sparse Coding.
+
+Robust Facial Recognition uses Sparse Subspace Clustering.
+
+Given 19 x 19 images, let $Y = [\vec Y_1 | ... | \vec Y_{45}], \ \vec y_j \in
+R^{361}$
+
+19 * 19 = 361
+
+Given Y, solve for matrix C
+$$
+Y = YC, \ diag(C) = \vec 0
+$$
+
+Since we don't want $Y_i = Y_i$, that is why the constraint $diag(C) = \vec 0$
+is introduced. It ensures that a group of vectors can be a linear combination of
+others.
+
+Each column of C is sparse since we want all column vectors to be a linear
+combination of a smaller set of columns.
+
+
+** Example - Handwritten Digit Recognition
+
+Given 28 x 28 images,
+Let $B = [\vec y_1 | ... | \vec y_{4000}]$ where each $\vec y_j \in R^{784}$
+
+- 800 images of 0, 1-800
+- 800 images of 1, 801-1600
+- 800 images of 2, 1601-2400
+- 800 images of 3, 2401-3200
+- 800 images of 8, 3201-4000
+
+Let $\vec f$ be a new image of 2. Solve for X such that $\vec f = B \vec x$
+
+Assume $\vec x$ is 20-sparse.
+
+We would like to see the only *non-zero* entries at position 1601-2400.
+
+Columns outside the range may be non-zero as well. There is a 95% probability
+that a digit will be 2, 5% it will be another digit.
+
+
+*** Qualitative Theorem
+Given $A^{m \times N}$ with $m << N$. If A is a Gaussian random matrix, then
+with overwhelming high probability, it satisfies some Exact Recovery Condition
+for s-sparse Vectors.
+
+For most large undetermined systems of linear equations, the minimal $l_1$-norm
+solution is also the sparsest solution.
+
+#+begin_quote
+Topics of Research:
+- Theory of Random Matrices
+- Banach Spaces
+#+end_quote
+
+** Solving P1 solves P0. Why?
+_PO_
+
+Find the s-sparse $\vec x \in R^N$ such that $\vec y = A \vec x$.
+
+_P1_
+
+$A \in R^{m \times N}$ and measurement $\vec y \in R^m$. Solve optimization
+problem,
+
+$$
+\underset{x \in R^{N}}{min} \| x\|_1
+$$
+
+subject to the constraint $y = A \vec x$
+
+
+Suppose $\vec y = A \vec x$ and $\vec y = A \vec z$. Suppose $\vec x$ is a
+sparse vector and $\vec z$ is *not*.
+
+We want to show that $\| \vec x \|_1 < \| \vec x \|_1$ - Null Space property of
+order S
+
+$\| \vec x \|_1 = \| \vec x - \vec z_{S} + \vec z_S \|_1$ - $\vec z$ restricted
+to some Set S. (Subtract 0 so we can use triangle inequality).
+
+Let $\vec v = \vec x - \vec z, \ \vec v \in Ker(A)$
+
+$A (\vec x + \vec z) = A \vec v = \vec 0$
+
+\begin{subequations}
+\label{first:main}
+\begin{align}
+\|\vec x\|_1 \leq \|\vec x - \vec z_S\|_1 = & \| \vec v_S\|_1 + \| \vec z_S \|_1 < \| \vec z_S\|_1 + \| \vec v_S\|_1\\
+= & \| - \vec z_{\bar S} \| + \| z_S\|_1\\
+= & \| \vec z \|_1
+\end{align}
+\end{subequations}
+
+#+begin_quote
+Didn't quite understand the jump between b -> c
+#+end_quote
+
+** Adjoint
+
+Let $T \colon V \to W$. For example, T can be a matrix from $R^3$ to $R^2$. In this
+case, V is $R^3$ and W is $R^2$
+
+We write $T*$ for the adjoint of T.
+$$
+\forall x \in V, \ \forall y \in W, \ \langle Tx, y \rangle = \langle x, T* y \rangle
+$$
+
+Horrible way to think of it, when T is a matrix, the adjoint is the same as the
+transpose.
+
+*Q*: When A is an orthogonal matrix, what is $A * A$? I
+
+Hint: each column has $l_2$-norm 1, distinct cols are perpendicular.
+
+*Q*: When A is an orthogonal matrix, why is $\| Ax \|_2 = \| x \|_2$ for every
+ vector x? (This is known as an isometry)
+
+ $$
+ \| Ax \|_2^2 = \langle Ax, Ax \rangle = \langle x, A* Ax \rangle = \langle x, x
+ \rangle = \| x \|_2^2
+ $$
+
+** Restricted Isometry Property (RIP)
+
+$A \in R^{m \times N}$ satisfies the restricted isometry property of order s and
+level $\delta_s$ $(0 < \delta_s \leq 1)$
+
+$$
+(1 - \delta_s) \| x\|_2^2 \leq \| Ax\|_2^2 \leq (1 + \delta_s) \| x\|_2^2, \
+\forall \ \text{s-sparse} \ x \in R^N
+$$
+
+#+begin_quote
+Any s columns of the matrix A are *nearly* orthogonal to each other.
+#+end_quote
+
+*Q*: What can we say about $|\langle (I - A^* A)x, x \rangle|$ when vector is
+s-sparse?
+
+This is a small number.
+
+Let $u, \ v \in R^N$ and $S \in \{1,2,3,...,N\}, \ |S| = s$
+
+What can we say about the following?
+
+$$
+|\langle u, (I - A* A)v \rangle|
+$$
+
+We would like to be able to say
+
+$|\langle u,(I - A^*A)v \rangle| \leq \delta_t \|u\|_2 \|v\|_2$
+
+*** How to think about RIP?
+
+Suppose A satisfies the restricted isometry property of order s.
+
+_Intuition_: *Hopefully*, the matrix $A* A$ behaves like the Identity Matrix. $(I
+- A*A)$ is small.
+
+If you take some s-sparse vector $\vec x$ and multiply it by $I - A* A$,
+hopefully, the resulting vector will also be small.
+
+*** Algorithm
+
+Consider the following vectors,
+
+$$
+\vec x_1 = \begin{bmatrix}
+10\\ -20\\ 3\\ -4\\ 5\\ -6\\ -7\\ 8\\ 4
+\end{bmatrix}, \ \vec x_2 = \begin{bmatrix}
+10\\ -20\\ 0\\ 0\\ 0\\ 0\\ -7\\ 8\\ 0
+\end{bmatrix}
+$$
+
+_Hard Threshold_
+
+$\tau_s(\vec x)$ is the vector that keeps the s entries that are the largest in
+Absolute Value.
+
+Example: When $s = 4, \ \tau_s(\vec x_1) = \vec x_2$
+
+$\tau_s (\cdot)$ is an operator that takes a vector and will output a sparse vector.
+
+
+\begin{subequations}
+\label{first:main2}
+\begin{align}
+\vec u_n = & \vec x_n + A* (\vec y - A \vec x_n), \ \text{where} \ \vec y = A \vec x\\
+= & \vec x_n + (A* A \vec x - A* A \vec x_n)\\
+= & (I - A* A)\vec x_n + A* A \vec x
+\end{align}
+\end{subequations}
+
+
+- expect $\vec u_n$ close to $\vec x$
+- however, $\vec u_n$ may not be sparse. Thus use $\tau_s(\cdot)$
+
+  _Iterative Hard Thresholding_
+ 
+  $$
+  \vec x_{n + 1} = \tau_x (\vec x_n + A* (\vec y - A \vec x_n))
+  $$
+** Operator Norm
+
+$\| A \| = \underset{x \neq 0}{max} \frac{\| Ax \|_2}{\| x \|_2}$
+
+How much influence does A have on a vector x? Shrink, stretch, compress?
+
+Describes how big a matrix is. If A is 2 x 3, then take $\vec x \in R^3, \ x
+\neq 0$
+
+What is
+
+$$
+\| A \| = max\{ \| Ax \|_2 \colon \| x \|_2 = 1 \}
+$$
+
+*** Inner Product
+
+Let A be a matrix . The inner product of two vectors $Ax$ and $y$ has this
+property,
+
+$$
+| \langle Ax, y \rangle | \leq \| A\| \cdot \|x\|_2 \|y\|_2
+$$
+
+Where $\|A\|$ is the operator norm of A.
+
+By Cauchy-Schwartz Inequality,
+
+$$
+\|\langle Ax, y \rangle\| \leq \|Ax\|_2 \cdot \|y\|
+$$
+
+By def,
+
+$$
+\|Ax\| \leq \|A\| \cdot \|x\|_2
+$$
+
+Thus,
+
+$$
+\|\langle Ax, y \rangle\| \leq \|A\| \cdot \|x\|_2 \cdot \|y\|_2
+$$

@@ -1,0 +1,94 @@
+---
+title: 'Homework #3'
+author: "Dustin Leatherman"
+date: "4/20/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+```
+
+# 4
+
+> Consider the European call option for an asset price modeled by a geometric
+> Brownian motion with initial asset price $100, interest rate 3%, volatility 30%,
+> and expiry date 1 year from now
+
+## a
+
+> According to the formula in the notes, text, or sample computer program on d2l,
+> compute the **exact/true** fair option price for strike prices $75, $100, $130
+
+```{r}
+S_0 = 100
+r = 0.03
+sigma = 0.3
+t = 1
+K <- c(75, 100, 130)
+
+ExactEuroCall <- S_0 * pnorm(
+    (log(S_0/K) + (r + sigma^2/2)*t) / 
+      (sigma*sqrt(t))
+  ) - K * exp(-r * t) * pnorm(
+    (log(S_0/K) + (r-sigma^2/2)*t) / (sigma*sqrt(t))
+  )
+
+ExactEuroCall
+```
+
+## b
+
+> Using simple Monte Carlo simulation with $n = 10^5$ samples, compute the approximate value of the European call option for the parameter values above. You may use the sample program on d2l. What is the relative error for each strike price? For which strike price is the relative error largest?
+
+```{r}
+n <- 10^5 #number of sample paths
+
+#generate n pseudo-random normal numbers (n samples of Brownian motion at maturity)
+x <- sqrt(t) * rnorm(n)
+
+#generate n sample stock prices at maturity
+S_T <- S_0 * exp((r - sigma^2 / 2) * t + sigma * x)
+EuroCallPrice <- c()
+EuroPutPrice <- c()
+for (k in K) {
+  EuroCallPayoff <- pmax(S_T - k, 0) * exp(-r * t)
+  EuroPutPayoff <- pmax(k - S_T, 0) * exp(-r * t)
+  EuroCallPrice <- c(EuroCallPrice, mean(EuroCallPayoff))
+  EuroPutPrice <- c(EuroPutPrice, mean(EuroPutPayoff))
+}
+
+ExactEuroPut <- K * exp(-r*t) * pnorm(
+    (log(K / S_0) - (r - sigma^2/2) * t) / (sigma*sqrt(t)) 
+  ) - S_0 * 
+  pnorm( 
+    (log(K/S_0) - (r+sigma^2/2)*t) / (sigma*sqrt(t))
+  )
+
+
+error_EuroPut<-abs(EuroPutPrice-ExactEuroPut)/ExactEuroPut
+error_EuroCall<-abs(EuroCallPrice-ExactEuroCall)/ExactEuroCall
+
+data <- data.frame(
+  "Type" = c("Call", "Call", "Call", "Put", "Put", "Put"),
+  "Strike Price" = c(K, K),
+  "Exact" = c(ExactEuroCall, ExactEuroPut),
+  "Estimate" = c(EuroCallPrice, EuroPutPrice),
+  "Estimate Error" = c(error_EuroCall, error_EuroPut)
+) 
+
+data %>% 
+  kable(
+    caption = "European Option Estimates vs Exact Prices using Black-sholes Formula"
+) %>% 
+  kable_styling(bootstrap_options = "striped", latex_options = "hold_position") %>% 
+  row_spec(which(data$Estimate.Error >= max(data$Estimate.Error)), color = "black", bold = T)
+  
+```
+
+The Strike Price and the row pertaining to the largest relative error is bolded.
