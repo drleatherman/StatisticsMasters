@@ -613,3 +613,86 @@ P(X < x) = & P(F(Y) < X)\\
 = & x
 \end{split}
 \end{equation}
+* Geometric Brownian Motion Explanation (2020/04/30)
+
+Geometric + Random term to model that the price is always increasing.
+
+GBM model used to simulate stock prices at a given time.
+
+\begin{equation}
+\begin{split}
+S(t) = S(0) exp((-r - \sigma^2/2)t + \sigma B(t))
+\end{split}
+\end{equation}
+
+Random log Return between t1 and t2
+\begin{equation}
+  \begin{split}
+    R(t_1, t_2) = ln(\frac{S(t_2)}{S(t_1)}) = (r - \sigma^2/2)(t_2 - t_1) + \sigma[B(t_2) - B(t_1)]
+  \end{split}
+\end{equation}
+
+$B(t_2) - B(t_1) \sim N(0, t_2 - t_1)$
+
+Risk Free investment (no volatility or money in the bank) ($\sigma = 0$)
+
+$E(S(t)) = S(0) exp(rt)$
+
+$exp(-\sigma^2 t/2)$: comes from _no arbitrage principle_. The mean return is
+the return on a risk-free investment.
+
+Return is a Gaussian random variable. May be positive or negative
+
+\begin{equation}
+  \begin{split}
+    ln(\frac{S(t + \Delta)}{S(t)}) = (r - \sigma^2/2) \Delta + \sigma[B(t + \Delta) - B(t)]
+  \end{split}
+\end{equation}
+
+$B(t + \Delta) - B(t) \sim N(0, \Delta)$
+
+GBM
+$S(t) = S(0) exp((r - \sigma^2/2)t + \sigma B(t))$
+
+\begin{equation}
+  \begin{split}
+    E(S(t)) = & E[S(0) exp((r - \sigma^2/2)t + \sigma B(t))]\\
+= & S(0) exp((r - \sigma^2/2)t) E(exp(\sigma B(t)))
+  \end{split}
+\end{equation}
+
+The moment generating function for $N(0, \sigma^2)$ is
+
+$M_x(t) = exp(\frac{\sigma^2 t^2}{2})$
+
+\begin{equation}
+  \begin{split}
+    E[exp(\sigma B(t))] = \sigma^2/2
+  \end{split}
+\end{equation}
+
+Cancels out the term in $E[S(t)]$
+
+** Fair European Put Price
+
+E[discounted payoff at time T]
+\begin{equation}
+  \begin{split}
+   & E[max(K - S(T, X), 0) e^{-rT}]\\
+= & \int_{-\infty}^{\infty} max(K - S(T, X), 0) e^{-rT} dx\\
+= & \int_{-\infty}^{\infty} max(K - S(T, X), 0) e^{-rT} f(x) dx\\
+= & \int_{-\infty}^{\infty} max(K - S(0)exp((r - \sigma^2/2)T + \sigma \sqrt{T} X), 0) e^{-rT} f(x) dx\\
+= & \int_{-\infty}^{X_{hi}} K - S(0)exp((r - \sigma^2/2)T + \sigma \sqrt{T} X) e^{-rT} f(x) dx + \int_{X_{hi}}^{\infty} 0\\
+= & \int_{-\infty}^{X_{hi}} K e^{-rT} f(x) dx - \int_{-\infty}^{X_{hi}} S(0)exp((r - \sigma^2/2)T + \sigma \sqrt{T} X - rT) f(x) dx\\
+= & k exp(-rT) \Phi (X_{hi}) - S(0) \int_{-\infty}^{X_{hi}} exp(r - \sigma^2/2)T + \sigma \sqrt T X - \frac{1}{\sqrt{2 \pi}} exp(-x^2/2)\\
+= & k e^{-rT} \Phi (X_{hi}) - S(0) \int_{-\infty}^{X_{hi}} \frac{1}{\sqrt{2 \pi}} exp(-\sigma^2 T/2 + \sigma \sqrt T X - X^2/2)\\
+= & k e^{-rT} \Phi (X_{hi}) - S(0) \Phi (X_{hi} - \sigma \sqrt T)\\
+  \end{split}
+\end{equation}
+
+
+Need to find out when this becomes 0.
+$K - S(0) exp((r - \sigma^2/2)T + \sigma \sqrt{T} X) \leq 0$
+
+X_hi
+$X \geq \frac{ln(k/S(0)) - (r - \sigma^2/2)T}{\sigma \sqrt T}$
