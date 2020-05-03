@@ -967,30 +967,30 @@ $A (\vec x + \vec z) = A \vec v = \vec 0$
 \begin{subequations}
 \label{first:main}
 \begin{align}
-\|\vec x\|_1 \leq \|\vec x - \vec z_S\|_1 = & \| \vec v_S\|_1 + \| \vec z_S \|_1 < \| \vec z_S\|_1 + \| \vec v_S\|_1\\
-= & \| - \vec z_{\bar S} \| + \| z_S\|_1\\
+\|\vec x\|_1 \leq & \|\vec x - \vec z_S\|_1 + \|z_{S}\|_1 \\
+= & \| \vec v_S\|_1 + \| \vec z_S \|_1\\
+< & \| \vec z_S\|_1 + \| \vec v_{\bar S}\|_1 & \ \text{via Null Space Property}\\
+= & \| - \vec z_{\bar S} \|_1 + \| z_S\|_1 & \ \|x_{\bar s}\|_1 = 0 \ \text{since x is sparse}\\
 = & \| \vec z \|_1
 \end{align}
 \end{subequations}
 
-#+begin_quote
-Didn't quite understand the jump between b -> c
-#+end_quote
+
 
 ** Adjoint
 
 Let $T \colon V \to W$. For example, T can be a matrix from $R^3$ to $R^2$. In this
 case, V is $R^3$ and W is $R^2$
 
-We write $T*$ for the adjoint of T.
+We write $T^*$ for the adjoint of T.
 $$
-\forall x \in V, \ \forall y \in W, \ \langle Tx, y \rangle = \langle x, T* y \rangle
+\forall x \in V, \ \forall y \in W, \ \langle Tx, y \rangle = \langle x, T^* y \rangle
 $$
 
 Horrible way to think of it, when T is a matrix, the adjoint is the same as the
 transpose.
 
-*Q*: When A is an orthogonal matrix, what is $A * A$? I
+*Q*: When A is an orthogonal matrix, what is $A^* A$? I
 
 Hint: each column has $l_2$-norm 1, distinct cols are perpendicular.
 
@@ -998,9 +998,14 @@ Hint: each column has $l_2$-norm 1, distinct cols are perpendicular.
  vector x? (This is known as an isometry)
 
  $$
- \| Ax \|_2^2 = \langle Ax, Ax \rangle = \langle x, A* Ax \rangle = \langle x, x
+ \| Ax \|_2^2 = \langle Ax, Ax \rangle = \langle x, A^* Ax \rangle = \langle x, x
  \rangle = \| x \|_2^2
  $$
+
+ #+begin_quote
+ This shows that $\|Ax\|_2^2$ is not too different than $\|x\|_2^2$
+ #+end_quote
+
 
 ** Restricted Isometry Property (RIP)
 
@@ -1025,9 +1030,7 @@ Let $u, \ v \in R^N$ and $S \in \{1,2,3,...,N\}, \ |S| = s$
 
 What can we say about the following?
 
-$$
-|\langle u, (I - A* A)v \rangle|
-$$
+$$|\langle u, (I - A* A)v \rangle|$$
 
 We would like to be able to say
 
@@ -1037,10 +1040,10 @@ $|\langle u,(I - A^*A)v \rangle| \leq \delta_t \|u\|_2 \|v\|_2$
 
 Suppose A satisfies the restricted isometry property of order s.
 
-_Intuition_: *Hopefully*, the matrix $A* A$ behaves like the Identity Matrix. $(I
-- A*A)$ is small.
+_Intuition_: *Hopefully*, the matrix $A^* A$ behaves like the Identity Matrix.
+$(I - A^*A)$ is small.
 
-If you take some s-sparse vector $\vec x$ and multiply it by $I - A* A$,
+If you take some s-sparse vector $\vec x$ and multiply it by $I - A^* A$,
 hopefully, the resulting vector will also be small.
 
 *** Algorithm
@@ -1068,9 +1071,9 @@ $\tau_s (\cdot)$ is an operator that takes a vector and will output a sparse vec
 \begin{subequations}
 \label{first:main2}
 \begin{align}
-\vec u_n = & \vec x_n + A* (\vec y - A \vec x_n), \ \text{where} \ \vec y = A \vec x\\
-= & \vec x_n + (A* A \vec x - A* A \vec x_n)\\
-= & (I - A* A)\vec x_n + A* A \vec x
+\vec u_n = & \vec x_n + A^* (\vec y - A \vec x_n), \ \text{where} \ \vec y = A \vec x\\
+= & \vec x_n + (A^* A \vec x - A^* A \vec x_n)\\
+= & (I - A^* A)\vec x_n + A^* A \vec x
 \end{align}
 \end{subequations}
 
@@ -1081,7 +1084,7 @@ $\tau_s (\cdot)$ is an operator that takes a vector and will output a sparse vec
   _Iterative Hard Thresholding_
  
   $$
-  \vec x_{n + 1} = \tau_x (\vec x_n + A* (\vec y - A \vec x_n))
+  \vec x_{n + 1} = \tau_x (\vec x_n + A^* (\vec y - A \vec x_n))
   $$
 ** Operator Norm
 
@@ -1103,9 +1106,7 @@ $$
 Let A be a matrix . The inner product of two vectors $Ax$ and $y$ has this
 property,
 
-$$
-| \langle Ax, y \rangle | \leq \| A\| \cdot \|x\|_2 \|y\|_2
-$$
+$$| \langle Ax, y \rangle | \leq \| A\| \cdot \|x\|_2 \|y\|_2$$
 
 Where $\|A\|$ is the operator norm of A.
 
@@ -1126,3 +1127,286 @@ Thus,
 $$
 \|\langle Ax, y \rangle\| \leq \|A\| \cdot \|x\|_2 \cdot \|y\|_2
 $$
+
+* Sparse Representation Pt 3 (2020/04/28)
+
+** Expanding on RIP
+
+Expanding upon [[*Restricted Isometry Property (RIP)][RIP]]
+
+Any S columns of the matrix A are nearly orthogonal to each other.
+
+** Expanding on IHT
+:PROPERTIES:
+:ID:       7862fddd-57f6-4744-96ee-c82367241bb4
+:END:
+
+Expanding upon the [[*Algorithm][IHT Algorithm]],
+
+$\tau_x ( \cdot )$ is an _non-linear operator_ that outputs a sparse matrix. The
+operator is non-linear because it does not /change/ the dimensions on the
+vector. i.e. $R^n \to R^n$. You will not be able to find a matrix that will return the same output as this operator.
+
+$\tau_s (\vec x_1) = x_2$
+
+Which means both $\vec x_1$ and $\vec x_2$ have an inner product.
+
+The IHT algorithm is described below:
+
+\begin{subequations}
+\label{first:main2}
+\begin{align}
+\vec u_n = & \vec x_n + A^* (\vec y - A \vec x_n), \ \text{where} \ \vec y = A \vec x\\
+= & \vec x_n + (A^* A \vec x - A^* A \vec x_n)\\
+= & (I - A^* A)\vec x_n + A^* A \vec x
+\end{align}
+\end{subequations}
+
+
+We expect $\vec u_n$ is close to $\vec x$.
+
+What does it mean for a matrix A to be small? matrix A is small when $A \vec x$
+is small.
+
+** IHT Proof
+
+Suppose A satisfies RIP of order 3s with
+
+$$
+\delta_{3s} < \frac{1}{2}
+$$
+
+$\delta_{3s}$:  relaxation.
+
+$3s$: every 3s columns need to be orthogonal
+
+$\frac{1}{2}$: how far from orthogonality the difference can be.
+
+Then the sequence $\{\vec x_n\}$ defined by
+
+$$
+\vec x_{n + 1} = \tau_S (\vec x_n + A^* (\vec y - A \vec x_n))
+$$
+
+will converge to $\vec x$
+
+#+begin_quote
+Note: 3s-sparse vectors and s-sparse vectors are *not* the same.
+#+end_quote
+
+*** How to think about this?
+
+$u$ and $v$ are 2s-sparse.
+
+Let $S_1$ be the support of $u$. Meaning $S_1 = \{j: u(j) \neq 0\}$
+
+Let $S_2$ be the support of $v$.
+
+Let $S$ be the union of $S_1$ and $S_2$. Assume $|S| = 3s$
+
+If A satisfies RIP of order 3s. Then
+
+$|\langle u, (I - A^* A)v \rangle| \leq \delta_{3s} \|u\|_2 \cdot \|v\|_2$
+
+\begin{subequations}
+\label{first:main}
+\begin{align}
+\|\langle u, (I - A^* A) \rangle\| & \leq  \|u\|_2 \ \|v(I - A^* A)\|_2\\
+& \leq \|u\|_2 \ \|v \delta_{3s}\|_2\\
+& \leq \delta_{3s} \ \|u\|_2 \ \|v\|_2
+\end{align}
+\end{subequations}
+
+*** Explanation: Why is the theorem true?
+
+We want to find a constant $\lambda, \ 0 \leq \lambda < 1$ s.t.
+
+$$
+\|x_{n+1} - x\|_2 \leq \lambda \|x_n - x\|_2, \ \forall \ n = 1,2,3,...
+$$
+
+Why?
+
+\begin{equation}
+\begin{split}
+\|x_4 - x\|_2 \leq & \lambda \|x_3 - x\|_2\\
+\|x_3 - x\|_2 \leq & \lambda \|x_2 - x\|_2\\
+\|x_2 - x\|_2 \leq & \lambda \|x_1 - x\|_2
+\end{split}
+\end{equation}
+
+Therefore,
+
+\begin{equation}
+\begin{split}
+\|x_4 - x\|_2 \leq \lambda^{n - 1} \ \|x_1 - x\|_2
+\end{split}
+\end{equation}
+
+
+In general,
+
+\begin{equation}
+\begin{split}
+\|x_{n + 1} - x\|_2 \leq \lambda^{n - 1} \ \|x_1 - x\|_2
+\end{split}
+\end{equation}
+
+as $n \to \infty, \ \lambda \to 0$ (because $\lambda < 1$)
+
+
+$$
+\vec x_{n + 1} = \tau_S (\vec x_n + A^* (\vec y - A \vec x_n))
+$$
+
+and
+
+$$
+x_{n + 1} = \tau_S (u_n)
+$$
+
+$x_{n + 1}, \ x$ are s-sparse.
+
+_Key Observation_: Which one ($x_{n + 1}$ or $x$) is a better approximation to
+$u_n$?
+
+$x_{n + 1}$
+
+Thus,
+
+\begin{equation}
+\begin{split}
+\|u_n - x_{n + 1}\|_2^2 \leq \|u_n - x\|_2^2
+\end{split}
+\end{equation}
+
+*What is $u_n - x$?*
+
+\begin{subequations}
+\label{first:second}
+\begin{align}
+u_n - x = & x_n + A^* A (x - x_n) - x\\
+= & (I - A^* A) x_n + (A^* A - I)x\\
+= & (I - A^* A) (x_n - x)
+\end{align}
+\end{subequations}
+
+*What is $u_n - x_{n + 1}$?*
+
+\begin{subequations}
+\label{first:third}
+\begin{align}
+\|u_n - x_{n + 1}\|_2^2 = & \|u_ - x_{n + 1} - (x - x)\|_2^2, & \text{subtract 0}\\
+= & \|(u_n - x) - (x_{n + 1} - x)\|_2^2, & \text{square of l2 norm os inner product}\\
+= & \langle (u_n - x) - (x_{n + 1} - x), (u_n - x) - (x_{n+1} - x) \rangle\\
+= & \|u_n - x\|_2^2 - 2 \langle u_n - x, x_{n + 1} - x \rangle + \|x_{n + 1} - x\|_2^2
+\end{align}
+\end{subequations}
+
+From the above two formulas, we getattr
+
+\begin{equation}
+\begin{split}
+-2 \langle u_n - x, x_{n + 1} - x \rangle + \|x_{n + 1} - x\|_2^2 \leq 0
+\end{split}
+\end{equation}
+
+This is the same as
+
+$$
+\|x_{n + 1} - x\|_2^2 \leq 2 \langle u_n - x, x_{n + 1} - x \rangle
+$$
+
+What is $u_n - x$?
+
+$$
+u_n - x = (I - A^* A) (x_n - x)
+$$
+
+$$
+\langle u_n - x, x_{n + 1} - x \rangle = & \langle (I - A^* A)(x_n - x), x_{n +
+1} - x \rangle
+$$
+
+
+Thus,
+
+$$
+u = x_{n - x}, \ v = x_{n + 1} - x
+$$
+
+
+Why? $x_n - x$ is 2s-sparse and $x_{n + 1} - x$ is also 2s-sparse.
+
+
+We have shown that
+
+$$
+\langle u_n - x, x_{n + 1} - x \rangle \leq \delta_{3s} \|x_{n} - x\|_2 \cdot \|x_{n + 1} - x\|_2
+$$
+
+
+\begin{equation}
+\begin{split}
+\|x_{n + 1} - x\|_2^2 \leq & 2 \delta_{3s} \|x_{n} - x\|_2 \cdot \|x_{n + 1} - x\|_2\\
+\|x_{n + 1} - x\|_2 \leq & 2 \delta_{3s} \cdot \|x_n - x\|_2
+\end{split}
+\end{equation}
+
+The hypothesis is $\delta_{3s} < \frac{1}{2}$ and so $0 \leq \lambda < 1$
+
+\begin{equation}
+\begin{split}
+\|x_{n + 1} - x\|_2 \leq \lambda \|x_n - x\|_2
+\end{split}
+\end{equation}
+
+Explanation succeeded
+
+** Convex Functions
+
+Pick any norm, $\|\cdot\|_1, \ \|\cdot\|_2$
+
+We have the triangle inequality
+
+\begin{equation}
+\begin{split}
+\|x + y\| \leq \|x\| + \|y\|
+\end{split}
+\end{equation}
+
+Suppose we define $f(x) = \|x\|$ for any $x \in R^d$ and $0 \leq \theta \leq 1$.
+
+\begin{equation}
+\begin{split}
+f(\theta x = (1 - \theta) y) = & \|\thetax + (1 - \theta)y\| \leq \|\theta x\| + \|(1 - \theta) y\|\\
+= & \theta \|x\| + (1 - \theta) \|y\|
+\end{split}
+\end{equation}
+
+
+
+Hence, $f(\theta x + (1 - \theta) y) \leq \theta f(x) + (1 - \theta) f(y)$ so
+$f(x)$ is a convex function.
+
+** Convex Optimization
+
+Suppose you have a convex function defined over a convex set C, and you want to
+find the minimum of the function over the set C.
+
+What do you have? A convex optimization problem!
+
+Let $f(x)$ be a convex function over $R^d$. Minimize $f(x)$ subject to $Ax = b$.
+
+The domain D is the set of $x \in R^d$ such that $Ax = b$.
+
+If $Ax = b$, and $Ay = b$, then $A(tx + (1 - t)y) = b$. Thus D is a convex set.
+
+If x and y are both in D, then the line segment joining x and y is entirely in D.
+
+** Why is convex optimization important?
+
+Fundamental property of Convex optimization:
+
+Any __local minimum_ of a convex function $f$ over a convex set C *must* also be
+a _global minimum_ of $f$ over C.

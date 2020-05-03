@@ -358,7 +358,7 @@ $$
 
 $MSE = Bias^2 + Var(\hat \mu) = 0 + O(n^{-3})$
 
-* European Call/Put Options & Brownian Motion
+* European Call/Put Options & Brownian Motion (2020/04/16)
 ** Options
 
 *Call Option*: Contract that gives the buyer of the option the right to buy an
@@ -484,3 +484,132 @@ Put-call parity: Fair European call price - fair European put price = $S(0) - k
 
    Estimated error = $\pm \frac{2.58 \hat \sigma}{\sqrt{n}}$ where $\hat \sigma$
    is the sample standard deviation of the discounted payoffs.
+* Linear Congruential Generators & Inverse Distributions (2020/04/23)
+** Linear Congruential Generators
+
+Random numbers aren't truly random.
+
+#+begin_quote
+"Anyone who considers arithmetic methods of producing random digits is, of
+course, in a state of sin."
+    - John Neumann
+#+end_quote
+
+$M$: A large Integer
+
+$a$: large primitive root of M ($a mod M \neq 0$)
+
+$i = 1,..,M - 1$
+
+$m_0$: integer seed
+
+$$m_i = a \ m_{i - 1} mod M, \ x_i = \frac{m_i}{M}, \ i = 1,2,...$$
+
+$x_i \neq x_j$ for $j = i + 1, ..., i + M - 2$
+
+$M - 1$: Period
+
+\begin{equation}
+\begin{split}
+m_i = & a \ m_{i - 1} \ mod \ M\\
+= & m_0 \ a^i \ mod \ M
+\end{split}
+\end{equation}
+
+$a$ is a primary root of M if $a^i$ mod M > 0 for $i = 1,..., M - 1$
+
+
+\begin{equation}
+\begin{split}
+m_i = & a[m_o a^{i - 1} \ mod \ M] \ mod M\\
+= & a[m_0 a^{i -1} - (\frac{m_o a^{i - 1}}{m}) \cdot M] \ mod \ M\\
+= & (m_o a^i - a[\frac{m_o a^{i - 1}}{m}] \ M)\\
+= & m_o a^i \ mod \ M
+\end{split}
+\end{equation}
+
+*** Example 1
+
+$M - 1 = 16$
+
+$a = 5$
+
+$m_n = 5 \ m_{n - 1} mod 16$
+
+\begin{equation}
+\begin{split}
+m_0 = & 5\\
+m_1 = & 10\\
+m_2 = & 3\\
+...\\
+m_5 = & 6\\
+m_6 = & 15\\
+...
+\end{split}
+\end{equation}
+
+
+$0 \leq \frac{m_i}{16} \leq 1$
+
+at $m_16$, it starts over again
+
+_period length_: any linear congruential generator will eventually repeat
+itself.
+
+_reproducability_: Using the same seed can produce the same /random/
+
+** Tests for Pseudo random numbers
+
+A given M may have primary roots, a, but not all may produce good sequences of
+random numbers.
+
+The numbers should fill the d-dim hypercube.
+
+_Spectral Tests_: Quantitative measure of how well the points $(x_i, x_{i + 1},
+..., x_{i + d - 1})$ fill $[0,1]^d$. This test, $l(0, M, d)$ is the largest
+possible distance between planes covering the points.
+
+
+*** Collision Test
+
+$Y_1, ..., Y_n$ iid R.V. with the common cumulative prob distr. function F so
+$x_i = F(Y_i) \sim iid U[0, 1]$
+
+
+$Z_i = (X_{(i - 1)d + 1}, ..., X_{id}), \ i = 1, ..., k = \frac{n}{d}$
+
+$Z_i \sim iid [0,1]^d$
+
+W = \# of Bins with more than one point. (collisions)
+
+Break the cube $[0,1]^d$ into *l* non overlapping Bins
+
+Check if the points are uniformly random.
+
+$\underset{n \to \infty}{lim} W \sim Poisson$
+
+$$
+\lambda = \frac{k^2}{l}
+$$
+
+If W is much smaller than $\lambda$ or much larger than $\lambda$, then it is
+not pseudo random.
+
+** Inverse Distribution
+
+Y with CDF F(Y)
+
+$$
+0 \leq F(Y) \leq 1
+$$
+
+Define a new R.V. X: $X = F(Y) \sim Unif(0, 1)$
+
+\begin{equation}
+\begin{split}
+P(X < x) = & P(F(Y) < X)\\
+= & P(Y < F^{-1} (x))\\
+= & F(F^{-1}(x))\\
+= & x
+\end{split}
+\end{equation}

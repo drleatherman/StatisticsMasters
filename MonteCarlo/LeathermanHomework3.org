@@ -1,0 +1,26 @@
+#+TITLE:     Homework 3
+#+AUTHOR:    Dustin Leatherman
+
+* 4
+#+begin_quote
+Consider the European call option for an asset price modeled by a geometric
+Brownian motion with initial asset price $100, interest rate 3%, volatility 30%,
+and expiry date 1 year from now
+#+end_quote
+
+
+** a
+
+#+begin_quote
+According to the formula in the notes, text, or sample computer program on d2l,
+compute the *exact/true* fair option price for strike prices $75, $100, $130
+#+end_quote
+
+\begin{equation}
+\begin{split}
+S(0) = & 100\\
+r = & 0.03\\
+\sigma = & 0.3\\
+t = & 1
+\end{split}
+\end{equation}
