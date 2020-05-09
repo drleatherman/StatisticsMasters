@@ -1410,3 +1410,264 @@ Fundamental property of Convex optimization:
 
 Any __local minimum_ of a convex function $f$ over a convex set C *must* also be
 a _global minimum_ of $f$ over C.
+* Gradient Descent (2020/05/05)
+
+** Method of Steepest Descent
+
+Let $x \in R^3, \ y \in R^3$. these are column vectors in $R^3$
+
+\begin{equation}
+\begin{split}
+f(x) = & f(x_1, x_2, x_3)\\
+f(y) = & f(y_1, y_2, y_3)\\
+G(y) = & G(y_1, y_2, y_3)\\
+\end{split}
+\end{equation}
+
+$\nabla f(x)$ is a gradient vector. The convention is that the gradient is a
+*row* vector.
+
+$G(y) = f(y) - \nabla f(x) y$
+
+\begin{equation}
+\begin{split}
+\nabla f(x) == & (\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}, \frac{\partial f}{\partial x_3})\\
+\nabla f(x) y = & \frac{\partial f}{\partial x_1} y_1  + \frac{\partial f}{\partial x_2} y_2 + \frac{\partial f}{\partial x_3} y_3\\
+= & \begin{bmatrix}
+\frac{\partial f}{\partial x_1} & \frac{\partial f}{\partial x_2} & \frac{\partial f}{\partial x_3}
+\end{bmatrix} \begin{bmatrix}
+y_1\\ y_2\\ y_3
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+*** Warm Up
+
+$\nabla G(y) = \nabla [f(y) - \nabla f(x) y] = \nabla f(y) - \nabla f(x)$
+
+
+We assume
+$$
+f(x) - f(y) - \nabla f(y) (x - y) \leq \frac{b}{2} \|x - y\|_2^2
+$$
+
+#+begin_quote
+This assumption drives from Taylor's Theorem  where the Hessian Matrix (Matrix
+of 2ND Derivatives) is bounded by the largest Eigenvalue.
+#+end_quote
+
+For any given x, consider the function
+
+$$
+G(y) = f(y) - \nabla f(x) y
+$$
+
+G is convex.
+
+$G(y) == G_x (y)$ because G depends on x.
+
+Suppose x is the minimizer of $G(y)$
+
+$$
+G(x) \leq G(y - \frac{1}{b} \nabla G(y))
+$$
+
+and
+
+$$
+\nabla G(y) = \nabla [f(y) - \nabla f(x) y] = \nabla f(y) - \nabla f(x)
+$$
+
+We assume $f(x)$ is $C^1$ and satisfies the condition:
+
+$$
+\forall x, \ y, \ f(x) - f(y) \leq \nabla f(y) (x - y) + \frac{b}{2} \|x - y\|_2^2
+$$
+
+#+begin_quote
+$C^1$: continuously differentiable.
+#+end_quote
+
+$G(y - a) - G(y)$
+
+Let $x = y - a, a = \frac{1}{b} \nabla G(y)$
+
+#+begin_quote
+When making an assumption, make an assumption that allows you to learn something interesting.
+#+end_quote
+
+\begin{equation}
+\begin{split}
+& \leq \nabla G(y)(x - y) + \frac{b}{2} \|x - y\|_2^2\\
+& = \nabla G(y)(-a) + \frac{b}{2} \|x - y\|_2^2\\
+& = \nabla G(y)(- \frac{1}{b} \nabla G(y)^T) + \frac{b}{2} \ \frac{1}{b^2} \|\nabla G(y)\|_2^2
+\end{split}
+\end{equation}
+
+We just demonstrated
+
+\begin{equation}
+\begin{split}
+& G(y - \frac{1}{b} \nabla G(y)) - G(y)\\
+& \leq \nabla G(y)(- \frac{1}{b} \nabla G(y)^T) + \frac{b}{2} \ \frac{1}{b^2} \|\nabla G(y)\|_2^2
+\end{split}
+\end{equation}
+
+*** Proving Gradient Descent
+
+
+$$
+\nabla G(y) = \nabla [f(y) - \nabla f(x) y] = \nabla f(y) - \nabla f(x)
+$$
+
+\begin{subequations}
+\label{first:main}
+\begin{align}
+\to & f(x) - f(y) - \nabla f(x) (x - y)\\
+= & f(x) - \nabla f(x) x - (f(y) - \nabla f(x) y)\\
+= & G(x) - G(y)\\
+\leq & G(y - \frac{1}{b} \nabla G(y)) - G(y)\\
+\leq & \nabla G(y)(- \frac{1}{b} \nabla G(y)^T) + \frac{b}{2} \ \frac{1}{b^2} \|\nabla G(y)\|_2^2\\
+= & - \frac{1}{2b} \|\nabla G(y)\|_2^2\\
+= & - \frac{1}{2b} \|\nabla f(x) - \nabla f(y)\|_2^2\\
+\end{align}
+\end{subequations}
+
+[g] says
+
+$$
+f(x) - f(y) - \nabla f(x) (x - y) \leq - \frac{1}{2b} \|\nabla f(x) - \nabla f(y)\|_2^2
+$$
+
+We define a sequence of vectors
+
+$$x_{k + 1} = x_k - \frac{1}{b} g_k$$
+
+$x_{k + 1} = x_k - \frac{1}{b} \nabla f(x_k)$
+
+Using \frac{1}{b} is *Bold*. The old style updated the step at each iteration
+which results in less iterations but more compute.
+
+$h = \frac{1}{b}$
+
+Let us write
+
+\begin{equation}
+\begin{split}
+d_k = & x_k - x^* & \text{How far the current estimate is from the minimum}\\
+\delta_k = & f(x_k) - f(x^*) & \text{Actual Error}
+\end{split}
+\end{equation}
+
+Thus,
+
+$$
+d_{k + 1} = x_{k + 1} - x^*
+$$
+
+Apply [g] with $x = x_k, \ y = x^*$
+
+\begin{equation}
+\begin{split}
+& f(x_k) - f(x^*) - g_k^T (x_k - x^*) \leq - \frac{1}{2b} \|\nabla f(x_k) - \nabla f(x^*)\|_2^2\\
+& \to \delta_k \leq g_k^T d_k - \frac{1}{2b} \|g_k\|_2^2
+\end{split}
+\end{equation}
+
+because $g_k = \nabla f(x_k)$ and $d_k = x - x^*$
+
+G: scalar
+everything else: vector
+
+_Look Closer_!
+
+
+$$x_{k + 1} - x_k = - \frac{1}{b} g_k$$ <= Using $x_{k + 1} - \frac{1}{b} g_k$
+
+$g_k = -b (x_{k + 1} - x_k)$
+
+\begin{subequations}
+\label{first:main2}
+\begin{align}
+\delta_k \leq & g_k^T d_k - \frac{1}{2b} \|g_k\|_2^2\\
+= & -b(x_{k + 1} - x_k)^T d_k - \frac{b}{2} \|x_{k + 1} - x_k\|_2^2\\
+= & - \frac{b}{2}(\|x_{k + 1} - x_k \|_2^2 + 2(x_{k + 1} - x_k)^T d_k)\\
+= & - \frac{b}{2}(\|d_{k + 1} - d_k \|_2^2 + 2(d_{k + 1} - d_k)^T d_k)\\
+= & \frac{b}{2}(\|d_k\|_2^2 + \|d_{k + 1}\|_2^2)\\
+= & \|d_{k + 1} - d_k\|_2^2 + 2(d_{k + 1} - d_k)^T d_k\\
+= & (\langle d_{k + 1}, d_{k + 1} \rangle - 2 \langle d_{k + 1}, d_k \rangle + \langle d_k, d_k \rangle) + (2 d_{k + 1}^T d_k - d_k^T d_k)
+\end{align}
+\end{subequations}
+
+#+begin_quote
+why [f]?
+#+end_quote
+
+To summarize,
+
+$$
+\delta_k \leq \frac{b}{2} (\|d_k\|_2^2 - \|d_{k + 1}\|_2^2)
+$$
+
+$$
+\sum_{i = 1}^{n} \delta_i \leq \frac{b}{2} (\|d_0\|_2^2 - \|d_{n}\|_2^2 \leq
+\frac{b}{2} \|d_0\|_2^2
+$$
+
+What do we know about convergent series?
+
+If $\sum_{k = 1}^{\infty} \delta_k$ is convergent, then $\delta_k \to 0$ as $k
+\to \infty$
+
+** Global Convergence
+
+Start with any $x_0$. We define the sequence of vectors
+
+$$x_{k + 1} = x_k - \frac{1}{b} g_k$$
+
+$x_{k + 1} = x_k - \frac{1}{b} \nabla f(x_k)$
+
+Then, $f(x_k) - f(x^*) \to 0$ as $k \to \infty$
+
+We can pick N as large as we want,
+
+$$
+\sum_{k = 0}^{N} \delta_k \leq \frac{b}{2} \|d_0\|_2^2
+$$
+
+Recall that $g_k == \nabla f(x_k)$ and $g_{k + 1} == \nabla f(x_{k + 1})$
+
+We can also show that $\|g_{k + 1}\| \leq \|g_k\|$
+
+The length of the gradient vectors are monotone decreasing.
+
+** About Gradient Descent
+
+Gradient Descent is /not/ a single method. It is a large collection of methods.
+
+1. Steepest Descent with a constant step size
+   $$x_{k + 1} = x_k - h \nabla f(x_k)$$
+
+2. Use a different step size at each iteration
+   $$x_{k + 1} = x_k - \alpha_k \nabla f(x_k)$$
+
+
+*** Example
+
+Select $\alpha_k$ to minimize $f(x_k - d_k g_k)$, where $g_k = \nabla f(x_k)$.
+Lots of algorithms to choose $\alpha_k$
+
+We assume $f(x)$ is $C^1$ and satisfies
+
+$$
+f(x) - f(y) \leq \nabla f(y)(x - y) + \frac{b}{2} \|x - y\|_2^2
+$$
+
+If we assume f is convex, differentiable, and its gradient vector satisfies the
+Lipshitz Condition
+
+$$
+\|\nabla f(x) - \nabla f(y)\| \leq b \|x - y\|
+$$
+
+for any two points $x, \ y$, then the condition (*) is true.
