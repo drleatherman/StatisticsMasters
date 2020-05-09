@@ -1431,7 +1431,7 @@ $G(y) = f(y) - \nabla f(x) y$
 
 \begin{equation}
 \begin{split}
-\nabla f(x) == & (\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}, \frac{\partial f}{\partial x_3})\\
+\nabla f(x) \equiv & (\frac{\partial f}{\partial x_1}, \frac{\partial f}{\partial x_2}, \frac{\partial f}{\partial x_3})\\
 \nabla f(x) y = & \frac{\partial f}{\partial x_1} y_1  + \frac{\partial f}{\partial x_2} y_2 + \frac{\partial f}{\partial x_3} y_3\\
 = & \begin{bmatrix}
 \frac{\partial f}{\partial x_1} & \frac{\partial f}{\partial x_2} & \frac{\partial f}{\partial x_3}
@@ -1464,7 +1464,7 @@ $$
 
 G is convex.
 
-$G(y) == G_x (y)$ because G depends on x.
+$G(y) \equiv G_x (y)$ because G depends on x.
 
 Suppose x is the minimizer of $G(y)$
 
@@ -1526,10 +1526,10 @@ $$
 \to & f(x) - f(y) - \nabla f(x) (x - y)\\
 = & f(x) - \nabla f(x) x - (f(y) - \nabla f(x) y)\\
 = & G(x) - G(y)\\
-\leq & G(y - \frac{1}{b} \nabla G(y)) - G(y)\\
+= & G(y - \frac{1}{b} \nabla G(y)) - G(y)\\
 \leq & \nabla G(y)(- \frac{1}{b} \nabla G(y)^T) + \frac{b}{2} \ \frac{1}{b^2} \|\nabla G(y)\|_2^2\\
 = & - \frac{1}{2b} \|\nabla G(y)\|_2^2\\
-= & - \frac{1}{2b} \|\nabla f(x) - \nabla f(y)\|_2^2\\
+= & - \frac{1}{2b} \|\nabla f(x) - \nabla f(y)\|_2^2
 \end{align}
 \end{subequations}
 
@@ -1635,11 +1635,63 @@ $$
 \sum_{k = 0}^{N} \delta_k \leq \frac{b}{2} \|d_0\|_2^2
 $$
 
-Recall that $g_k == \nabla f(x_k)$ and $g_{k + 1} == \nabla f(x_{k + 1})$
+Recall that $g_k \equiv \nabla f(x_k)$ and $g_{k + 1} \equiv \nabla f(x_{k + 1})$
 
 We can also show that $\|g_{k + 1}\| \leq \|g_k\|$
 
 The length of the gradient vectors are monotone decreasing.
+
+We've shown that
+
+$$
+f(x) - f(y) - \nabla f(x) (x - y) \leq - \frac{1}{2b} \|\nabla f(x) - \nabla f(y)\|_2^2
+$$
+
+Similarly,
+
+
+$$
+f(y) - f(x) - \nabla f(y) (y - x) \leq - \frac{1}{2b} \|\nabla f(x) - \nabla f(y)\|_2^2
+$$
+
+Summing the above inequalities yields
+
+$$-\nabla f(x) (x - y) - \nabla f(y) (y - x) \leq - \frac{1}{b} \|\nabla f(x) -
+\nabla f(y)\|_2^2$$
+
+which means,
+
+$$
+(\nabla f(x) - \nabla f(y)) (x - y) \geq \frac{1}{b} \|\nabla f(x) - \nabla
+f(y)\|_2^2 \ \ \ \text{**}
+$$
+
+Let $x = x_{k + 1}, \ y = x_k$. Then, from (**),
+
+$$
+(x_{k + 1} - x_k)^T (g_{k + 1} - g_k) \geq \frac{1}{b} \|g_{k + 1} - g_k\|_2^2
+$$
+
+But $x_{k + 1} = x_k - \frac{1}{b} g_k$ so that
+
+$$
+-\frac{1}{b} (g_k)^T (g_{k + 1} - g_k) \geq \frac{1}{b} \|g_{k + 1} - g_k\|_2^2
+$$
+
+\begin{subequations}
+\label{first:main}
+\begin{align}
+\|g_{k + 1}\|_2^2 \leq & g_{k + 1}^T g_k\\
+\leq & \|g_{k + 1}\| \|g_k\| & \text{By Cauchy-Schwartz}
+\end{align}
+\end{subequations}
+
+#+begin_quote
+Why is a true?
+#+end_quote
+
+That means, $\|g_{k+1}\| \leq \|g_k\|$, which is the desired conclusion
+
 
 ** About Gradient Descent
 
@@ -1671,3 +1723,21 @@ $$
 $$
 
 for any two points $x, \ y$, then the condition (*) is true.
+
+** Challenge
+We have already demonstrated
+$$
+\sum_{i = 1}^{100} \delta_i \leq \frac{b}{2} \|d_0\|_2^2
+$$
+
+and $ \|g_{k + 1}\| \leq \|g_k\|$. Our notation is $\delta_k = f(x_k) - f(x^*)$
+
+You can show that the rate of convergence is given by
+
+$$
+\delta_k \leq (\frac{1}{k + 1}) \frac{b}{2} \|d_0\|_2^2
+$$
+
+#+begin_quote
+TODO: Prove this out.
+#+end_quote
