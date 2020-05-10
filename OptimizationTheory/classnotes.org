@@ -1545,7 +1545,7 @@ $$x_{k + 1} = x_k - \frac{1}{b} g_k$$
 
 $x_{k + 1} = x_k - \frac{1}{b} \nabla f(x_k)$
 
-Using \frac{1}{b} is *Bold*. The old style updated the step at each iteration
+Using $\frac{1}{b}$ is *Bold*. The old style updated the step at each iteration
 which results in less iterations but more compute.
 
 $h = \frac{1}{b}$
@@ -1593,15 +1593,14 @@ $g_k = -b (x_{k + 1} - x_k)$
 = & -b(x_{k + 1} - x_k)^T d_k - \frac{b}{2} \|x_{k + 1} - x_k\|_2^2\\
 = & - \frac{b}{2}(\|x_{k + 1} - x_k \|_2^2 + 2(x_{k + 1} - x_k)^T d_k)\\
 = & - \frac{b}{2}(\|d_{k + 1} - d_k \|_2^2 + 2(d_{k + 1} - d_k)^T d_k)\\
-= & \frac{b}{2}(\|d_k\|_2^2 + \|d_{k + 1}\|_2^2)\\
 = & \|d_{k + 1} - d_k\|_2^2 + 2(d_{k + 1} - d_k)^T d_k\\
-= & (\langle d_{k + 1}, d_{k + 1} \rangle - 2 \langle d_{k + 1}, d_k \rangle + \langle d_k, d_k \rangle) + (2 d_{k + 1}^T d_k - d_k^T d_k)
+= & (\langle d_{k + 1}, d_{k + 1} \rangle - 2 \langle d_{k + 1}, d_k \rangle + \langle d_k, d_k \rangle) + (2 d_{k + 1}^T d_k - 2d_k^T d_k)\\
+= & (\langle d_{k + 1}, d_{k + 1} \rangle - 2 \langle d_{k + 1}, d_k \rangle + \langle d_k, d_k \rangle) + (2 \langle d_{k + 1}, d_k \rangle - 2 \langle d_k, d_k \rangle)\\
+= & - \frac{b}{2}(\langle d_{k + 1}, d_{k + 1} \rangle - \langle d_k, d_k \rangle)\\
+= & \frac{b}{2}(\|d_k\|_2^2 + \|d_{k + 1}\|_2^2)\\
 \end{align}
 \end{subequations}
 
-#+begin_quote
-why [f]?
-#+end_quote
 
 To summarize,
 
@@ -1679,6 +1678,20 @@ $$
 $$
 
 \begin{subequations}
+\label{first:mythird}
+\begin{align}
+-\frac{1}{b} (g_k)^T (g_{k + 1} - g_k) \geq & \frac{1}{b} \|g_{k + 1} - g_k\|_2^2\\
+- (g_k)^T (g_{k + 1} - g_k) \geq & \|g_{k + 1} - g_k\|_2^2\\
+- g_k^T g_{k + 1} + g_k^T g_k) \geq & \|g_{k + 1} - g_k\|_2^2\\
+\langle g_k, g_k \rangle - \langle g_k, g_{k+1} \rangle \geq & \|g_{k + 1} - g_k\|_2^2\\
+\langle g_k, g_k \rangle - \langle g_k, g_{k+1} \rangle \geq & \langle g_{k + 1}, g_{k + 1} \rangle - 2 \langle g_{k + 1}, g_k \rangle + \langle g_k, g_k \rangle\\
+\langle g_k, g_{k+1} \rangle \geq & \langle g_{k + 1}, g_{k + 1} \rangle\\
+\|g_{k+1}\|_2^2 \leq & g_{k+1}^T g_k
+\end{align}
+\end{subequations}
+
+
+\begin{subequations}
 \label{first:main}
 \begin{align}
 \|g_{k + 1}\|_2^2 \leq & g_{k + 1}^T g_k\\
@@ -1686,9 +1699,6 @@ $$
 \end{align}
 \end{subequations}
 
-#+begin_quote
-Why is a true?
-#+end_quote
 
 That means, $\|g_{k+1}\| \leq \|g_k\|$, which is the desired conclusion
 
@@ -1730,7 +1740,7 @@ $$
 \sum_{i = 1}^{100} \delta_i \leq \frac{b}{2} \|d_0\|_2^2
 $$
 
-and $ \|g_{k + 1}\| \leq \|g_k\|$. Our notation is $\delta_k = f(x_k) - f(x^*)$
+and $\|g_{k + 1}\| \leq \|g_k\|$. Our notation is $\delta_k = f(x_k) - f(x^*)$
 
 You can show that the rate of convergence is given by
 
