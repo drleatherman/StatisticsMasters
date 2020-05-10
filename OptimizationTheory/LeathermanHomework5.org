@@ -1,0 +1,105 @@
+#+TITLE:     Homework 5
+#+AUTHOR:    Dustin Leatherman
+
+* 1
+
+** a
+
+#+begin_quote
+Change the step size h to 0.03 and run the program. What are the output values
+of x and y? After how many iterations?
+#+end_quote
+
+[x, y] = [0.12463, 2.97990] after *495* iterations
+
+** b
+
+#+begin_quote
+Change the step size h to 0.01, set $\epsilon = 0.00005$, set the maximum number
+of iterations to be 5000, and run.
+
+What are the output values of x and y? After how many iterations?
+#+end_quote
+
+
+[x, y] = [0.052461, 2.991510] after *3253* iterations
+
+** c
+
+#+begin_quote
+Modify the program so that it solves for x and y so that
+
+$$
+(x - 10)^4 (y - 1)^2 = 0, \ (y - 12)^4 (x - 1)^2 = 0
+$$
+
+Do not forget to change the jacobian matrix. Use the initial estimates $[x_0,
+y_0] = [11, 11]$.
+
+Use step size $h = 0.00002$ [note the number of zeros], set $\epsilon = 0.0004$.
+
+Set the maximum number of iterations to be 80,000 and run.
+
+What are the output values of x and y? After how many iterations?
+#+end_quote
+
+#+BEGIN_SRC octave
+    Gvect = [(x - 10)^4 * (y - 1)^2, (y - 12)^4 * (x - 1)^2]';
+
+    %%% compute the Jacobian matrix
+
+    Jmat = [4 * (x - 10)^3 * (y - 1)^2, (y - 12)^4 * 2 * (x - 1); (x - 10)^4 * 2 * (y - 1), 4 * (y - 12)^3 * (x - 1)^2];
+#+END_SRC
+
+[x, y] = [10.111, 11.873] after *69490* iterations
+
+* 2
+
+#+begin_quote
+Suppose we want to find the minimum value of $$f(x,y) = (x - 1)^4 + (y - 3)^4 +
+(x - y)^6$$
+
+Apply the method of steepest descent.
+
+For the initial point, set $x_0 = y_0 = 10$.
+
+Here $x_0$ and $y_0$ are the x and y coordinates of the vector, $x_0$.
+
+At each iteration k, $$x_{k+1} = x_k - h g_k$$
+
+where $g_k$ is the gradient vector of $f$ evaluated at $x_k$.
+
+Exit the Loop if we reach the max number of iterations or if $$\frac{1}{2}
+g_k^T g_k < \epsilon$$
+
+Use the step size $h = 0.00002$, set $\epsilon = 0.0004$, and max iterations to 80,000.
+#+end_quote
+
+
+#+BEGIN_SRC octave
+h = 0.00002; eps = 0.0004; N = 80000;
+x = 10; y = 10;
+xvect = [x, y]';
+x_and_y = zeros(N,2);
+
+for i = 1:N
+  G = [(x - 1)^4 + (y - 3)^4 + (x - y)^6]';
+  J = [4 * (x - 1)^3 + (y - 3)^4 + 6 * (x - y)^5; (x - 1)^4 + 4 * (y - 3)^3 - 6 * (x - y)^5];
+  xvect = xvect - h * J * G;
+
+  x_and_y(i,:) = xvect;
+  x = xvect(1);  y = xvect(2);
+
+  Fvalue = 0.5*(G'*G);
+
+  if Fvalue < eps
+    break
+  end
+end
+
+disp('The approximate solution found by Gradient Descent is ');
+disp('x = '); disp( x); disp('y = '); disp(y);
+
+disp('Output after '); disp(trial); disp(' iterations  is [x, y] = ');
+disp(xvect);
+#+END_SRC

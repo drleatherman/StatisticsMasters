@@ -264,12 +264,12 @@ RMSE(\hat \mu) = \sqrt{Var(\hat \mu) + [bias(\hat \mu)]^2}
 $$
 
 Summary
-| Estimator($\hat{\mu}$) | bias($\hat \mu$) | Var($\hat \mu$)  | RMSE($\hat \mu$)          |
-|------------------------+------------------+------------------+---------------------------|
-| $\hat \mu_{MC1}$       |                0 | 0.0023345 n^{-1} | 0.048420 n^{-\frac{1}{2}} |
-| $\hat \mu_{MC2}$       |                0 | 0.22483 n^{-1}   | 0.47416 n^{\frac{-1}{2}}  |
-| $\hat \mu_{MC3}$       |      O($n^{-1}$) | 0                | O($n^{-1}$)               |
-| $\hat \mu_{MC4}$       |                0 | O($n^{-3}$)      | O($n^{\frac{-3}{2}}$)     |
+| Estimator($\hat{\mu}$) | bias($\hat \mu$) | Var($\hat \mu$)  | RMSE($\hat \mu$)            |
+|------------------------+------------------+------------------+-----------------------------|
+| $\hat \mu_{MC1}$       |                0 | 0.0023345 n^{-1} | 0.048420 $n^{-\frac{1}{2}}$ |
+| $\hat \mu_{MC2}$       |                0 | 0.22483 n^{-1}   | 0.47416 $n^{\frac{-1}{2}}$  |
+| $\hat \mu_{MC3}$       |      O($n^{-1}$) | 0                | O($n^{-1}$)                 |
+| $\hat \mu_{MC4}$       |                0 | O($n^{-3}$)      | O($n^{\frac{-3}{2}}$)       |
 
 
 **** First Estimator - Simple Monte Carlo Estimator
@@ -491,8 +491,7 @@ Random numbers aren't truly random.
 
 #+begin_quote
 "Anyone who considers arithmetic methods of producing random digits is, of
-course, in a state of sin."
-    - John Neumann
+course, in a state of sin." - John Neumann
 #+end_quote
 
 $M$: A large Integer
@@ -696,3 +695,249 @@ $K - S(0) exp((r - \sigma^2/2)T + \sigma \sqrt{T} X) \leq 0$
 
 X_hi
 $X \geq \frac{ln(k/S(0)) - (r - \sigma^2/2)T}{\sigma \sqrt T}$
+* Random Number Generation pt 2 (2020/05/07)
+
+** Acceptance-Rejection Method
+
+$Y_i, \ W_i \sim iid R.V$
+
+$Y_i \sim$ common PDF, $f_Y$
+
+$W_i \sim U[0,1]$
+
+$Let c  \leq 1 \ s.t. \ \ \frac{c f_Z (z)}{f_Y (z)}$
+
+$f_Z$: PDF of the Random variable we want to generate.
+
+We want C to be as close to 1 as possible. It is generally found by calculation
+
+$\frac{1}{c} = sup_z \frac{f_Z (z)}{f_Y (z)} == \frac{f_Y (y)}{c} = sup f_Z (y)$
+
+1/c is the largest value of the ratio between $f_Z(y), \ f_Y (y)$
+#+begin_quote
+sup = supremum = maximum of a given set
+#+end_quote
+
+$k = 0, ..., m$ for $i = 1,2,...$
+
+if $W_i \leq \frac{c f_Z(Y_i)}{f_Y (Y_i)}, \ \ k = k + 1, \ \ Z_k = Y_i$
+
+$Z_1, ..., Z_n$ iid with PDF $f_Z$
+
+_Goal_: Want to simulate a random sample from Z with known PDF $f_Z (y)$
+
+*What we know*
+1. We can simulate random samples $Y_1, ..., Y_n$ from $f_Y (y)$. $f_Y (y)$ is
+   known and has the same support as Z. The support being the domain of a R.V
+   where the pdf is non-zero. For example, values using the Beta distr. PDF is between 0 and 1,
+   so is $U[0,1]$
+2. We can simulate random samples from a Uniform Distribution $W_1, ..., W_n
+   \sim U[0,1]$
+
+#+CAPTION: Acceptance-Rejection method using two distributions
+#+ATTR_LaTeX: :width 10.6cm :height 7cm\textwidth
+#+LABEL: fig:acceptreject
+
+[[./resources/acceptreject.jpg]]
+
+
+*** Proof
+
+How do we know whether the accepted samples are sufficient for a random sample?
+
+\begin{equation}
+\begin{split}
+\lim_{\Delta \to 0} & \frac{P(Y \in [y, y + \Delta] | \ \text{Y accepted to be Z})}{\Delta} = f_Z (y)\\
+\lim_{\Delta \to 0} & \frac{P(Y \in [y, y + \Delta] \cap \ \text{Y accepted to be Z})}{\Delta \cdot P(\text{Y accepted to be Z})}\\
+\lim_{\Delta \to 0} & \frac{f_Y(y) \times P(W \leq c f_Z(y)/ f_Y(y))}{\Delta \cdot c} & \ \text{Using definition for P(Y is Z)}\\
+\lim_{\Delta \to 0} & \frac{f_Y(y) \times c f_Z(y)/ f_Y(y)}{c} = f_Z (y)
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+P(\text{Y accepted to be Z}) = & \lim_{n \to \infty} \sum_{i = 1}^{n} P (w \leq \frac{c f_Z (y_i)}{f_Y (y_i)}) f_Y (y_i) \cdot \Delta\\
+= & \lim_{n \to \infty} \sum_{i = 1}^{n} P (\text{accept } y_i | y_i) \cdot P(y_i)\\
+= & \int_\Omega \frac{c f_Z (y_i)}{f_Y (y_i)} \cdot f_Y (y_i) dy\\
+= & c \int_\Omega f_Z (y) dy\\
+= & c \cdot 1 = c
+\end{split}
+\end{equation}
+
+$\Omega$: Support of Y and Z
+
+- You *must* know the PDF function $f_Y, \ f_Z$ explicitly
+- Generating $Y_1, Y_2,...$ with PDF $f_Y$ may be done using the inverse
+  transformation method.
+
+*** Application
+
+Generate a Sequence of 1000 random numbers.
+
+$$
+f_Z (z) = 20z (1 - z)^3, \ 0 < z < 1, \ z \sim Beta(\alpha = 2, \beta = 4)
+$$
+
+$f_Y \sim U[0,1]$
+
+1. The candidate distribution $f_Y(y) = 1, \ 0 < y < 1$
+2. What is the value of C?
+
+   $$
+   \frac{1}{c} = sup \ \frac{f_Z(y)}{f_Y(y)}
+   $$
+
+    $Q = \frac{f_Z(y)}{f_Y(y)} = \frac{20z(1 - z)^3}{1}$.  Need to find max of Q
+
+    \begin{subequations}
+    \label{first:main}
+    \begin{align}
+    \frac{dQ}{dz} = & 20 z(1 - z)^3 - 60z(1 - z)^2\\
+    = & (1 - z)^2 (20 (1 - z) - 60z)\\
+    = & (1 - z)^2 (20 - 80z) = 0\\
+    z = & 1, \frac{1}{4}
+    \end{align}
+    \end{subequations}
+
+    Since $\frac{1}{4}$ is the smallest,
+
+    $$
+    \frac{20 (0.25)(1 - 0.25)^3}{1} = \frac{135}{64} \to \frac{1}{c} \to c = \frac{64}{135}
+    $$
+
+3. How many random samples are required?
+
+    Let N be the number of iterations required.
+
+    $E(N) = \frac{1000}{c} = \frac{1000 \cdot 135}{64} = \frac{135000}{64}$
+
+    $N = 1.1 \cdot E(N) = 2321$ random samples
+
+4. How to simulate
+
+   1. Sim N random samples from $U[0,1]$ Y
+   2. Sim N random samples from $U[0,1]$ W
+   3. Make decision. if $W_i < \frac{c f_Z(y)}{f_Y(y)}$ then reject
+*** Normal Distribution
+
+$f_Z (z) = \frac{1}{\sqrt {2 \pi}} exp(-z^2/2), \ \ - \infty \leq z \leq \infty$
+
+Want to simulate a Normal Z but we need to find a candidate distribution with
+the same support. No other distributions have the same support as the Normal but
+many have the support $0 \leq y < \infty$.
+
+$|z| < \infty$
+
+\begin{equation}
+\begin{split}
+P(|z| \leq z) = & P(-z \leq Z \leq z)\\
+= & \Phi (z) - \Phi(-z)\\
+= & \Phi (z) - (1 - \Phi (z))\\
+= & 2 \Phi (z) - 1
+\end{split}
+\end{equation}
+
+$f_{|z|} (z) = \frac{2}{\sqrt{2 \pi}} exp(- z^2/2)$
+
+$P(z < 0) = P(z \geq 0) = 0.5$
+
+We will need to simulate random samples from $|z|$.
+
+1. What is the candidate distr. for Y?
+
+   $$
+   Y \sim exp(1), \ \ f_Y(z) = exp(- z), \ 0 \leq z < \infty
+   $$
+
+2. What is the value of c?
+
+   $$
+   Q = \frac{1}{c} = \frac{f_Z(z)}{f_Y(z)} = \frac{\frac{2}{\sqrt{2 \pi}}
+   exp(-z^2/2)}{exp(-z)} = \frac{2}{\sqrt{2 \pi}} exp(-z^2/2 + z)
+   $$
+
+   Maximize Q which means maximize $-z^2/2 + z$ (z = 1)
+
+   $Q = \frac{2}{\sqrt{2 \pi}} exp(0.5) = \sqrt{\frac{2e}{\pi}} = \frac{1}{6}$
+
+   $c = \sqrt{\frac{\pi}{2e}}$
+
+   $Q = \frac{1}{c} = \frac{c f_Z(y)}{f_Y(y)} = sqrt{\frac{\pi}{2e}} \cdot \sqrt{\frac{2}{\pi}} exp(-z^2/2 + z) = exp(-z^2/2 + z - 0.5)$
+
+   $c \frac{f_Z(y)}{f_Y(y)} = exp(- \frac{y^2}{2} + y - 0.5) = exp(-\frac{1}{2}(y - 1)^2)$
+
+3. How many random samples?
+
+   $E(N) = \frac{1000}{c} \approx 1316$
+
+    $N = 1.1 \cdot 1316 = 1448$ random samples
+
+4. Simulate
+
+   1. Simulate R.S $U[0,1]$ W
+   2. Simulate $.S from $Y \sim exp(1)$
+      Inverse transformation method yields $Y_i = - log(x_i)$
+
+      \begin{equation}
+      \begin{split}
+      F_Y(y) = & 1 - e^{-1}\\
+      F_Y^{-1}(x) = & -log(x_i) OR \ -log(1 - x_i)
+      \end{split}
+      \end{equation}
+
+   3. If $W_i \leq exp(-0.5(y - 1)^2)$, accept.
+   4. Simulate R.S $V_i \sim U[0,1]$
+
+      $Z_k = sign(V_i - 0.5) Y_i$
+
+** Brownian Motion Time Differencing
+
+Sometimes instead of a scalar, we want to generate random functions, $B$.
+
+*** Properties
+- $B(0) = 0$
+- $B(\tau)$ and $B(t) - B(\tau)$ are indep for all $0 \leq \tau \leq t$
+- $B(t) - B(\tau) \sim N(0, t - \tau)$
+- $B(t)$ and $B(\tau)$ are _not_ independent.
+  $cov(t, \tau) = min(t, \tau) = \tau$
+- May be generated at discrete times, $0 = t_0 < t_1 < ... < t_\alpha = T$
+
+  $B(0) = 0, B(t_k) = B(t_{k - 1}) + X_k \sqrt{t_k - t_{k - 1}}, k = 1,...,d$
+
+  $X_1,...,X_d$ are iid.
+
+*** Linear Interpolation
+
+#+CAPTION: Linear Interpolation
+#+ATTR_LaTeX: :width 10.6cm :height 7cm\textwidth
+#+LABEL: fig:second
+[[./resources/linear_interpolation.jpg]]
+
+*** Generating Brownian Sample Paths
+
+$d$: number of time nodes
+
+$$
+0, \frac{T}{d}, \frac{2T}{d}, ..., \frac{(d - 1)T}{d}, \frac{dT}{d} = T
+$$
+
+to generate sample paths of brownian motion.
+
+1. Generate $d$ standard normal random numbers $X_1, ..., X_d$
+2. Brownian motion at time $\frac{kT}{d}, \ k = 1,2,...,d$
+
+__Relationship between Brownian Motion and Geometric Brownian Motion_
+
+They are the same thing.
+
+/Brownian Motion/
+
+$$
+S(T) = S(0) exp(rT - T\frac{\sigma^2}{2} + \sigma B(T))
+$$
+
+/Geometric Brownian Motion/
+
+$$
+S(T) = S(0) exp(T(r - \frac{\sigma^2}{2}) + \sigma B(T))
+$$
