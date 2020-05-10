@@ -79,18 +79,19 @@ Use the step size $h = 0.00002$, set $\epsilon = 0.0004$, and max iterations to 
 #+BEGIN_SRC octave
 h = 0.00002; eps = 0.0004; N = 80000;
 x = 10; y = 10;
-xvect = [x, y]';
+xvect = [x, y]'
 x_and_y = zeros(N,2);
 
 for i = 1:N
   G = [(x - 1)^4 + (y - 3)^4 + (x - y)^6]';
-  J = [4 * (x - 1)^3 + (y - 3)^4 + 6 * (x - y)^5; (x - 1)^4 + 4 * (y - 3)^3 - 6 * (x - y)^5];
-  xvect = xvect - h * J * G;
+  J = [4 * (x - 1)^3 + 6 * (x - y)^5; 4 * (y - 3)^3 - 6 * (x - y)^5];
+  xvect = xvect - h * J;
 
   x_and_y(i,:) = xvect;
-  x = xvect(1);  y = xvect(2);
-
-  Fvalue = 0.5*(G'*G);
+  x = xvect(1);
+  y = xvect(2);
+ 
+  Fvalue = 0.5*(J'*J);
 
   if Fvalue < eps
     break
@@ -100,6 +101,21 @@ end
 disp('The approximate solution found by Gradient Descent is ');
 disp('x = '); disp( x); disp('y = '); disp(y);
 
-disp('Output after '); disp(trial); disp(' iterations  is [x, y] = ');
+disp('Output after '); disp(i); disp(' iterations  is [x, y] = ');
 disp(xvect);
 #+END_SRC
+
+** a
+
+#+begin_quote
+What are the output values of x and y? After how many iterations?
+#+end_quote
+
+[x, y] = [1.6494, 2.3586] after 60112 iterations
+** b
+
+#+begin_quote
+What is the minimum value of $f(x,y)$?
+#+end_quote
+
+0.47433
