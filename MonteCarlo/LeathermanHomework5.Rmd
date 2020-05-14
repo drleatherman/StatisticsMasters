@@ -1,0 +1,54 @@
+---
+title: 'Homework #5'
+author: "Dustin Leatherman"
+date: "5/11/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+> Consider the situation where the maximum temperature in degrees Farenheit for the seven successive days in a certain week is the vector random variable, $(T_1, ..., T_7)$, where
+> $$T_1 \sim U(70,80)$$
+> $$T_{j + 1} = 14 + 0.8T_j + 3 X_j, \ j = 1,...,6$$
+> where $X_1, ..., X_6 \ iid \ N(0,1)$. A weather derivative pays $100 if there are two or more days with maximum temperatures below 70 degrees. Using Monte Carlo simulation compute the fair price of this derivative with relative error of no more than 1%.
+
+```{r}
+set.seed(5623453)
+num_days <- 6
+simulateDailyTemperature <- function(t, x) 14 + 0.8 * t + 3 * x
+payout <- function(v) ifelse(length(v[v <= 70]) > 1, 100, 0)
+
+N <- 10^5
+
+simulateWeeklyTemperature <- function() {
+  ti <- runif(1, 70, 80)
+  out <- c(ti)
+  for (i in 1:num_days) {
+    x <- rnorm(1)
+    ti <- simulateDailyTemperature(ti, x)
+    out <- append(out, ti)
+  }
+  return (out)
+}
+
+alpha <- 0.01
+z <- qnorm(1 - alpha)
+
+nWeeks <- replicate(N, payout(simulateWeeklyTemperature()))
+est <- mean(nWeeks)
+nWeeks.sd <- sd(nWeeks)
+
+lcl <- est - z * nWeeks.sd / sqrt(N)
+ucl <- est + z * nWeeks.sd / sqrt(N)
+```
+
+**Estimated Payout**: $`r est`
+
+**99% Lower Confidence Limit**: $`r round(lcl, 2)`
+
+**99% Upper Confidence Limit**: $`r round(ucl, 2)`

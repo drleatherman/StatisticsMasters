@@ -1486,6 +1486,13 @@ $$
 
 #+begin_quote
 $C^1$: continuously differentiable.
+What happens y = x?
+$$
+\nabla G(x) = \nabla f(x) - \nabla f(x) = 0
+$$
+
+meaning that its a minimum, which is a global minimum because G is converse.
+Thus explaining _why_ x is a minimizer?
 #+end_quote
 
 $G(y - a) - G(y)$
@@ -1751,3 +1758,374 @@ $$
 #+begin_quote
 TODO: Prove this out.
 #+end_quote
+
+* Lagrangian Multipliers (2020/05/12)
+** Prelude
+
+Find MAX $x^2 + y^2$ subject to $x + y = 4$
+
+Increase radius until it hits the slow of $x + y = 4$
+
+#+CAPTION: Prelude Drawgin
+#+ATTR_LaTeX: :height 4cm :width 6cm
+#+LABEL: fig:main
+[[./resources/lagrangian_prelude.jpg]]
+
+*** Geometric Significance
+
+A $(x, y) = (2, 2)$ where MAX occurs: $\nabla f // \nabla g$
+
+$f(x, y) = x^2 + y^2; \ \nabla f = (2x, 2y)$
+
+$g(x, y) = x + y - 4 = 0;$
+
+$ \nabla g = (1, 1)$
+
+\begin{equation}
+\begin{split}
+\nabla f = & \lambda \nabla g & \ \text{another way of saying parallel}\\
+= & (2x, 2y) = (4, 4)
+\end{split}
+\end{equation}
+
+** Lagrange Multipliers
+with Several inequality constraints
+
+#+begin_quote
+Karush Kahn Tucker
+#+end_quote
+
+_Goal_: Get the background to understand Lagrange Duality
+
+_Idea_: Find a MAX or MIN of $f(x_1, x_2, y_1, y_2)$ subject to 3 requirements
+(constraints)
+
+\begin{equation}
+\begin{split}
+g_1(x_1, x_2, y_1, y_2) = & 0\\
+g_2(x_1, x_2, y_1, y_2) = & 0\\
+\end{split}
+\end{equation}
+
+
+
+- $f (\cdot)$ can have any number of variables
+- can be subject to any constraint
+
+Famous application in ML: SNMF (Semi-nonnegative Matrix Factorization)
+
+*** Geometric Condition
+
+The gradient of $f$ is a _Linear Combination_ of the gradients of $g_1$ and
+$g_2$. The number of $\lambda =$ number of constraints.
+
+$$
+\nabla f = \lambda_1 \nabla g_1 + \lambda_2 \nabla g_2
+$$
+
+#+CAPTION: Hyperplane of Gradients and vector function
+#+ATTR_LaTeX: :height 3cm :width 5cm
+#+LABEL: fig:second
+[[./resources/lagrangian_planes.jpg]]
+
+$ \nabla g_1, \ \nabla g_2, \ \nabla f$ lie in the _same_ plane.
+
+**** Example
+
+Find the distance between the ellipse $x^2 + 2 y^2 = 1$ and the line $x + y =
+4$.
+
+_Main Idea of the Solution_
+
+Let $(x_1, y_1)$ be any point on the ellipse and $(x_2, y_2)$ be on any point on
+the line.
+
+$$
+min \ d^2 = (x_1 - x_2)^2 + (y_1 - y_2)^2
+$$
+
+^^f
+
+subject to
+
+$$x_1^2 + 2y_!^2 = 1, \ x_2 + y_2 = 4$$
+
+_Setting_: To find MIN of $f$, subject to $g_1 = 0$ and $g_2 = 0$ where
+
+$$
+g_1 = x_1^2 + 2y_1^2 - 1, \ g_2 = x_2 + y_2 - 4
+$$
+
+
+_Strategy_: Let $F = f - \lambda_1 g_1 - \lambda_2 g_2$ where F is the
+*Lagrangian*
+
+\begin{equation}
+\begin{split}
+\nabla F = & \nabla f - \lambda_1 \nabla g_1 - \lambda_2 \nabla g_2\\
+0 = & \nabla f - \lambda_1 \nabla g_1 - \lambda_2 \nabla g_2\\
+\nabla f = & \lambda_1 \nabla g_1 + \lambda_2 \nabla g_2
+\end{split}
+\end{equation}
+
+Let
+
+$$
+F = \frac{1}{2} [(x_1 - x_2)^2 + (y_1 - y_2)^2] - \frac{\lambda_1}{2}(x_1^2 + 2
+y_1^2 - 1) - \lambda_2 (x_2 + y_2 - 4)
+$$
+
+Take all partial derivatives. set $\nabla F = \vec 0$
+
+\begin{subequations}
+\label{first:two}
+\begin{align}
+\frac{\partial F}{\partial x_1} = (x_1 - x_2)  - \lambda_1 x_1 \to & \ x_1 - x_2 = \lambda_1 x_1\\
+\frac{\partial F}{\partial y_1} = (y_1 - y_2) - 2 \lambda_1 y_1 \to & \ y_1 - y_2 = 2 \lambda_1 y_1\\
+\frac{\partial F}{\partial x_2} = -(x_1 - x_2) - \lambda_2 \to & \ x_2 - x_1 = \lambda_2\\
+\frac{\partial F}{\partial y_2} = - (y_1 - y_2) - 2 \lambda_2 \to & \ y_2 - y_1 = \lambda_2\\
+\end{align}
+\end{subequations}
+
+$$
+\lambda_2 = - \lambda_1 x_1, \ \lambda_2 = -2 \lambda_1 y_1
+$$
+
+(1)(3), (2)(4)
+
+#+begin_quote
+$\lambda_1 \neq 0$. If $\lambda_1 = 0$, then $x_1 = x_2$ which means the ellipse
+and the line touch (which they don't). There is no common intersection point.
+#+end_quote
+
+From (1), $\lambda \neq 0$, therefore $x_1 = 2 y_1$
+
+
+Since $x_1^2 + 2 y_1^2 = 1$ and $(x_1, y_1)$ is in the first quadrant, so using
+$x_1 = 2 y_1$.
+
+$$
+(x_1, y_1) = (\frac{2}{\sqrt 6}, \ \frac{1}{\sqrt 6})
+$$
+
+Using (3)(4) to solve for $(x_2, y_2)$.
+
+Once we have $(x_1, y_1), \ (x_2, y_2)$, compute $s^2 = (x_1 - x_2)^2 + (y_1 -
+y_2)^2$. The distance between the ellipse and the line is the value of $d$.
+
+$$
+F(x_1, x_2, y_1, y_2) = f - \lambda_1 g_1 - \lambda_2 g_2
+$$
+
+Then set $\nabla F = \vec 0$.
+
+What are Lagrangian Multipliers doing? It turns a constrained optimization
+problem into an UNCONSTRAINED optimization problem.
+
+Does this method work in general?
+
+#+CAPTION: Breaking Down the Chain Rule
+#+ATTR_LaTeX: :height 4cm :width 6cm
+#+LABEL: fig:third
+[[./resources/chain_rule.jpg]]
+
+$\frac{\partial g}{\partial x_1} \frac{\partial x_2}{\partial y_1} + \frac{\partial g}{\partial x_2} \frac{\partial x_2}{\partial y_1} + \frac{\partial g}{\partial y_1} = 0$
+
+$C^1$ mapping from $h_1 \to h_2$.
+
+$\exists h_1, \ h_2$ such that
+
+$$
+x_1 = h_1 (y_1, y_2), \ x_2 = h_2 (y_1, y_2)
+$$
+
+Some function exists of $y_1, y_2$ called $h_1, h_2$. This comes from the *constraints*.
+
+This is due to the *Implicit Function Theorem*. We never use $f$ to determine
+$h_1, h_2$ which means we can have $f$ be /anything/. It is important because we
+know f is a function $y_1$ and $y_2$ only, which means we only have to take
+derivatives of $y_1$ and $y_2$.
+
+*** Explain Why Lagrange Multipliers Work
+
+How do we know $\lambda_1, \ \lambda_2$ exist?
+
+Optimization Problem: MIN $f (x_1, x_2, y_1, y_2)$ subject to constraints
+
+\begin{equation}
+\begin{split}
+g_1 (x_1, x_2, y_1, y_2) = & 0\\
+g_2 (x_1, x_2, y_1, y_2) = & 0\\
+\end{split}
+\end{equation}
+
+#+begin_quote
+$h_1$ and $h_2$ are smooth as $g_1$ and $g_2$.
+#+end_quote
+
+$\exists \ h_1, \ h_2$ such that $x_1 = h_1 (y_1, y_2), \ x_2 = h_2 (y_1, y_2)$
+
+
+\begin{equation}
+\begin{split}
+\to & g_1 (h_1(y_1, y_2), h_2 (y_1, y_2), y_1, y_2) = 0\\
+\to & g_2 (h_1(y_1, y_2), h_2 (y_1, y_2), y_1, y_2) = 0\\
+\end{split}
+\end{equation}
+
+Take partial derivatives with respect to $y_1$
+- from $g_1$
+
+$\frac{\partial g_1}{\partial y_1} + \frac{\partial h_1}{\partial y_1}
+\frac{\partial g_1}{\partial x_1} + \frac{\partial h_2}{\partial y_1} \frac{\partial g_1}{\partial x_2} = 0$
+
+- from $g_2$, we get
+
+$\frac{\partial g_2}{\partial y_1} + \frac{\partial h_1}{\partial y_1}\frac{\partial g_2}{\partial x_1} + \frac{\partial h_2}{\partial y_1} \frac{\partial g_2}{\partial x_2} = 0$
+
+- to minimize $f(x_1, x_2, y_1, y_2)$
+
+
+$\frac{\partial f}{\partial y_1} + \frac{\partial f}{\partial x_1}\frac{\partial h_1}{\partial y_1} + \frac{\partial f}{\partial x_2} \frac{\partial h_2}{\partial y_1} = 0$
+
+\begin{equation}
+\begin{split}
+\begin{bmatrix}
+\frac{\partial f}{\partial y_1} & \frac{\partial f}{\partial x_1} & \frac{\partial f}{\partial x_2}\\
+\frac{\partial g_1}{\partial y_1} & \frac{\partial g_1}{\partial x_1} & \frac{\partial g_1}{\partial x_2}\\
+\frac{\partial g_2}{\partial y_1} & \frac{\partial g_2}{\partial x_1} & \frac{\partial g_2}{\partial x_2}\\
+\end{bmatrix} \begin{bmatrix}
+1\\ \frac{\partial h_1}{\partial y_1}\\ \frac{\partial h_2}{\partial y_1}
+\end{bmatrix} = \begin{bmatrix}
+0\\ 0\\ 0\\
+\end{bmatrix} & \text{(*)}
+\end{split}
+\end{equation}
+
+Let A be the $3 \times 3$ matrix on the left side. Suppose $A^{-1}$ exists, then
+multiplying both side by $A^{-1}$.
+
+\begin{equation}
+\begin{split}
+\begin{bmatrix}
+1\\ \frac{\partial h_1}{\partial y_1}\\ \frac{\partial h_2}{\partial y_1}
+\end{bmatrix} = \begin{bmatrix}
+0\\ 0\\ 0
+\end{bmatrix}
+\end{split}
+\end{equation}
+
+*Not True* thus $A^{-1}$ cannot exist.
+
+If $\nabla g_1$ and $\nabla g_2$ are linearly independent, then the top row is a
+linear combination of $\nabla g_1$ and $\nabla g_2$. (Otherwise the matrix would
+be invertible).
+
+As long as your constraints are linearly independent, then the function is a
+linear combo of the gradients of the constraints.
+
+
+** Application
+
+Non-Negative Matrix Factorization
+
+$B \geq 0$ denotes a matrix with non-negative entries.
+
+We use the Frobenius Norm (Hilbert-Schmidt Norm)
+
+$$
+\|B\|_F^2 = \Sigma_j \Sigma_k |B(j, k)^2|
+$$
+
+Given an $m \times n$ non-negative matrix A, NMF is defined as
+
+\begin{equation}
+\begin{split}
+\underset{x \in R^{m \times r, \ Y \in R^{r \times m}}}{\|A - XY\|_F^2} & \text{s.t.} \ x \geq 0, \ Y \geq 0
+\end{split}
+\end{equation}
+
+Where r is the parameter that controls the size of factors X, Y.
+
+Let A be a $1000 \times 1000$ image. Each pixel is a nonnegative number from $0
+\to 255$. We _hope_ to discover the structure of A by writing $A = X_Y$ where X
+has 60 columns.
+
+The column vectors $a_1, a_2, ..., a_{1000} \in R^{1000}$ belong to a
+60-dimensional subspace. A has 1 million entries. X has 60,000 entries and Y has
+60,000 entries.
+
+Since A is a non-negative matrix, it makes sense that at least one of X and Y is
+non-negative.
+
+$$
+a_1, a_2, a_3, ... \in Span\{x_1, x_2, ..., x_{60}\}, \ \text{each} \ \ x_j \in R^{1000}
+$$
+
+$a_5 = c_1 x_1 + c_2 x_2 + ... + c_{60} x_{60}$
+
+This problem can be formulated as the following:
+
+\begin{equation}
+\begin{split}
+\underset{X,U \in R^{m \times r, \ Y,V \in R^{r \times m}}}{\|A - XY\|_F^2} & \text{s.t.} U = X, \ V = Y, \ \ x \geq 0, \ Y \geq 0
+\end{split}
+\end{equation}
+
+Where we introduced artificial variables for matrices U,V.
+
+We consider the *Augment Lagrangian* of the Problem.
+
+#+begin_quote
+"Augmented" means to increase in mathematical terms.
+#+end_quote
+
+$$
+\mathcal L = \|A - XY\|_F^2 + \langle \Lambda, X - U \rangle + \langle \Phi, Y -
+V \rangle + \frac{\alpha}{2} \|X - U\|_F^2 + \frac{\beta}{2} \|Y - V\|_F^2
+$$
+
+
+$\|A - XY\|_F^2$: Objective Function
+
+$\Lambda, \ \Phi$: Lagrange Multipliers that are Matrices
+
+$\Lambda$ is the same size as X
+
+$\Phi$ is the same size as Y
+
+#+begin_quote
+Inner product of A,B = $\langle A, B \rangle = Tr(A^T B)$
+#+end_quote
+
+_Remark_: $\mathcal L$ is a function of entries $X, Y, U, V$.
+
+It is possible to compute partial derivatives such as
+
+$$
+\frac{\partial \mathcal L}{\partial x_{1,1}}, \ \frac{\partial \mathcal
+L}{\partial x_{1,2}}, \ \frac{\partial \mathcal L}{\partial y_{1,1}}, \ \frac{\partial \mathcal L}{\partial y_{1,2}}
+$$
+
+*** An Approach to NMF Using ADMM
+
+Input: A $m \times n$ matrix A, Target Rank R.
+
+Alternating Direction Method of Multipliers
+
+Output: A $m \times r$ matrix U, an $r \times n$ matrix V.
+
+K = 1, ..., N
+
+\begin{equation}
+\begin{split}
+X_{k + 1} = & (A Y_k^T + \alpha U_k - \Lambda_k) (Y_k Y_k^T + \alpha I)^{-1}\\
+Y_{k + 1} = & (X_{k + 1}^T X_{k + 1} - \beta I)^{-1} (X_{k + 1}^T \Lambda + \beta V_k - \Phi_k)\\
+\end{split}
+\end{equation}
+
+Update $U_{k + 1}$ using $X_{k + 1}$ and $\Lambda_k$
+
+Update $V_{k + 1}$ using $Y_{k + 1}$ and $\Phi_k$
+
+Update $\Lambda_{k + 1}$ and $\Phi_{k + 1}$
