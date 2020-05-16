@@ -1,12 +1,14 @@
 #+TITLE:     Think Globally, Fit Locally: Summary
 #+AUTHOR:    Dustin Leatherman
 
+* Preface
 This document consists of a Summary of "Think Globally, Fit Locally: Unsupervised
 Learning of Low Dimensional Manifolds" by Lawrence K. Saul and Sam T. Rowels.
 
+
 The three-pass technique is utilized here.
 
-* Three-Pass Technique
+** Three-Pass Technique
 
 For the uninitiated, the three-pass technique is a method for reading dense
 article or papers that breaks down reading into three steps.
@@ -15,17 +17,22 @@ article or papers that breaks down reading into three steps.
 3. Read the entire paper end-to-end.
 
 For (1), each header in this document pertains to a header of the paper.
+\\
+
 For (2), the first sentence of each paragraph has been paraphrased. If the first
 sentence was not descriptive enough, the second sentence was used. Any formulas
 from a previous paragraph that was referenced in the first sentence of the
 following paragraph, the formula was recorded.
+\\
+
 For (3), a "Third Pass" sub-header following the paragraph contains details
 picked up on the third read.
+\\
 
 The conclusion of the Three-pass technique should result in a reconstruction of the
 original paper.
 
-* Notations
+** Notations
 
 There are not any mathematical notations that deviate from the norm in this
 document.
@@ -36,7 +43,7 @@ provide delineation between the source material and my own thoughts as I grapple
 its meaning.
 #+end_quote
 
-* Keywords
+** Keywords
 - Dimension Reduction
 - Manifolds
 - Locally Linear Embedding
@@ -232,6 +239,11 @@ of reference.
 Suppose data lie on or near a manifold of $d << D$. To a good approximation, we
 imagine there exists a linear mapping that maps the high dim coords to each
 neighborhood to global internal coords on the manifold.
+
+*** Third Pass
+Since the reconstruction weights $W_{ij}$ are invariant to translation,
+rotation, and rescaling transformations, it is expected that the weights equally
+and correctly describe the reconstructed patches in both D and d dimensions.
 ** 7
 Imagine cutting out locally linear patches of the manifold and rearranging them
 in the low dim embedding space. If the placement of each patch involves no more
@@ -240,10 +252,28 @@ will be preserved.
 ** 8
 LLE constructs a neighborhood mapping on the above idea.
 
+*** Third Pass
+
+- The third step of LLE maps a neighborhood from D to d dimensions.
+- $\vec Y_i$ are chosen to minimize the Embedded cost function $\eqref{eq:2}$
+  - Similar to $\eqref{eq:1}$ except the weights are fixed and the outputs $\vec
+    Y_i$ are optimized.
+- Note that no $\vec X_i$ is used. Only $W_{ij}$
 ** 9
 The embedding cost function $\eqref{eq:2}$ defines a quadratic form in the
 outputs $\vec Y_i$. Subject to constraints that make the problem well-posed, the
 cost function has a unique global minimum.
+
+*** Third Pass
+- The Embedded cost function has a unique global minimum which is returned as
+  the output of LLE (low dimensional embedding).
+  - It can be minimized using a sparse $N \times N$ eigenvalue problem.
+
+    #+begin_quote
+    The eigenvalue problem is defined as
+
+    $Av = \lambda v$
+    #+end_quote
 ** 10
 Note that while reconstruction weights for each data point are computed from its
 local neighborhood (independent of the weights for other data points) the
@@ -254,25 +284,64 @@ of the graph defined by the neighbors.
 #+begin_quote
 Is "connected" the same as continuous and homeomorphic?
 #+end_quote
+*** Third Pass
+
+- The algorithm discovers the /global/ structure by integrating information from
+  overlapping neighborhoods.
+- The dth coordinate output by LLE corresponds to the $(d + 1)^{st}$ smallest
+  eigenvector of the cost matrix.
+  - LLE Coordinates are ordered/nested and immutable when new dimensions are added.
 ** 11
 Implementation is straightforward. In the simplest formulation of LLE, there is
 only one free parameter: number of neighbors per data point K.
 
-* Examples
+*** Third Pass
 
+- Optimal weights $W_{ij}$ and $\vec Y_i$ are computed using Least Squares.
+- Single pass through the three steps to find the global minima of the
+  reconstruction and embedding costs.
+- No learning rates, annealing schedules are required. No random initialization
+  or local optima affect the final results
+
+  #+begin_quote
+  Annealing is a probabilistic heuristic technique for finding a global optimum.
+  Usually over a discrete set of values, it runs Monte Carlo simulations to
+  determine optimum.
+
+  In this context, I think an annealing schedule is referring to a "warm up"
+  period that could help reduce the amount of points to choose from.
+  #+end_quote
+
+* Examples
+** 1
 Embeddings discovered by LLE are easiest to visualize for data samples from
 2-dim manifolds.
 
+** 2
 Under the right conditions, LLE can learn the stereo-graphic mapping from sphere
 to plane.
 
+*** Third Pass
+- Required conditions
+  - the North pole must be excluded
+  - Data sampled uniformly in manifold coordinates.
+- Assumes that density increases as one approaches the north pole
+- suggests that Local angles but not distances are preserved.
+- Still an open item if this mapping can be discovered by LLE (as of 2003).
+  #+begin_quote
+  What is the latest research on applying LLE to stereographic mappings successfully?
+  #+end_quote
+** 3
 Figure 5 shows another 2-dim manifold, but one living in a much higher
 dimensional space.
 
+*** Third Pass
+- Figure 5 shows LLE reconstruction of a series of faces to be superior to PCA.
+** 4
 Low dimensional outputs of LLE can be used to index the original collection of
 high dimensional images. Fast and accurate indexing is an essential component of
 example-based video synthesis from a large library of stored frames.
-
+** 5
 LLE scales relatively well to large datasets because it generates /sparse/
 intermediate results and eigenproblems.
 
@@ -285,19 +354,69 @@ The algorithm consists of three steps:
 3. Singular Value Decomposition (to perform the embedding)
 
 ** Neighborhood Search
-
+*** 1
 In the simplest formulation of the algorithm, one identifies a fixed number of
 nearest neighbors, K, per data point, as measured by Euclidean Distance.
 
+**** Third Pass
+
+*Other Criteria for choosing neighbors*
+- all points within a ball of fixed radius
+  #+begin_quote
+  Is a ball different than a sphere?
+
+  Yes, a ball encompasses all points inside a spherical object. The points on a
+  sphere only encompass the surface of the sphere.
+  #+end_quote
+ 
+- locally derived distance metrics that deviate significantly from the euclidean norm
+  - based on prior knowledge
+  - estimated curvature
+  - pairwise distances
+  - nonparametric techniques like box-counting
+- Number of neighbors can differ between each point. Good place to introduce
+  domain knowledge.
+*** 2
 The results of LLE are typically stable of a range of neighborhood sizes. The
 size of the that range depends on various features of the data, such as the
 sampling density and the manifold geometry.
 
+**** Third Pass
+Criteria to keep in mind when selecting K
+- $d < K$. Some margin between d and K is required to obtain a
+  topology-preserving embedding but the exact margin is unknown
+  #+begin_quote
+  Has this been answered by newer research?
+  #+end_quote
+- a neighborhood must be locally linear. Meaning smaller K is needed for
+  datasets with curvature.
+- When $K > D$ (low dimension data), each datapoint can be reconstructed
+  perfectly from its neighbors and the weights are no longer uniquely defined.
+  Regularization must be added to "break" this.
+*** 3
 The nearest neighbor step in LLE is simple to implement, though it can be time
 consuming for large datasets ($N \leq 10^4$) if performed /without/ any optimizations.
 
+**** Third Pass
+- $O(DN^2)$ for KNN
+- K-D Trees or Ball Trees can be used to compute neighbors in $O(N log(N))$
+  #+begin_quote
+  A Ball Tree is a Binary Tree where the Leaf Node is a Ball. A ball is
+  comprised of a set of points where the distance to the center of the ball is
+  minimized.
+
+  A K-D tree is a K-dimensional tree where the Leaf Node is K-dimensional point.
+  This is similar to a ball tree except in how the contents of the Leaf node is decided.
+  #+end_quote
+- Approximation methods may also be used but do so at your own risk.
+*** 4
 An implementation of LLE also needs to check that the graph formed by linking
 each data point to its neighbors is connected.
+
+**** Third Pass
+- If the graph is disconnected or weakly connected, apply LLE separately to the
+  data of each graph's strongly connected components
+  - One may also refine the neighborhood selection rule
 
 #+begin_quote
 I am pretty sure this is confirming the assumption of homeomorphic/continuity
@@ -306,9 +425,11 @@ within the neighborhood of the points.
 Is each neighborhood considered convex?
 #+end_quote
 ** Constrained Least Squares Fits
-
+*** 1
 The second step of LLE is to reconstruct each data point from its nearest
 neighbors. The optimal reconstruction weights can be computed in closed form.
+
+*Reconstruction Error*
 
 \begin{equation}
 \begin{split}
@@ -324,6 +445,8 @@ G_{jk} = (\vec x - \eta_j) \cdot (\vec x - \vec \eta_k)
 \end{split}
 \end{equation}
 
+*Optimal Weights using Inverse of Gram Matrix*
+
 \begin{equation}
 \begin{split}
 \label{eq:5}
@@ -331,28 +454,57 @@ w_j = \frac{\Sigma_k G_{jk}^{-1}}{\Sigma_{lm} G_{lm}^{-1}}
 \end{split}
 \end{equation}
 
-
-
+**** Third Pass
+- We assumed that the sum of the weights = 1.
+  - First identity exploits this
+- Second identity introduces a local Gram matrix
+  #+begin_quote
+  $G = A^T A$
+  #+end_quote
+- Reconstruction error can be minimized analytically using a Lagrange Multiplier
+  to enforce the sum-to-one constraint.
+- It is faster to solve a linear system of equations then re scale the weights so
+  the sum to one, than calculate the inverse of the Gram matrix as described in $\eqref{eq:5}$
+*** 2
 In unusual cases, it can arise that the Gram matrix in $\eqref{eq:4}$ is
 singular or nearly singular. For example, when there are more neighbors than
 input dimensions ($K > D$), or when the data points are not in general position.
-
 When $K > D$, Least squares problem for finding the weight does not have a
 unique solution. Thus elements of the Gram matrix need to be conditioned before solving.
+
 
 $$
 G_{jk} \leftarrow G_{jk} + \delta_{jk} (\frac{\Delta^2}{K}) Tr(G)
 $$
 
+**** Third Pass
+- Least Squares doesn't provide a unique solution so regularities must be
+  applied
+- $\delta_{jk}$: 1 if j == k, else 0
+- $Tr(G)$: Trace of G
+- $\Delta^2 << 1$
+  #+begin_quote
+  This means that $\Delta < 1$ is a hyper-parameter chosen ahead of time.
+  #+end_quote
+- Adds a regularization term to the reconstruction cost that measures summed
+  squared magnitudes of the weights.
+ 
+*** 3
 The regularization term ($\frac{\Delta^2}{K}$) acts to penalize large weights that exploit correlations
 beyond some level of precision in the data sampling process. It may also
 introduce some robustness to noise and outliers.
 
+*** 4
 Computing the reconstruction weights $W_{ij}$ is typically the least expensive
 step of the LLE algorithm.
 
-** Eigenvalue Problem
+**** Third Pass
 
+- $O(DNK^3)$ operations required to solve a $K \times K$ set of linear equations
+  for each data point.
+- Weight can be stored as a sparse matrix with NK Nonzero elements.
+** Eigenvalue Problem
+*** 1
 The final step of LLE is to compute a low dimensional embedding based on the
 reconstruction weights $W_{ij}$ of the high dimensional inputs $\vec X_i$. Only
 information captured by the weights $W_{ij}$ is used to construct the embedding.
@@ -385,12 +537,35 @@ M_{ij} = \delta_{ij} - W_{ij} - W{ji} + \Sigma_k W_{ki} W_{kj}
 \end{split}
 \end{equation}
 
-
-
-
+**** Third Pass
+- Low Dimension outputs $\vec Y_i$ found by minimizing $\eqref{eq:2}$ for fixed weights $W_{ij}.
+  - The Embedded cost function is minimized when $W_{ij}$ are used to construct $Y_i$
+- $M$ is sparse, symmetric, and semipositive definite.
+*** 2
 The optimization of $\eqref{eq:6}$ is performed subject to constraints that make
 the problem well-posed.
 
+**** Third Pass
+- $\vec Y_i$ can be translated by a constant without affecting cost, $\Phi (Y)$
+  in $\eqref{eq:2}$.
+- We remove this translational degree of freedom by requiring the outputs to be
+  centered on the origin. $\Sigma_i \vec Y_i = \vec 0$
+- We remove the rotational degree of freedom and fixing scaling by constraining
+  $\vec Y_i$ to have unit covariance and outer products that satisfy
+  $\eqref{eq:9}$. This constraint is chosen for three reasons
+  - different coordinates in embedding space should be uncorrelated to
+    second-order
+    #+begin_quote
+    What does this mean?
+    #+end_quote
+  - reconstruction errors for these coordinates should be measured on the same
+    scale.
+  - the scale should be an order of unity.
+    #+begin_quote
+    What is an order of unity?
+    #+end_quote
+
+*** 3
 Under these restrictions, the optimal embedding - up to a trivial global
 rotation of the embedding space - is found by minimizing $\eqref{eq:2}$ subject
 to the constraints in $\eqref{eq:8}-\eqref{eq:9}$. This can be done in many
@@ -398,12 +573,38 @@ ways, but the most straightforward is to find the bottom $d + 1$ eigenvectors of
 the cost matrix, M. (Bottom or Top eigenvectors correspond to largest or
 smallest eigenvalues).
 
+**** Third Pass
+- Equivalence of optimization between normalized Quadratic form and the
+  computation of the largest or smallest eigenvectors is a version of the
+  Rayleitz-Ritz theorem.
+- Lagrange multipliers enforce $\eqref{eq:8}-\eqref{eq:9}$
+- Setting Gradients with respect to $\vec Y_i$ = 0 yield a symmetric eigenvalue
+  problem (like PCA).
+- The bottom eigenvector is a unit vector with all equal components. This is
+  discarded to enforce $\eqref{eq:8}$. This is because the other eigenvectors
+  are orthogonal to the bottom one so the rest of the $Y_i$ sum to 0.
+- The rest of the d eigenvectors are the d embedding coordinates found by LLE.
+
+*** 4
 Note that the bottom $d + 1$ eigenvectors of the sparse, symmetric matrix M can
 be found *without* performing a full matrix diagonalization.
 
+**** Third Pass
+
+M can be represented as a product of 2 sparse matrices. This gives large
+computational savings for large N.
+
+$$
+M = (I - W)^T(I - W)
+$$
+
+#+begin_quote
+Look up eigensolvers.
+#+end_quote
+*** 5
 The final step of LLE is typically the most computationally expensive. Without
 special optimizations, computing the bottom eigenvectors scales as $O(dN^2)$.
-
+*** 6
 Note that the $d^{th}$ coordinate output by LLE always corresponds to the $(d +
 1)^{st}$ smallest eigenvector of the matrix M, regardless of the total number
 of outputs computed or the order in which they are calculated.
