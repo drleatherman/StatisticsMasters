@@ -1,7 +1,7 @@
-#+TITLE:     Think Globally, Fit Locally: Review
+#+TITLE:     Think Globally, Fit Locally: Summary
 #+AUTHOR:    Dustin Leatherman
 
-This document consists of a review of "Think Globally, Fit Locally: Unsupervised
+This document consists of a Summary of "Think Globally, Fit Locally: Unsupervised
 Learning of Low Dimensional Manifolds" by Lawrence K. Saul and Sam T. Rowels.
 
 The three-pass technique is utilized here.
