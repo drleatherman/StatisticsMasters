@@ -6,6 +6,36 @@ Learning of Low Dimensional Manifolds" by Lawrence K. Saul and Sam T. Rowels.
 
 The three-pass technique is utilized here.
 
+* Three-Pass Technique
+
+For the uninitiated, the three-pass technique is a method for reading dense
+article or papers that breaks down reading into three steps.
+1. Read the Abstract and headers.
+2. Read the First sentence of each paragraph from end-to-end.
+3. Read the entire paper end-to-end.
+
+For (1), each header in this document pertains to a header of the paper.
+For (2), the first sentence of each paragraph has been paraphrased. If the first
+sentence was not descriptive enough, the second sentence was used. Any formulas
+from a previous paragraph that was referenced in the first sentence of the
+following paragraph, the formula was recorded.
+For (3), a "Third Pass" sub-header following the paragraph contains details
+picked up on the third read.
+
+The conclusion of the Three-pass technique should result in a reconstruction of the
+original paper.
+
+* Notations
+
+There are not any mathematical notations that deviate from the norm in this
+document.
+
+#+begin_quote
+Comments or questions interjected by myself are placed in "quote" bodies to
+provide delineation between the source material and my own thoughts as I grapple
+its meaning.
+#+end_quote
+
 * Keywords
 - Dimension Reduction
 - Manifolds
@@ -13,6 +43,13 @@ The three-pass technique is utilized here.
 - Unsupervised Learning
 
 * Introduction
+
+#+begin_quote
+The introduction contains a series of definitions of key concepts gleaned from
+the paper. This is different than other sections in that extra care and
+attention was spent upfront in ensuring the definitions of key terms were understood.
+#+end_quote
+
 *Preprocessing*: Obtain more useful representations of raw signals for
  subsequent operations. i.e. classification, denoising, interpolation,
  visualization, outlier detection.
@@ -57,33 +94,81 @@ methods for dim reduction
  linear methods (PCA/MDS)
 
 * Algorithm
-
+** 1
 Based on simple geometric intuitions. Computes low dim embedding with the
 property that nearby points in the high dim space are nearby and co-located with
 respect to one another in the low dim space.
 
+*** Third Pass
+- Embedding optimized to preserve local configurations of nearest neighbors.
+  #+begin_quote
+  This is accomplished by calculating weights based on the distance between
+  K-nearest neighbors and using those weights in the Embedding cost function.
+  #+end_quote
+ 
+- LLE doesn't need to use measures of distance or relation to far away points
+  #+begin_quote
+  This is because the algorithm restricts distance measures to the K nearest neighbors.
+  #+end_quote
+** 2
 Data consists of N real-valued vectors $\vec X_i$ of dimensionality D, sampled
 from an underlying smooth manifold.
+
+*** Third Pass
 
 #+begin_quote
 What does "Smooth" mean in mathematical terms?
 #+end_quote
 
-In the simplest form of LLE, identify the K nearest neighbors per data point (by
-Euclidean Distance).
+- Each data point and its neighbors should lie on or close to the manifold.
 
-The constrained weights that minimize the reconstruction errors have several
-important symmetries: For any data point, they are invariant to rotations,
-rescalings, and translations from that data point to its neighbors. This also
-means they are invariant to global rotations, rescalings, and translations.
+  #+begin_quote
+  In this case, the manifold is equivalent to the original image so when talking
+  about being close to the manifold, this means that sampled points shouldn't be
+  far-fetched from the original points.
+  #+end_quote
 
-*Weight Cost Function*
+- "Smooth" and "well-sampled" mean that the data point has on the order of 2d
+  neighbors which define an approximately linear patch on the manifold.
+
+  #+begin_quote
+  This allows us to treat $\vec X_i$ as a linear combination of its neighbors.
+  Later, this allows an approximation of $\vec X_i$ to be constructed based off
+  its neighbors.
+
+  - How many neighboring data points are considered orthogonal?
+  #+end_quote
+** 3
+In the simplest form of LLE, identify the K nearest neighbors per data point by
+Euclidean Distance.
+
+*Reconstruction Errors - Cost Function*
 
 \begin{equation}
 \begin{split}
 E(W) = \Sigma_i |\vec X_i - \Sigma_j W_{ij} \vec X_j|^2 \label{eq:1}
 \end{split}
 \end{equation}
+
+*** Third Pass
+- Reconstruction Cost Function adds up squared distances between all points and
+  their reconstructions.
+
+$W_{ij}$: contribution of the jth data point to the ith reconstruction.
+
+Weights are computed using Least Squares with two constraints
+1. Sparseness
+   - Each $\vec X_i$ is reconstructed from only its neighbors.
+   - $W_{ij} = 0$ if $\vec X_j$ not in the set.
+2. In-variance
+   - $\Sigma_j W_{ij} = 1$
+
+** 4
+The constrained weights that minimize the reconstruction errors have several
+important symmetries: For any data point, they are invariant to rotations,
+rescalings, and translations from that data point to its neighbors. This also
+means they are invariant to global rotations, rescalings, and translations.
+
 
 *Embedding Cost Function*
 
@@ -93,6 +178,49 @@ E(W) = \Sigma_i |\vec X_i - \Sigma_j W_{ij} \vec X_j|^2 \label{eq:1}
 \end{split}
 \end{equation}
 
+*** Third Pass
+- Invariance from Rotations and rescaling follows from $\eqref{eq:1}$
+
+- Invariance to translation enforced by sum-to-one constraint.
+- Reconstruction of weights *not* invariant to shear transformations.
+
+  #+begin_quote
+  Shear mapping is a linear map that displaces each point in a fixed direction,
+  by an amount proportional to its signed distance from the line that is
+  parallel to that direction and goes through the origin.
+
+  *Horizontal Shear example*
+
+  \begin{bmatrix}
+x'\\ y'
+\end{bmatrix} = \begin{bmatrix}
+x + my\\ y
+\end{bmatrix} = \begin{bmatrix}
+1 & m\\ 0 & 1
+\end{bmatrix} \begin{bmatrix}
+x\\ y
+\end{bmatrix}
+
+  *Vertical Shear Example*
+
+   \begin{bmatrix}
+x'\\ y'
+\end{bmatrix} = \begin{bmatrix}
+x\\ mx + y
+\end{bmatrix} = \begin{bmatrix}
+1 & 0\\ m & 1
+\end{bmatrix} \begin{bmatrix}
+x\\ y
+\end{bmatrix}
+
+I believe its not invariant because a translation or rescaling affects all
+elements of a matrix whereas a shear transformation affects individual elements.
+This means that the matrix doesn't keep the same "shape"?
+  #+end_quote
+
+This means that the reconstruction weights do not depend on a particular frame
+of reference.
+** 5
 *Steps*
 1. Compute neighbors of each $\vec X_i$
 2. Compute weights $W_{ij}$ that best reconstruct each $\vec X_{i}$ from its
@@ -100,22 +228,23 @@ E(W) = \Sigma_i |\vec X_i - \Sigma_j W_{ij} \vec X_j|^2 \label{eq:1}
 3. Compute $\vec Y_i$ best reconstructed by $W_{ij}$, minimizing the quadratic
    form $\eqref{eq:2}$ by its bottom non-zero eigenvectors.
 
-
+** 6
 Suppose data lie on or near a manifold of $d << D$. To a good approximation, we
 imagine there exists a linear mapping that maps the high dim coords to each
 neighborhood to global internal coords on the manifold.
-
+** 7
 Imagine cutting out locally linear patches of the manifold and rearranging them
 in the low dim embedding space. If the placement of each patch involves no more
 than a translation, rotation, and/or rescaling, then angles between data points
 will be preserved.
-
+** 8
 LLE constructs a neighborhood mapping on the above idea.
 
+** 9
 The embedding cost function $\eqref{eq:2}$ defines a quadratic form in the
 outputs $\vec Y_i$. Subject to constraints that make the problem well-posed, the
 cost function has a unique global minimum.
-
+** 10
 Note that while reconstruction weights for each data point are computed from its
 local neighborhood (independent of the weights for other data points) the
 embedding coordinates are computed by an $N \times N$ eigensolver, a global
@@ -125,7 +254,7 @@ of the graph defined by the neighbors.
 #+begin_quote
 Is "connected" the same as continuous and homeomorphic?
 #+end_quote
-
+** 11
 Implementation is straightforward. In the simplest formulation of LLE, there is
 only one free parameter: number of neighbors per data point K.
 
