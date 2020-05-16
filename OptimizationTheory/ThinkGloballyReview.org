@@ -1,0 +1,283 @@
+#+TITLE:     Think Globally, Fit Locally: Review
+#+AUTHOR:    Dustin Leatherman
+
+This document consists of a review of "Think Globally, Fit Locally: Unsupervised
+Learning of Low Dimensional Manifolds" by Lawrence K. Saul and Sam T. Rowels.
+
+The three-pass technique is utilized here.
+
+* Keywords
+- Dimension Reduction
+- Manifolds
+- Locally Linear Embedding
+- Unsupervised Learning
+
+* Introduction
+*Preprocessing*: Obtain more useful representations of raw signals for
+ subsequent operations. i.e. classification, denoising, interpolation,
+ visualization, outlier detection.
+
+*Unsupervised Learning*: Framework of automatic methods to discover hidden structures of
+ statistical regularities.
+
+*Density Estimation*: Learn parameters of a prob. model for prediction (like $\lambda$ in
+Poisson)
+
+*Dimensionality Reduction*: Compact representations of original data which
+ contain enough information to make decisions.
+
+#+begin_quote
+Dimensionality Reduction is applied here in a non-prob and non-parametric setting.
+#+end_quote
+
+*Problem trying to be addressed*: Compute a low dim embedding of high dim data
+ sampled with noise from an underlying manifold. Intersection of Geometry +
+ Statistics. Use this to discover the /few degrees of freedom/ underlying the
+ observations.
+
+#+begin_quote
+*Manifold*: A topological space that locally represents a Euclidean space near
+ each point. Manifolds are continuous (homeomorphic) to n-dimensions. Manifolds cannot intersect (like a figure 8). Examples include: a
+ line, a circle, Surfaces (plane, sphere, torus). A Manifold may /not/ be
+ homeomorphic beyond n-dimensions.
+#+end_quote
+
+*PCA*: Compute linear projections of greatest variance from top eigenvectors
+ of the covariance matrix.
+
+*Multidimensional Scaling (MDS)*: Compute low dim embedding that best preserves pairwise distances between points.
+
+If using euclidean distance, MDS equivalent to PCA. Both powerful /Linear/
+methods for dim reduction
+
+*Locally Linear Embedding (LLE)*: Dimension Reduction technique for non-linear
+ data. Involves a sparse eigenvalue problem that scales well to high dim
+ datasets.
+ - More accurate for reconstructing manifolds in lower dimensions than
+ linear methods (PCA/MDS)
+
+* Algorithm
+
+Based on simple geometric intuitions. Computes low dim embedding with the
+property that nearby points in the high dim space are nearby and co-located with
+respect to one another in the low dim space.
+
+Data consists of N real-valued vectors $\vec X_i$ of dimensionality D, sampled
+from an underlying smooth manifold.
+
+#+begin_quote
+What does "Smooth" mean in mathematical terms?
+#+end_quote
+
+In the simplest form of LLE, identify the K nearest neighbors per data point (by
+Euclidean Distance).
+
+The constrained weights that minimize the reconstruction errors have several
+important symmetries: For any data point, they are invariant to rotations,
+rescalings, and translations from that data point to its neighbors. This also
+means they are invariant to global rotations, rescalings, and translations.
+
+*Weight Cost Function*
+
+\begin{equation}
+\begin{split}
+E(W) = \Sigma_i |\vec X_i - \Sigma_j W_{ij} \vec X_j|^2 \label{eq:1}
+\end{split}
+\end{equation}
+
+*Embedding Cost Function*
+
+\begin{equation}
+\begin{split}
+\Phi(Y) = \Sigma_i |\vec Y_i - \Sigma_j W_{ij} \vec Y_j|^2 \label{eq:2}
+\end{split}
+\end{equation}
+
+*Steps*
+1. Compute neighbors of each $\vec X_i$
+2. Compute weights $W_{ij}$ that best reconstruct each $\vec X_{i}$ from its
+   neighbors, minimizing the Weight cost function $\eqref{eq:1}$ by using constrained Linear fits.
+3. Compute $\vec Y_i$ best reconstructed by $W_{ij}$, minimizing the quadratic
+   form $\eqref{eq:2}$ by its bottom non-zero eigenvectors.
+
+
+Suppose data lie on or near a manifold of $d << D$. To a good approximation, we
+imagine there exists a linear mapping that maps the high dim coords to each
+neighborhood to global internal coords on the manifold.
+
+Imagine cutting out locally linear patches of the manifold and rearranging them
+in the low dim embedding space. If the placement of each patch involves no more
+than a translation, rotation, and/or rescaling, then angles between data points
+will be preserved.
+
+LLE constructs a neighborhood mapping on the above idea.
+
+The embedding cost function $\eqref{eq:2}$ defines a quadratic form in the
+outputs $\vec Y_i$. Subject to constraints that make the problem well-posed, the
+cost function has a unique global minimum.
+
+Note that while reconstruction weights for each data point are computed from its
+local neighborhood (independent of the weights for other data points) the
+embedding coordinates are computed by an $N \times N$ eigensolver, a global
+operation that couples all data points that lie in the same connected component
+of the graph defined by the neighbors.
+
+#+begin_quote
+Is "connected" the same as continuous and homeomorphic?
+#+end_quote
+
+Implementation is straightforward. In the simplest formulation of LLE, there is
+only one free parameter: number of neighbors per data point K.
+
+* Examples
+
+Embeddings discovered by LLE are easiest to visualize for data samples from
+2-dim manifolds.
+
+Under the right conditions, LLE can learn the stereo-graphic mapping from sphere
+to plane.
+
+Figure 5 shows another 2-dim manifold, but one living in a much higher
+dimensional space.
+
+Low dimensional outputs of LLE can be used to index the original collection of
+high dimensional images. Fast and accurate indexing is an essential component of
+example-based video synthesis from a large library of stored frames.
+
+LLE scales relatively well to large datasets because it generates /sparse/
+intermediate results and eigenproblems.
+
+* Implementation
+
+The algorithm consists of three steps:
+1. Nearest neighbor search (to identify the non-zero elements of the weight
+   matrix)
+2. Constrained Least Squares Fits (to compute the values of these weights)
+3. Singular Value Decomposition (to perform the embedding)
+
+** Neighborhood Search
+
+In the simplest formulation of the algorithm, one identifies a fixed number of
+nearest neighbors, K, per data point, as measured by Euclidean Distance.
+
+The results of LLE are typically stable of a range of neighborhood sizes. The
+size of the that range depends on various features of the data, such as the
+sampling density and the manifold geometry.
+
+The nearest neighbor step in LLE is simple to implement, though it can be time
+consuming for large datasets ($N \leq 10^4$) if performed /without/ any optimizations.
+
+An implementation of LLE also needs to check that the graph formed by linking
+each data point to its neighbors is connected.
+
+#+begin_quote
+I am pretty sure this is confirming the assumption of homeomorphic/continuity
+within the neighborhood of the points.
+
+Is each neighborhood considered convex?
+#+end_quote
+** Constrained Least Squares Fits
+
+The second step of LLE is to reconstruct each data point from its nearest
+neighbors. The optimal reconstruction weights can be computed in closed form.
+
+\begin{equation}
+\begin{split}
+\label{eq:3}
+\epsilon = |\vec x - \Sigma_j w_j \vec \eta_j|^2 = |\Sigma_j w_j (\vec x - \vec \eta_j)|^2 = \Sigma_{jk} w_j w_k G_{jk}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\label{eq:4}
+G_{jk} = (\vec x - \eta_j) \cdot (\vec x - \vec \eta_k)
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\label{eq:5}
+w_j = \frac{\Sigma_k G_{jk}^{-1}}{\Sigma_{lm} G_{lm}^{-1}}
+\end{split}
+\end{equation}
+
+
+
+In unusual cases, it can arise that the Gram matrix in $\eqref{eq:4}$ is
+singular or nearly singular. For example, when there are more neighbors than
+input dimensions ($K > D$), or when the data points are not in general position.
+
+When $K > D$, Least squares problem for finding the weight does not have a
+unique solution. Thus elements of the Gram matrix need to be conditioned before solving.
+
+$$
+G_{jk} \leftarrow G_{jk} + \delta_{jk} (\frac{\Delta^2}{K}) Tr(G)
+$$
+
+The regularization term ($\frac{\Delta^2}{K}$) acts to penalize large weights that exploit correlations
+beyond some level of precision in the data sampling process. It may also
+introduce some robustness to noise and outliers.
+
+Computing the reconstruction weights $W_{ij}$ is typically the least expensive
+step of the LLE algorithm.
+
+** Eigenvalue Problem
+
+The final step of LLE is to compute a low dimensional embedding based on the
+reconstruction weights $W_{ij}$ of the high dimensional inputs $\vec X_i$. Only
+information captured by the weights $W_{ij}$ is used to construct the embedding.
+
+\begin{equation}
+\begin{split}
+\label{eq:6}
+\Phi(Y) = \Sigma_{ij} M_{ij} (\vec Y_i \cdot \vec Y_j)
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\label{eq:7}
+M_{ij} = \delta_{ij} - W_{ij} - W{ji} + \Sigma_k W_{ki} W_{kj}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\label{eq:8}
+\Sigma_i \vec Y_i = \vec 0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\label{eq:9}
+\frac{1}{N} \Sigma_i \vec Y_i \vec Y_i^T = I
+\end{split}
+\end{equation}
+
+
+
+
+The optimization of $\eqref{eq:6}$ is performed subject to constraints that make
+the problem well-posed.
+
+Under these restrictions, the optimal embedding - up to a trivial global
+rotation of the embedding space - is found by minimizing $\eqref{eq:2}$ subject
+to the constraints in $\eqref{eq:8}-\eqref{eq:9}$. This can be done in many
+ways, but the most straightforward is to find the bottom $d + 1$ eigenvectors of
+the cost matrix, M. (Bottom or Top eigenvectors correspond to largest or
+smallest eigenvalues).
+
+Note that the bottom $d + 1$ eigenvectors of the sparse, symmetric matrix M can
+be found *without* performing a full matrix diagonalization.
+
+The final step of LLE is typically the most computationally expensive. Without
+special optimizations, computing the bottom eigenvectors scales as $O(dN^2)$.
+
+Note that the $d^{th}$ coordinate output by LLE always corresponds to the $(d +
+1)^{st}$ smallest eigenvector of the matrix M, regardless of the total number
+of outputs computed or the order in which they are calculated.
+
+* Extensions
+** LLE from Pairwise Distances
