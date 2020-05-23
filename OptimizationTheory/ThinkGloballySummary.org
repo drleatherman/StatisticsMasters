@@ -353,6 +353,12 @@ The algorithm consists of three steps:
 2. Constrained Least Squares Fits (to compute the values of these weights)
 3. Singular Value Decomposition (to perform the embedding)
 
+#+begin_quote
+General Items I am hung up on
+- How is $\vec Y_i$ calculated? I understand $\vec Y_i$ should maximize the
+  embedded cost function $\Phi (Y)$ but that doesn't say how to compute $\vec
+  Y_i$.
+#+end_quote
 ** Neighborhood Search
 *** 1
 In the simplest formulation of the algorithm, one identifies a fixed number of
@@ -541,6 +547,26 @@ M_{ij} = \delta_{ij} - W_{ij} - W{ji} + \Sigma_k W_{ki} W_{kj}
 - Low Dimension outputs $\vec Y_i$ found by minimizing $\eqref{eq:2}$ for fixed weights $W_{ij}.
   - The Embedded cost function is minimized when $W_{ij}$ are used to construct $Y_i$
 - $M$ is sparse, symmetric, and semipositive definite.
+
+  #+begin_quote
+  Since M can be represented as $M = (I - W)^T (I - W)$,
+
+  it can be deduced that the diagonal elements of W are 1 and thus the diagonal
+  elements of M are 0.
+
+  \begin{equation}
+  \begin{split}
+  M_{kk} = & \delta_{kk} - 2 W_{kk} + \Sigma_k W_{kk}^2\\
+  (1 - W_{kk})^2 = & \delta_{kk} - 2 W_{kk} + Tr(W^T W)\\
+  1 - 2 W_{kk} + W_{kk}^2 = & \delta_{kk} - 2 W_{kk} + Tr(W^T W)\\
+  W_{kk}^2 = & \delta_{kk} - 1 + \|W\|_2^2\\
+  W_{kk}^2 = \delta_{kk}\\
+  = & 1
+  \end{split}
+  \end{equation}
+
+  $\delta_{jk} = 1$ when j = k.
+  #+end_quote
 *** 2
 The optimization of $\eqref{eq:6}$ is performed subject to constraints that make
 the problem well-posed.
@@ -557,14 +583,26 @@ the problem well-posed.
     second-order
     #+begin_quote
     What does this mean?
+
+    $\vec Y_i \vec Y_i^T$ produces a second-order equation. The average of all
+    the elements equals the Identity matrix.
+
+    Do these values equaling the identity matrix mean they are uncorrelated? Why
+    is this the case?
     #+end_quote
   - reconstruction errors for these coordinates should be measured on the same
     scale.
   - the scale should be an order of unity.
     #+begin_quote
-    What is an order of unity?
+    Order of unity means that the formula is an approximation as there may be an
+    unspecified constant which yields the "true" formula. In this context, the
+    constraint ensures that we are within some magnitude of the "true" $\vec Y_i$
     #+end_quote
-
+#+begin_quote
+Why should the translational, rotation, and scaling ability for the vectors be
+removed? If these transformations do not fundamentally shift the geometry that
+we are using, then why bother removing them?
+#+end_quote
 *** 3
 Under these restrictions, the optimal embedding - up to a trivial global
 rotation of the embedding space - is found by minimizing $\eqref{eq:2}$ subject
@@ -597,10 +635,6 @@ computational savings for large N.
 $$
 M = (I - W)^T(I - W)
 $$
-
-#+begin_quote
-Look up eigensolvers.
-#+end_quote
 *** 5
 The final step of LLE is typically the most computationally expensive. Without
 special optimizations, computing the bottom eigenvectors scales as $O(dN^2)$.

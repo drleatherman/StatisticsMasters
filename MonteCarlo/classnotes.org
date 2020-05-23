@@ -705,7 +705,7 @@ $Y_i \sim$ common PDF, $f_Y$
 
 $W_i \sim U[0,1]$
 
-$Let c  \leq 1 \ s.t. \ \ \frac{c f_Z (z)}{f_Y (z)}$
+Let $c  \leq 1 \ s.t. \ \ \frac{c f_Z (z)}{f_Y (z)}$
 
 $f_Z$: PDF of the Random variable we want to generate.
 
@@ -714,6 +714,7 @@ We want C to be as close to 1 as possible. It is generally found by calculation
 $\frac{1}{c} = sup_z \frac{f_Z (z)}{f_Y (z)} == \frac{f_Y (y)}{c} = sup f_Z (y)$
 
 1/c is the largest value of the ratio between $f_Z(y), \ f_Y (y)$
+
 #+begin_quote
 sup = supremum = maximum of a given set
 #+end_quote
@@ -940,4 +941,154 @@ $$
 
 $$
 S(T) = S(0) exp(T(r - \frac{\sigma^2}{2}) + \sigma B(T))
+$$
+
+* Types of Options (2020/05/14)
+** Vanilla European Call/Put Option
+#+begin_quote
+Asset path not important for European options
+#+end_quote
+
+*Review*
+
+    $$S(t) = S(0) exp(r - \sigma^2/2)t + \sigma B(t) = S(0) exp(r -
+    \sigma^2/2)t + \sigma \sqrt{t} X$$
+
+$\sqrt T X \approx B(t)$
+
+where $X \sim N(0,1)$
+
+$E(S(t)) = S(0) exp(rt)$
+
+\begin{equation}
+\begin{split}
+S(\frac{t}{d}) = & S(0) exp(r - \sigma^2/2) \frac{t}{d} + \sigma \sqrt{\frac{t}{d}} X_1\\
+S(\frac{2t}{d}) = & S(0) exp(r - \sigma^2/2) \frac{2t}{d} + \sigma \sqrt{\frac{t}{d}} (X_1 + X_2)\\
+S(\frac{3t}{d}) = & S(0) exp(r - \sigma^2/2) \frac{3t}{d} + \sigma \sqrt{\frac{t}{d}} (X_1 + X_2 + x_3)\\
+...\\
+S(t) = & S(0) exp(r - \sigma^2/2)t + \sigma B(t) = S(0) exp(r - \sigma^2/2)t + \sigma \sqrt{t} X
+\end{split}
+\end{equation}
+
+
+More generically,
+
+$$
+S(\frac{kt}{d}) = & S(0) exp(r - \sigma^2/2) \frac{kt}{d} + \sigma
+\sqrt{\frac{t}{d}} \sum_{1}^{k} X_i\\
+$$
+
+where $\sum_{i}^{k} X_i \sim N(0, \frac{kt}{d})$
+
+$d$: Number of increments. It can be years, days, hours, etc. In previous
+discussions, d was /years/. In this case, it is /days/.
+
+*Simulation Steps*
+1. Simulate independent Std. Norm R.V.s $n \times d$
+2. Generate Brownian Motion Path for each sample
+   $\sqrt{\frac{t}{d}} \cdot cumsum(x)$
+3. Generate Geometric Brownian Motion using formula above (asset price path)
+   payoff = $max(K - S(t), 0)$
+   discounted payoff = $max(K - S(t), 0) exp(-rt)$
+
+** Asian Call/Put Options
+
+Uses the average price of the asset from purchase to maturity instead of the
+asset price at maturity.
+
+European Option = Arithmetic or Geometric Asian Option where d = 1.
+
+$\bar S_{geo} \leq \bar S_{ari}$
+
+*** Arithmetic Mean
+
+call payoff = $max(\frac{1}{d} \sum_{j = 1}^{d} S(\frac{jT}{d}) - K, 0)$
+
+put payoff = $max(K - \frac{1}{d} \sum_{j = 1}^{d} S(\frac{jT}{d}), 0)$
+
+European options will be a higher payout because of higher volatility.
+
+*** Geometric Mean
+
+$\sqrt{ab}$
+
+$$
+\bar S_{geo} = [ \Pi_1^d S(\frac{jT}{d})]^{1/d}
+$$
+
+\begin{equation}
+\begin{split}
+S(\frac{T}{d}) = & S(0) exp((r - \sigma^2/2)\frac{T}{d} + \sigma \sqrt{\frac{T}{d}} X_1)\\
+S(\frac{2T}{d}) = & S(0) exp((r - \sigma^2/2)\frac{2T}{d} + \sigma \sqrt{\frac{T}{d}} (X_1 + X_2))\\
+...\\
+S(T) = & S(0) exp((r - \sigma^2/2)T + \sigma \sqrt{\frac{T}{d}} \sum_{1}^{d} X_i)\\
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+[ \Pi_1^d S(\frac{jT}{d})]^{1/d} = & [S(0) exp(d(r - \sigma^2/2) \frac{(1 + 2 +
+... + d) T}{d} + \sigma \sqrt{\frac{T}{d}} [X_1 + (d - 1) X_2 + (d - 2) X_3 +
+... + X_d])]^{1/d}\\
+= & S(0) [exp((r - \sigma^2/2)\frac{d(d + 1)}{d} \cdot \frac{T}{d} + \sigma \sqrt{\frac{T}{d}} W)]
+\end{split}
+\end{equation}
+
+$W = d X_1 + (d - 1) X_2 + ... + x_0 d \sim N(0, \frac{d(d + 1)(d + 2)}{6})$
+
+$V(W) = d^2 + (d - 1)^2 + ... + 1^2 = \frac{d(d + 1)(d + 2)}{6}$
+
+We replace W with $\sqrt{\frac{d(d + 1)(d + 2)}{6}} X$
+
+$T = (\frac{d + 1}{2d})T = (\frac{1}{2} + \frac{1}{d})T \leq T$
+
+$\bar \sigma^2 = \frac{\sigma^2 (2 + \frac{1}{d})}{3} = (\frac{2}{3} + \frac{1}{3d}) \sigma^2 \leq \sigma^2$
+
+
+$r = r + (\bar \sigma^2 - \sigma^2)/2 \leq r$
+
+** Barrier Options
+
+There may be a barrier price, b, which one must cross to trigger the option (one
+way or another).
+
+*** Knock-in Barrier Option
+
+#+begin_quote
+Knock-out is the opposite of Knock-in. I.e. option no longer valid if the
+barrier is crossed.
+#+end_quote
+**** Up-and-in
+If barrier is met during the time to maturity, the option is activated.
+
+#+CAPTION: Barrier Options: Up and In
+#+ATTR_LaTeX: scale=0.75
+#+LABEL: fig:barrier_opts
+[[./resources/barrier_options.jpg]]
+
+**** Down-and-out
+
+#+CAPTION: Barrier Options: Down and Out
+#+ATTR_LaTeX: scale=0.75
+#+LABEL: fig:downandout
+[[./resources/barrier_downandout.jpg]]
+
+
+** Lookback Options
+
+Minimum or maximum value of the asset price before expiry acts as a strike
+price.
+
+Call Payoff
+
+$$
+S(T) - \min_{j = 1,...,d} S(jT/d) \ \text{or} \ S(T) - \min_{0 < t \leq T} S(t)
+$$
+
+
+Put Payoff
+
+$$
+\max_{j = 1,...,d} S(jT/d) - S(T) \ \text{or} \ \max_{0 < t \leq T} S(t) - S(T)
 $$
