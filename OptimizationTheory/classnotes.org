@@ -2129,3 +2129,109 @@ Update $U_{k + 1}$ using $X_{k + 1}$ and $\Lambda_k$
 Update $V_{k + 1}$ using $Y_{k + 1}$ and $\Phi_k$
 
 Update $\Lambda_{k + 1}$ and $\Phi_{k + 1}$
+* Lagrangian Multipliers & Optimal Margin Classifiers (2020/05/19)
+** Warm Up
+#+CAPTION: Warm Up Plane
+#+ATTR_LaTeX: :width 6cm :height 4cm
+#+LABEL: fig:warmupplane
+[[./resources/warmup_plane.jpg]]
+
+$Q = (X, Y, Z)$ is any point in the plane $2x + 3y + 4z = 5$
+
+$\vec b = [x, -x, y, -y, z, -z]$
+
+\begin{equation}
+\begin{split}
+D = & \frac{\|\vec N \cdot \vec b\|}{\|\vec N\|}, \ \vec N = [2, 3, 4]\\
+= & \frac{\|2(x_1 - x) + 3(y_1 - y) + 4(z_1 - z)\|}{\|\vec N\|}\\
+= & \frac{\|(2 x_1 + 3 y_1 + 4 z_1) - (2x + 3y + 4z)\|}{\|\vec N\|}\\
+= & \frac{\|(2x_1 + 3 y_1 + 4 z_1) - 5\|}{\|\vec N\|}
+\end{split}
+\end{equation}
+
+Input: $(\vec X_1, Y_1),(\vec X_2, Y_2),(\vec X_3, Y_3)$
+
+where $\begin{cases} Y_k = 1 & \vec X_k \in A\\ Y_k = -1 & \vec X_k \in B \end{cases}$
+
+$\begin{cases} \vec X \in A & D(\vec X) > 0\\ \vec X \in B & D(\vec X) \leq 0 \end{cases}$
+
+$D(\vec X) = \vec W \cdot \vec X$
+
+$D(X)$: The decision function
+
+#+CAPTION: Warmup (cont)
+#+ATTR_LaTeX: :height 4cm :width 6cm
+#+LABEL: fig:warmup2
+[[./resources/warmup2.jpg]]
+
+** Lagrange Multipliers
+
+_Example_
+
+Minimize xyz subject to $x + y + z \leq 3, \ -x \leq 0, \ -y \leq 0, -z \leq 0$
+
+Outline of Main Idea: The objective function is $f(x, y, z) = xyz$
+
+$$
+g_1 \leq 0, \ g_2 \leq 0, g_3 \leq 0, g_4 \leq 0
+$$
+
+*Constraints*
+
+\begin{equation}
+\begin{split}
+g_1 (x, y, z) = & x + y + z - 3\\
+g_2 (x, y, z) = & -x\\
+g_3 (x, y, z) = & -y\\
+g_4 (x, y, z) = & -z\\
+\end{split}
+\end{equation}
+
+*Lagrangian*
+
+$$
+F = f - \lambda_1 g_1 \lambda_2 g_2 - \lambda_3 g_3 - \lambda_4 g_4
+$$
+
+$$
+F(x,y,z) = xyz = \lambda_1 (x + y + z - 3) + \lambda_2 x + \lambda_3 y +
+\lambda_4 z
+$$
+
+_Take all partial derivatives and set to 0_
+
+\begin{equation}
+\begin{split}
+\frac{\partial F}{\partial x} = & yz - \lambda_1 + \lambda_2 = 0\\
+\frac{\partial F}{\partial y} = & xz - \lambda_1 + \lambda_3 = 0\\
+\frac{\partial F}{\partial z} = & yx - \lambda_1 + \lambda_4 = 0\\
+\end{split}
+\end{equation}
+
+The above constraints are know as the KKT condition. (Karush-Kuhn-Tucker)
+
+*More Constraints*
+
+The following constraints are derived from the Complementary Selectness Condition
+
+\begin{equation}
+\begin{split}
+\lambda_1(x + y + z - 3) = & 0\\
+\lambda_2 X = & 0\\
+\lambda_3 Y = & 0\\
+\lambda_4 Z = & 0\\
+\lambda_i \geq & 0, \ i = 1,2,3,4
+\end{split}
+\end{equation}
+
+This is _why_ the inequalities are stated as negative.
+
+What is the main lesson here?
+
+Having inequality constraints can make the problem complicated.
+
+#+begin_quote
+No implicit Function theorem is used to prove Lagrangian Multipliers with
+inequalities because it doesn't apply. The proof for why Lagrangian Multipliers
+work for inequality constraints is not present here.
+#+end_quote

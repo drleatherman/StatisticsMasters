@@ -1092,3 +1092,126 @@ Put Payoff
 $$
 \max_{j = 1,...,d} S(jT/d) - S(T) \ \text{or} \ \max_{0 < t \leq T} S(t) - S(T)
 $$
+* Control-Variate Method for Efficiency (2020/05/21)
+
+Suppose we want to estimate estimate $\mu = E(Y)$.
+
+Possible estimators
+- $\bar Y$
+- $Y_1$
+- $Y_1 + \frac{Y_2 + Y_3}{2}$
+
+$\hat \mu$ is a point estimator of $\mu$.
+
+How do we evaluate a point estimator? MSE
+
+\begin{equation}
+\begin{split}
+MSE = & E((\hat \mu - \mu)^2)\\
+= & Var(\hat \mu) + Bias^2(\hat \mu)
+\end{split}
+\end{equation}
+
+Let Y be a R.V. whose $\mu$ you want to estimate.
+Let X be a R.V. whose $\mu_x$ you already know.
+
+_Example_
+
+A student takes two tests. We would like to estimate the score of the second
+test. We know the distribution and score of the first test. The second test is
+/correlated/ with the score of the first. For example, if they do well on the
+first exam, it is likely that they will do well on the second exam.
+
+$X \sim N(85, 5^2), \ W \sim N(0, 3^2)$
+
+$Y = X + W$
+
+$X$ in this case is the *variate*. The *Control Variate* means Control $X$.
+
+Let $(X_i, Y_i), \ i = 1,...,n$ be iid draws of $(X, Y)$ which are not
+independent of each other.
+
+$$
+\hat Y = \bar Y + \beta(\mu_X - \bar X)\\ E(\hat Y) = \mu
+$$
+
+Without X, $\bar Y$ is an unbiased estimator for $\mu$.
+
+$V(\bar Y) = \frac{\sigma^2}{n}$
+
+$V(\hat Y) = V(\bar Y) + \beta(\mu_X - \bar X)$
+
+We would like to choose $\beta$ such that $Var(\hat Y)$ is minimized.
+
+
+\begin{equation}
+\begin{split}
+\hat Y = & \frac{Y_1 + ... + Y_n}{n} + \frac{\beta (\mu_X - (x_1 + ... + x_n))}{n}\\
+= & \frac{1}{n} \sum_{1}^{n} Y_i + \beta (\mu_X - X_i)
+\end{split}
+\end{equation}
+
+Adjust $\mu_X - X_i$ to be closer to the mean. This reduces variance of the
+point estimator.
+
+
+\begin{equation}
+\begin{split}
+V(\hat Y) = & V(\bar Y + \beta (\mu_X - \bar X))\\
+= & V(\bar Y) + V(\beta (\mu_X + \bar X)) + 2 cov (\hat Y, \beta (\mu_X - \bar X))\\
+= & \frac{\sigma^2}{n} + \beta^2 \frac{\sigma_X^2}{n} - 2 \beta cov(\bar Y, \bar X - \mu_X)
+\end{split}
+\end{equation}
+
+
+\begin{equation}
+\begin{split}
+cov(\bar Y, \bar X) = & cov(\frac{Y_1 + ... + Y_n}{n}, \frac{X_1 + ... + X_n}{n})\\
+= & \frac{n}{n^2} cov (X, Y)\\
+= & \frac{cov(X, Y)}{n} = \frac{corr(X, Y) \sigma_x \sigma_y}{n}
+\end{split}
+\end{equation}
+
+$$
+\frac{\partial V(\hat Y)}{\partial \beta} = \frac{2 \beta \sigma_X^2}{n} -
+\frac{2 corr(X, Y) \sigma_x \sigma_Y}{n} = 0
+$$
+
+$\beta = \frac{corr(X, Y) \sigma_X \sigma_Y}{\sigma_X} =
+\frac{cov(X,Y)}{\sigma_X^2} = \frac{\sigma_{xy}^2}{\sigma_x^2}$
+
+
+\begin{equation}
+\begin{split}
+V(\hat Y) = & \frac{\sigma_Y^2}{n} + (\frac{\sigma_{xy}^2}{\sigma_X}^2)^2 \frac{\sigma_X^2}{n} - \frac{2 \sigma_{xy}^2}{\sigma_X^2} - \frac{\sigma_{xy}^2}{n}\\
+= & \frac{\sigma_Y^2}{n} + \frac{\sigma_{xy}^4}{\sigma_X}^4 \cdot \frac{\sigma_X^2}{n} - \frac{2 \sigma_{xy}^4}{n \sigma_X^2}\\
+= & \frac{\sigma_Y^2}{n} + \frac{\sigma_{xy}^4}{n \sigma_X^2}\\
+= & \frac{\sigma_Y^2}{n}[1 - \frac{\sigma_{xy}^4}{\sigma_X^2 \sigma_Y^2}] = \frac{\sigma_Y^2}{n}[1 - corr(X,Y)]
+\end{split}
+\end{equation}
+
+The larger the correlation, the *better*.
+
+
+$V(\bar Y) = \frac{\sigma_Y^2}{n}$
+
+$$RMSE (\hat Y) = \sqrt{Var(\hat Y)} = \frac{\sigma_Y}{\sqrt n} [1 - corr^2(X, Y)]^{1/2}$$
+
+Choosing the Control Variate, X, to mark Corr(X, Y) as close to $\pm 1$ as
+possible.
+
+\begin{equation}
+\begin{split}
+\hat Y = & \bar Y + \hat \beta (\mu_X - \bar X) = \bar Y + \frac{(\mu_X - \bar X) \sum_{1}^{n}(X_i - \bar X)(Y_i - \bar Y)}{\sum_{1}^{n} (X_i \bar X)^2}\\
+= & \sum_{1}^{n} W_i Y_i \ \text{where} \ w_i = \frac{1}{n} + \frac{(\mu_X - \bar X)(X_i - \bar X)}{\sum_{1}^{n} (X_i - \bar X)^2}
+\end{split}
+\end{equation}
+
+If $X_i < \bar X$ and $\mu_X > \bar X$, then opposite side of $\bar X$ has a
+negative weight. Otherwise, its positive.
+
+
+*Remarks*
+- X,Y must be highly correlated
+- All pairs of X,Y must be independent
+- Reduces MSE but doesn't necessarily lead to a more accurate estimator.
