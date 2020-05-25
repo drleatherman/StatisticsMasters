@@ -2235,3 +2235,252 @@ No implicit Function theorem is used to prove Lagrangian Multipliers with
 inequalities because it doesn't apply. The proof for why Lagrangian Multipliers
 work for inequality constraints is not present here.
 #+end_quote
+** Optimal Margin Classifiers (Vapnik)
+
+
+Input: $(\vec X_1, Y_1),(\vec X_2, Y_2),(\vec X_3, Y_3)$
+
+where $\begin{cases} Y_k = 1 & \vec X_k \in A\\ Y_k = -1 & \vec X_k \in B \end{cases}$
+
+$\begin{cases} \vec X \in A & D(\vec X) > 0\\ \vec X \in B & D(\vec X) \leq 0 \end{cases}$
+
+$D(\vec X) = \vec W \cdot \vec X$
+
+Pick any point x, distance between the point x and the Line (Separating
+Hyperplane)
+
+#+begin_quote
+A plane is the set of all points perpendicular to a normal vector.
+#+end_quote
+
+$\frac{|D(x)|}{\|w\|}$
+
+Desired State:
+
+For $k = 1,2,...,p, \ Y_K = \{-1, 1\}$,
+
+$$
+Y_k \frac{|D(x)|}{\|w\|} \geq M
+$$
+
+#+begin_quote
+$Y_k$ assumes that we are treating distances as negative. This is just
+convention and may be dropped by other texts/sources.
+#+end_quote
+
+Formulate our optimization problem:
+
+$$
+\max_{w, \|w\| = 1} M
+$$
+
+Subject to,
+
+$$
+Y_k D(X_k) \geq M, \ 1 \leq k \leq p
+$$
+
+*Insight*: Maximizing the Margin M equivalent to
+
+$$
+\min_{w} \|w\|
+$$
+
+Subject to,
+
+$$
+Y_k D(X_k) \geq 1, \ 1 \leq k \leq p \ \ \ \label{eq:2}
+$$
+
+The maximum margin M is attained at $M^* = \frac{1}{\|W^*\|}$ where $W^*$ is the
+optimal W in $\eqref{eq:2}$
+
+
+*Reformulate with Lagrange Multipliers*
+
+$$
+\mathcal L (w, \lambda) = \frac{1}{2} \|W\|^2 - \sum_{k = 1}^{p} \lambda_k [Y_k
+D(X_k) - 1]
+$$
+
+#+begin_quote
+minimize the square of norm. The gradient of $\frac{1}{2} norm^2 = w$
+#+end_quote
+
+In $\mathcal R^2$, suppose $X_k = (t_k, u_k)$, then
+
+$$
+D(X_k) = D(t_k, u_k) = w_1 t_k + w_2 u_k \to \frac{\partial D(X_k)}{\partial
+w_1} = t_k
+$$
+
+
+$$
+\frac{\partial D(X_k)}{\partial w} \equiv (\frac{\partial D(X_k)}{\partial w_1},
+\frac{\prtial D(X_k)}{\partial w_2})
+$$
+
+$\frac{\partial D(X_k)}{\partial w_2} = u_k$
+
+
+$$
+\frac{\partial \mathcal{L}}{\partial W} = W - \sum_{k = 1}^{p} \lambda_k Y_k X_k
+= 0 \to W = \sum_{k = 1}^{p} \lambda_k Y_k X_k
+$$
+
+But $D(x) = W \cdot X$
+
+\begin{equation}
+\begin{split}
+D(x) = & (\sum_{k = 1}^{p} \lambda_k Y_k X_k) \cdot X \ \leftarrow X_k \cdot X = \langle X_k, X \rangle\\
+= & \sum_{k = 1}^{p} \lambda_k Y_k \langle X_k, X \rangle
+\end{split}
+\end{equation}
+
+Going back to the earlier example...
+
+$(3 x_1 + 17.2 x_2 + 19.3 X_3) \cdot X = 3 \langle x_1, x \rangle + 17.2 \langle
+x_2, x \rangle + 19.3 \langle x_3, x \rangle$
+
+_Main Insight_
+
+The function $D(X)$ depends on $x_1, x_2, x_3$ only through $\langle x_1, x \rangle, \langle x_2, x \rangle, \langle x_3, x \rangle$
+
+We don't care about the values in $x_1$, only the inner product of $x_1$ and x.
+
+#+begin_quote
+*Engineering Principles*
+
+- All numbers = 5
+- All functions are continuous
+- All continuous functions are polynomials
+- All polynomials are Linear
+#+end_quote
+
+Why do we assume the decision function is a linear function? Now, $D(X)$ depends
+on $x_1, x_2, x_3$ through the inner products of X, So we pick a function $f(X)$
+that _depends only on the inner products_ with x: $\langle x_1, x \rangle, ..., \langle x_p, x \rangle$
+
+#+begin_quote
+Don't forget the inner product is symmetric. \langle a, b \rangle = \langle b, a \rangle
+#+end_quote
+
+$f(\bullet) = c_z K(\bullet, x_1) + ... + c_p K(\bullet, x_p)$
+
+*K is a Kernel function.*
+
+$K (x, x_1) = \langle x, x_1 \rangle$
+
+$K (x, x_1) = 1 + \langle x, x_1 \rangle$ or $K (x, x_1) =$ a function of $\langle x, x_1 \rangle$
+
+*Evaluating when p = 4*
+
+What happens at $x_1$ and $x_2$?
+
+\begin{equation}
+\begin{split}
+y_1 = & f(x_1) =  c_1 K (x_1, x_1) + c_2 K (x_1, x_2) + c_3 K (x_1, x_3) + c_4 K (x_1, x_4)\\
+y_2 = & f(x_2) =  c_1 K (x_2, x_1) + c_2 K (x_2, x_2) + c_3 K (x_2, x_3) + c_4 K (x_2, x_4)\\
+y_3 = & f(x_3) =  c_1 K (x_3, x_1) + c_2 K (x_3, x_2) + c_3 K (x_3, x_3) + c_4 K (x_3, x_4)\\
+y_4 = & f(x_4) =  c_1 K (x_4, x_1) + c_2 K (x_4, x_2) + c_3 K (x_4, x_3) + c_4 K (x_4, x_4)\\
+\end{split}
+\end{equation}
+
+
+$K(a,b) = (1 + \langle a, b \rangle)^4$
+
+$y_1, y_2, y_3, y_4 \in \{ -1, 1\}$
+
+4 Linear equations in 4 Unknowns: $c_1, c_2, c_3, c_4$
+
+$K(x_j, x_k) = (1 + \langle x_j, x_k \rangle)^4$
+
+$Y = Ac$ where $A$ is $4 \times 4$, $A(i,j) = K(X_j, x_k)$
+
+We can solve for $c_1, c_2, c_3, c_4$ and obtain the function.
+
+$f(\bullet) = c_z K(\bullet, x_1) + ... + c_p K(\bullet, x_p)$
+
+When $\bullet$ is a new data point, we can predict whether it belongs to class A
+or B. If it is close to 1, it belongs to A. If it is close to -1, it is close to B.
+
+** Applications of ML
+*** Handwritten Digit Review
+
+$28 \times 28$ handwritten digits.
+
+$$
+B = [\vec y_1, ..., \vec y_{4000}], \ \vec y_j \in \mathbb R^{784}
+$$
+
+- 800 images of 0, first 800 columns
+- 800 images of 1, next 800 columns
+
+and so forth.
+
+Let $\vec f$ be a new image of digit 2. Solve for x such that $\vec f = B \vec
+x$. $\vec x$ is 20-sparse. Would like to only see non-zero entries at position
+1601-2400 (where the twos are)
+
+B has 784 rows, 4000 columns.
+
+*Important*
+
+Let $G^{500 \times 784}$ be a Gaussian Matrix.
+
+$$
+G \vec f = G B \vec x
+$$
+
+Let $A = GB$ and $\vec y = G \vec f$
+
+$$
+\vec y = A \vec x
+$$
+
+Solve for $\vec x$ by minimizing the $l_1$-norm.
+
+**** Application
+
+Each trial of an experiment consists of training the machine with samples of
+digits from 2,3,4,5. The goal is to distinguish 5 from 2,3,4.
+
+One trial consists of the following steps:
+- Take 1000 images of 2, Randomly select 800 and set aside 200
+- Take 1000 images of 3, Randomly select 800 and set aside 200
+- Take 1000 images of 4, Randomly select 800 and set aside 200
+- Take 1000 images of 5, Randomly select 800 and set aside 200
+- Use the 3200 selected images for training
+
+    $(x_1, y_1), ... , (x_p, y_p), \ p = 3200$
+
+    each $y_k = 1$ if digit is 5, and $y_k = -1$ if digits are 2, 3, 4.
+
+    $$
+    f(\diamond) = c_1 K(\diamond, x_1) + ... + c_p K(\diamond, x_p)
+    $$
+
+    Use the polynomial kernel suggested by Vapnik et al.
+
+    $$
+    K(x_i, x_j) = (1 + \langle x_i, x_j \rangle)^4
+    $$
+
+
+For the 200 images of 4 set aside for testing, we want to see $f(\diamond) \approx -1$
+For the 200 images of 5 set aside for testing, we want to see $f(\diamond) \approx 1$
+
+
+** Opinion
+
+Use Deep NN when sample $> 60,000$
+
+Use Kernel Method when sample $\leq 5000$
+
+Viewpoints Regarding Progress in ML
+- We have made 0 progress since 1992 (Vapnik et. al paper on Kernel Methods)
+- Made 1 progress (IHT)
+- We made a lot of progress (LeCun @ Facebook)
+
+Professor Opinion: Until there's a theory of non-convex optimization, there will
+not be an understanding of why DNN works.
