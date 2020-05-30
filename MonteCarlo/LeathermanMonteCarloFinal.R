@@ -1,3 +1,5 @@
+
+tic()
 # set seed for reproducability
 set.seed(1234)
 
@@ -5,7 +7,7 @@ set.seed(1234)
 s0 <- 50
 T <- 1
 sigma <- 0.13
-n <- 1000 # sample size
+n <- 10000 # sample size
 d <- 12 # time size
 init.r <- 0.07
 delta <- T / d
@@ -32,12 +34,13 @@ var_gamma <- function(st_1, delta, VG, rt_1, c) {
 # The first column contains the initial interest rate
 # Subsequent columns contain the calculation of the random variables of the Vasicek Interest Rate Formula
 # This was done here so it could be precomputed
-r <- cbind(rep(init.r, n), 0.02 * sqrt(delta) * t(apply(z, 1, cumsum)))
+#r <- cbind(rep(init.r, n), 0.02 * sqrt(delta) * t(apply(z, 1, cumsum)))
+r <- cbind(rep(init.r, n), 0.02 * sqrt(delta) * z))
 
 # Create and populate a matrix to be used for Stock Prices
 # Similar to above, calculatinos for the random variables and some transformations have been done to reduce work later on.
-# TODO: Does the cumulative sum rule apply to the Variance-Gamma Model? I took it out because I was getting some wild simulations.
 s <- cbind(rep(s0, n), exp(sigma * sqrt(g) * x))
+#s <- cbind(rep(s0, n), exp(sigma * t(sqrt(apply(g, 1, cumsum)) * apply(x, 1, cumsum))))
 
 # precompute part of the stockprice formula since its just constants
 s.c <- log(1 - 0.15 * sigma^2 / 2) / 0.15
@@ -68,7 +71,7 @@ simVasicekVarGamma <- function(d, r, s) {
 
 sampleSim <- simVasicekVarGamma(d, r, s)
 
-payoff <- pmax(sampleSim$s[, ncol(s)] - s0, 0) * exp(-init.r * T)
+payoff <- pmax(sampleSim$s[, ncol(s)] - s0, 0) * exp(-apply(sampleSim$r, 1, sum) * T)
 
 est.price <- mean(payoff)
 
@@ -87,9 +90,11 @@ s.full <- cbind(rep(s0, est.n), exp(sigma * sqrt(g.full) * x.full))
 
 sim <- simVasicekVarGamma(d, r.full, s.full)
 
-payoff.full <- pmax(sim$s[, ncol(s.full)] - s0, 0) * exp(-init.r * T)
+payoff.full <- pmax(sim$s[, ncol(s.full)] - s0, 0) * exp(-apply(sim$r, 1, sum) * T)
 
 est.price <- mean(payoff.full)
 
 lcl <- est.price - 1.96 * sd(payoff.full) / sqrt(est.n)
 ucl <- est.price + 1.96 * sd(payoff.full) / sqrt(est.n)
+
+toc()
