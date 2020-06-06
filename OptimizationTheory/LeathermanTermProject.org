@@ -1,10 +1,17 @@
+#+TITLE:     Optimization Theory: Term Project
+#+AUTHOR:    Dustin Leatherman
+
+* Code
+#+BEGIN_SRC octave
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%
 %%%   Make the Data
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-nrow = 60; dimN = 50;  Nsamples = 50; K = 4; 
+nrow = 60; dimN = 50;  Nsamples = 50; K = 4;
 patch = 20 * ones(28, 20);
 background = zeros(nrow, dimN);
 seed = 13579;
@@ -23,7 +30,7 @@ for corner1 = 4:8
             end
          end
 
-         picture = background; 
+         picture = background;
          picture([(corner1):(corner1 + 27)],[corner2:corner2 + 19]) = patch;
 
          Xmat(:,index) = reshape(picture,nrow * dimN,1);
@@ -40,7 +47,7 @@ for corner1 = 26:30
             end
          end
 
-        picture = background; 
+        picture = background;
         picture([(corner1):(corner1 + 27)],[corner2:corner2 + 19]) = patch;
 
         Xmat(:,index) = reshape(picture,nrow * dimN, 1);
@@ -177,6 +184,7 @@ scatter(x_axis, y_axis)
 %%%%   NOTE: This part is Optional.  Only do this if you wish to discuss your project in job interviews.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% Ugly brute force code just to make sure the answers are right.
 cost1 = 0;
 for i = 1:dimN
   for j = 1:dimN
@@ -194,9 +202,10 @@ for i = 1:dimN
   cost2 = cost2 + ((V(:, i) - innercost) .^ 2);
 end
 
+% cost2 is a vector so sum the vector to get the cost
 cost2 = sum(cost2)
 
-% round to the nth precision
+% round to the nth precision. Octave (OpenSource Matlab) only supports round(X), not round(X,N)
 round2 = @(x, n=0) round (x * 10^n) * 10^(-n)
 
 % trailing digits differ slightly so rounding for equality check
@@ -205,3 +214,86 @@ if round2(cost1, 5) == round2(cost2, 5)
 else
   disp("M_mat values do not match. Check calculations")
 endif
+
+%%% Code for Project output
+% plot 3 and 4th eigenvectors
+scatter(V(:, 3), V(:, 4))
+
+% plot 4th and 5th eigenvectors
+scatter(V(:, 4), V(:, 5))
+
+% output of third eigenvector
+>> V(:, 3)
+ans =
+
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.00000
+   0.26858
+   0.16758
+   0.00685
+  -0.15590
+  -0.25706
+   0.27351
+   0.16837
+   0.00448
+  -0.15856
+  -0.26613
+   0.27321
+   0.17129
+   0.00156
+  -0.17057
+  -0.27476
+   0.26851
+   0.16263
+  -0.00271
+  -0.16942
+  -0.27619
+   0.26031
+   0.15909
+  -0.00812
+  -0.17194
+  -0.27460
+#+END_SRC
+
+
+
+* Figures
+
+#+CAPTION: 2nd vs 3rd Eigenvectors
+#+ATTR_LaTeX: :width 8cm :height 8cm
+#+LABEL: fig:y2y3
+[[./resources/y2y3.png]]
+
+#+CAPTION: 3rd vs 4th Eigenvectors
+#+ATTR_LaTeX: :width 8cm :height 8cm
+#+LABEL: fig:y3y4
+[[./resources/y3y4.png]]
+
+
+#+CAPTION: 4th vs 5th Eigenvectors
+#+ATTR_LaTeX: :width 8cm :height 8cm
+#+LABEL: fig:y4y5
+[[./resources/y4y5.png]]
