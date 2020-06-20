@@ -2484,3 +2484,311 @@ Viewpoints Regarding Progress in ML
 
 Professor Opinion: Until there's a theory of non-convex optimization, there will
 not be an understanding of why DNN works.
+* Geometric Lemma (2020/06/02)
+
+- Let A be any $4 \times 4$ matrix.
+- Let $V \in \mathcal R^4$ so that $\|v\|_2 = 1$ and $\|Av\|_2$ is Max.
+
+Pick any $W \in \mathcal R^4$ so that $w \bot v, \ \|w\|_2 = 1$
+
+Then,
+
+$$
+Av \bot Aw
+$$
+
+
+$\bot$: orthogonal, perpendicular
+
+#+begin_quote
+The Vector v must be _special_. If you just have 2 vectors $v_1 \bot v_2$, then
+we cannot say $Av_1 \bot Av_2$.
+#+end_quote
+
+Use the Geometric Lemma to prove SVD (Eckhart Young Theorem)
+
+
+Let A be any $4 \times 4$ matrix. Then there are square matrices $U, \Sigma, V$
+s.t.
+
+$$
+A = U \Sigma V^T
+$$
+
+$U^T U = I, \ V^T V = I$: Columns are orthogonal to each other.
+
+$\Sigma = diag(\sigma_1, \sigma_2, \sigma_3, \sigma_4)$ where $\sigma_1$ is the
+largest and $\sigma_4$ is the smallest.
+
+
+** Warm Up
+
+Let $V \in \mathcal R^4$ so that $\|v\|_2 = 1$ and $\|Av\|_2$ is Max.
+
+This means among all vectors v of norm 1, $\langle Av, Au \rangle$ is as large
+as possible. Pick any $w \in \mathcal R^4$ so that $w \bot v, \ \|w\|_2 = 1$
+
+
+Let $u = \cos(\theta) v + \sin (\theta) w$ and $f(\theta) = \langle Av, Au \rangle$
+
+\begin{equation}
+\begin{split}
+f(\theta) = & A(\cos(\theta) v + \sin (\theta) w)^T A \cos(\theta) v + A \sin (\theta)\\
+= & \cos^2 (\theta) \langle Av, Av \rangle + \sin^2 (\theta) \langle Aw, Aw \rangle + 2 \cos (\theta) \sin (\theta) \langle Av, Aw \rangle\\
+= & \cos^2 (\theta) \langle Av, Av \rangle + \sin^2 (\theta) \langle Aw, Aw \rangle + \sin (2 \theta) \langle Av, Aw \rangle\\
+\end{split}
+\end{equation}
+
+#+begin_quote
+Trig definition
+$2 \cos(\theta) \sin(\theta) = \sin (2 \theta)$
+#+end_quote
+
+\begin{equation}
+\begin{split}
+f' (\theta) = & -2 \cos (\theta) sin (\theta) \langle Av, Av \rangle + 2
+\sin(\theta) \cos (\theta) \langle Aw, Aw \rangle + 2 \cos (2 \theta) \langle
+Av, Aw \rangle\\
+= & 2 \langle Av, Aw \rangle
+\end{split}
+\end{equation}
+
+
+but $f'(0) = 0$ so $\langle Av, Aw \rangle = 0$
+
+** Proof
+
+Use Geometric Lemma to prove the following:
+
+#+begin_quote
+Let A be any $3 \times 10$ matrix. Then there is a $3 \times 3$ matrix U and a
+$10 \times 3$ matrix V s.t.
+$$
+Av = U \Sigma
+$$
+#+end_quote
+
+Where
+
+$$
+U^T U = V^T V = I, \Sigma = diag(\sigma_1, \sigma_2, \sigma_3) \ \text{with} \
+\sigma_1 \geq \sigma_2 \geq \sigma_3 \geq 0
+$$
+
+$$
+A [\vec v_1 | \vec w | \vec x] = [\vec U_1 | \vec U_2 | \vec U_3] \begin{bmatrix}
+\sigma_1 & & \\
+& \sigma_2 &\\
+& & \sigma_3
+\end{bmatrix}
+$$
+** Netflix Problem
+
+Lowe Ran Matrix $M \in \mathcal R^{m \times N}$ with many missing entries
+
+_EX_: Barbara is a 512 x 512 image. Randomly erase half the image. Try to
+recover the original image.
+
+We observe those entries in the index set $\Omega$ (The set $\Omega$ locates our
+samples.)
+
+We want to recover the Matrix M, including all the missing entries.
+
+Use the nuclear norm,
+
+$$
+\|X\|_* = \sum_{k = 1}^{n} \sigma_k (x)
+$$
+
+#+begin_quote
+The nuclear norm is the sum of singular values. i.e. Trace of $\Sigma$ It comes from Alexander
+Grothendieck, the purest of the pure mathematicians.
+
+A small nuclear norm /roughly/ approximates low-rank.
+#+end_quote
+
+_Convex Optimization Problem_
+
+minimize $ \sum_{k = 1}^{n} \sigma_k (x)$
+
+subject to $X_{ij} = M_{ij} \forall (i,j) \in \Omega$
+
+*** Fast Augmented Lagrangian Algorithm for learning Low-Ran Matrices
+
+Given a rank-2 matrix B that is $50 \times 50$ with missing entries. In each
+iteration, keep track of two matrices, Z and Y. At the iteration K, update the
+matrix Z by
+
+$$
+Z_{k + 1} = \mathcal D_{\lambda} (Z_k + \alpha_k V_k)
+$$
+
+$\lambda$ is a param, $\alpha_k$ is a step size, $Y_k$ is the direction of
+descent. In addition, the soft-threshold operator $\mathcal D_{\lambda}$ is:
+
+$$
+\mathcal D_{\lambda} (z) = U max(S - \lambda I, 0) W^T
+$$
+
+$Z = U S V^T$ is the SVD of Z.
+* Special Topics: Bag-of-Words Topic Modeling (2020/06/05)
+
+#+begin_quote
+Philosophy
+
+What is the biggest responsibility and burden I can take on in order to greatly
+improve the fulfillment of my life?
+#+end_quote
+
+#+begin_quote
+Thinking of equations is the wrong way to think about math. If you think of math
+in this way, you miss the point entirely
+#+end_quote
+
+_Assumptions_
+
+- Each document is assigned a single topic
+- Words in a document are drawn independently
+
+Use Case:
+- Genetic pattern recognition
+
+K: \# of topics
+
+d: \# of distinct words in vocabulary
+
+$c \geq 3$: \# of words in each document
+
+In this case, Matrices are not powerful enough. We need _tensors_.
+** Tensors
+
+
+Tensor of Order 0: Number (5, e, $e^\pi$, ...)
+Tensor of Order 1: Vector
+Tensor of Order 2: Matrix
+Tensor of Order 3: Stack of Pancakes
+- "3d" matrix (crutch for initial understanding)
+
+#+begin_quote
+$e^\pi$: don't know how to show its irrational.
+#+end_quote
+
+** Generative Process for a Document
+1. The topic of a doc is a R.V. K = 4.
+
+   $$
+   P(m = j) = w_{j}, \ j \in \{1,2,3,4\}
+   $$
+
+   $\sum_{1}^{K}w_i = 1$ because its a probability.
+2. Given topic h, l words are drawn independently
+   $\mu_1 = \begin{bmatrix}0.1\\ 0.1\\ 0.1\\ 0.2\\ 0\end{bmatrix}$
+
+   $\mu_1$: vector of probabilities for a given word appearing in a document
+
+   $\mu_1 = \mu_2 = \mu_3 = ... \in \mathcal R^d$
+   for each word in doc $v \in \{1,2,..., l\}$
+  
+   Trying to find $\mathcal R^d$
+
+   $$
+   P(\text{word} \ v \ \text{is} \ i | h = j) = \langle \vec e_i, \vec \mu_j
+   \rangle = M_{ij} \ 1 \leq i \leq d, \ j \in \{1,2,3,4\}
+   $$
+
+   $M = [\vec \mu_1 | \vec \mu_2 | \vec \mu_3 \vec \mu_4]$: matrix of
+   conditional probabilities.
+
+** Two Ideas
+
+Pairs (i, j) = P(first word = i, second word = j). Pairs is d x d.
+
+Not a real way to solve because you need the documents.
+
+Triples(i,j,k) = P(first word i, second word = j, third word = k)
+
+_Actual Way to think of a Tensor_
+
+A Linear Map. Triples: $\mathcal R^d \to \mathcal R^{d \times d}$
+Takes a vector and returns a matrix.
+
+Let Random Vectors $\vec x_1, \vec x_2, ... \in \mathcal R^d$ represent the l
+words by setting
+
+\begin{equation}
+\begin{split}
+\vec x_v = & \vec e_i \iff \ \text{word v is i}, \ 1 \leq i \leq d\\
+x_3 = & e_3 \iff \ \text{third word in doc is 5th word in vocab}
+\end{split}
+\end{equation}
+
+Each word is a coordinate vector.
+
+#+begin_quote
+Don't ask what a tensor _is_ but what does it _do_?
+#+end_quote
+
+Pairs = $E[\vec x_1 \otimes \vec x_2]$
+
+Triples = $E[\vec x_1 \otimes \vec x_2 \otimes \vec x_3]$
+
+$\otimes$: Tensor Product
+
+
+defined by
+
+Triples($\vec y$) = $E[(\vec x_1 \otimes \vec x_2) \langle \vec y, \vec x_3
+\rangle]$
+
+$\langle \vec y, \vec x_3 \rangle$: Returns a number.
+
+if $\vec y(k)$ is the kth entry in $\vec y$, then the $(i, j)$ entry of
+Triples($\vec y$) is
+
+
+Triples($\vec y$) (i, j) = $\sum_{k = 1}^{d} y(k) \ \text{Triples (i, j, k)}$
+
+
+#+begin_quote
+Insight
+
+$Pairs = M diag(\vec w) M^T$
+
+$Triples = M diag(M^T \vec y) diag(\vec w) M^T$
+#+end_quote
+
+** Explanation for Pairs
+
+\begin{equation}
+\begin{split}
+Pairs(i, j) = & Pr(\vec x_1 = \vec e_i, \vec x_1 = \vec e_j | h = t) \cdot Pr (h = t)\\
+= & \sum_{t = 1}^{4} Pr(\vec x_1 = \vec e_i | h = t) \cdot Pr(\vec x_2 = \vec e_j | h = t) \cdot Pr(h = t)\\
+= & \sum_{t = 1}^{4} M (i, t) \ M(j, t) \cdot w_t\\
+= & M diag(\vec w) \ M^T
+\end{split}
+\end{equation}
+
+#+BEGIN_SRC octave
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% compute the matrix Pairs
+%%%% Pairs(i,j) = Pr[ first word is i, second word is j]
+%%%%
+%%%% Each column in a Shelf is a document.
+%%%% The documents are the columns of a Shelf.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Pairs = zeros(dwords, dwords);
+for ii=1:dwords
+  for jj = 1:dwords
+    count = 0;
+    total = 0;
+    for doc=1:Num
+      total = total + 1;
+      if (Shelf(1,doc) == ii) && (Shelf(2,doc) == jj)
+        count = count + 1;
+        end
+    end
+    Pairs(ii,jj) = count/total;
+    end
+end
+#+END_SRC
