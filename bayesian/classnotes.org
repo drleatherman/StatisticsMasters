@@ -1,0 +1,205 @@
+* Bayesian Statistics
+
+* Intro (2020/09/10)
+
+** Motivating Example
+There are two students: Student A and Student B, along with an instructor.
+A secretly writes down a number (1,..,10) then mentally calls heads or tails.
+
+1. The instructor flips a coin
+2. If heads, A honestly tells B if the number is even or odd.
+3. If A guesses H/T correctly, A tells B if their number is even or odd.
+   Otherwise, they lie.
+4. B will guess if the number is odd or even
+
+   Let $\theta$ be the probability that B correctly guesses even or odd.
+
+#+begin_quote
+The class (and myself) initially agreed without much discussion that 0.5 is the
+obvious answer. Upon further thinking on this, the probabilities breakdown in
+such way:
+
+(2): 0.5
+(3): 0.5
+(4): ?
+
+The initial logic is that its a 50/50 chance since there are two choices but
+there is an X-factor here with number 4. A few questions worth asking:
+1. Does B know the rules upfront? As in, are they
+aware that A may or may not lie?
+2. Does B see the result of the coin flip?
+3. Is this done virtually or in person?
+
+If the answer is no for 1 and 2, then 0.5 is a logical choice because they'd
+be guessing without much foreknowledge.
+
+If the answer is yes for 1 and 2, then B is in on the "game" and can make a more
+educated guess. If A or the professor has a "tell", then that could provide
+information. Reading body language may also provide some information to B on the
+veracity of A's claim.
+
+I would argue that $\theta$ would be > 0.5 /if/ A and B know each other well
+enough. Which is really a great example of Bayesian vs Frequentist view points.
+#+end_quote
+
+
+** Frequentist Approach
+
+Quantifies uncertainty in terms of repeating the process that generated the data
+many times.
+
+*** Properties
+- The parameters $\theta$ are fixed, unknown, and a constant.
+- The sample (data) Y are random
+- All prob. statements would be made about the randomness in the data.
+-
+
+A statistic $\hat \theta = Y / n$ is a statistic and is an estimator of the
+population proportion $\theta$
+
+The distribution of $\hat \theta$ from repeated sampling is the /sample distribution/.
+*** Things a Frequentist would never say
+- $P(\theta > 0) = 0.6$ because $\theta$ is not a random variable
+- The distribution of $\theta$ is Normal(4.2,1.2)
+- The probability that the true proportion is in the interval (0.4, 0.5) is
+  0.95.
+- The probability that the null hypothesis is true is 0.03.
+
+
+** Bayesian Approach
+
+Expresses uncertainty about $\theta$ using probability distributions. $\theta$
+is still fixed and unknown.
+
+Distribution /before/ observing the data is the *prior distribution*. e.g.
+$P(\theta > 0.5) = 0.6$. This is subjective since people may have different priors.
+
+Hopefully, Uncertainty about $\theta$ is reduced after observing the data.
+
+Bayesian Interpretations differ from /Frequentist/ Interpretations.
+
+Uncertainty distribution of $\theta$ after observing the data is the *posterior
+distribution*.
+
+*Bayes Theorem* for updating the prior
+
+\begin{equation}
+\begin{split}
+f(\theta | Y) = \frac{f(Y | \theta) f(\theta)}{f(Y)}
+\end{split}
+\end{equation}
+
+Described in words: Posterior $\propto$ Likelihood $\times$ Prior
+
+#+begin_quote
+$f(\theta | Y)$ is the posterior distribution.
+#+end_quote
+
+A key difference between Bayesian and frequentist statistics is that all
+inference is conditional on the single data set we observed (Y).
+
+
+
+*** Likelihood Function
+
+Distribution of the observed data given the parameters. This is the Same
+function used in a maximum likelihood analysis.
+
+#+begin_quote
+When prior information is weak, Bayesian and Maximum Likelihood Estimates are similar.
+#+end_quote
+
+*** Priors
+
+Say we observed Y = 60 successes in n = 100 trials and $\theta \in [0,1]$ is the
+true probability of success.
+
+Want to select a prior that has a domain of [0, 1]
+
+If there is no relevant prior information, we might use $\theta \sim Uni(0,1)$.
+This is called an /uninformative prior/. aka a "best guess".
+
+**** Beta
+
+Beta distributions are a common prior for parameters between 0 and 1.
+
+If $\theta \sim Beta(a, b)$, then the posterior is
+
+$$
+\theta | Y \sim Beta(Y + a, n - Y + b)
+$$
+
+
+$Beta(1,1) == Uni(0,1)$
+
+
+*** Posteriors
+
+The likelihood function $Y | \theta \sim Bin(n, \theta)$
+
+The Uniform prior is $\theta \sim Uni(0, 1)$
+
+The posterior is then $\theta | Y \sim Beta(Y + 1, n - Y + 1)$
+
+*** Advantages
+- Bayesian concepts (posterior probability of the null hypothesis) are arguably
+  easier to interpret than the frequentist ideas (p-value.)
+- Can incorporate scientific knowledge via the prior.
+  - Even a Small amount of prior information can add stability.
+- Excellent at quantifying uncertainty in complex problems.
+- Provides a framework to incorporate data/information from multiple sources.
+
+*** Disadvantages
+- Less common/familiar
+- Picking a prior is subjective (though there are objective priors)
+- Procedures with frequentist properties are desirable.
+- Computing can be slow for hard problems
+- Non parametric methods are challenging
+
+** Review
+
+#+begin_quote
+Only the interesting parts are placed here. See the rest of this repo for deeper
+dives on other concepts.
+#+end_quote
+
+*** Probability
+Objective (associated with Frequentist)
+- $P(X = x)$ is a mathematical statement
+- If we repeatedly sampled X, the value that the proportion of draws equal to x
+  converges is defined as $P(X = x)$
+
+Subjective (associated with Bayesian)
+- $P(X = x)$ represents an individual's degree of belief
+- Often quantified as the amount an individual would be willing to wager that X
+  will be x.
+
+A Bayesian Analysis uses both of these concepts.
+
+*** Uncertainty
+
+Aleatoric (def: indeterminate) uncertainty (likelihood)
+- Uncontrollable randomness in the experiment
+
+Epimestic (def: involving knowledge) uncertainty (prior/posterior)
+- Uncertainty about a quantity that could be theoretically
+
+A Bayesian Analysis uses both of these concepts
+
+*** Probability vs Statistics
+
+#+begin_quote
+The common sense, I like the way this is phrased.
+#+end_quote
+
+Probability is the forward problems
+- We assume we know how the data are being generated and computer the
+  probability of events.
+
+  For example, what is the probability of flipping 5 straight heads if the coins
+  are fair?
+
+Statistics is the inverse problem
+- We use data to learn about the data-generating mechanism
+
+  For example, if we flipped five straight heads, can we conclude the coin is biased?
