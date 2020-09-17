@@ -94,6 +94,8 @@ Described in words: Posterior $\propto$ Likelihood $\times$ Prior
 
 #+begin_quote
 $f(\theta | Y)$ is the posterior distribution.
+
+Given that I have seen some data, what am I seeing now?
 #+end_quote
 
 A key difference between Bayesian and frequentist statistics is that all
@@ -133,6 +135,8 @@ $$
 
 $Beta(1,1) == Uni(0,1)$
 
+**** Gamma
+Popular distribution for $\sigma$ (population standard deviation)
 
 *** Posteriors
 
