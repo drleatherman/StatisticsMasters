@@ -1,0 +1,74 @@
+#+TITLE:     Quiz #1
+#+AUTHOR:    Dustin Leatherman
+#+OPTIONS: toc:nil
+
+* Question 1
+
+#+begin_quote
+Assuming the joint p.m.f below, are $X_1$ and $X_2$ independent? Justify your answer
+#+end_quote
+
+|       |    0 |   1 | Total |
+|-------+------+-----+-------|
+|     0 | 0.45 | 0.1 |  0.55 |
+|     1 | 0.25 | 0.2 |  0.45 |
+| Total |  0.7 | 0.3 |     1 |
+
+
+By Bayes Rule, if $X_1$ and $X_2$ are independent, then
+
+$$
+f(X_1 | X_2) = \frac{f(X_1, X_2)}{f_{X_2}(X_2)} = \frac{f_{X_1}(X_1)
+f_{X_2}(X_2)}{f_{X_2}(X_2)} = f_{X_1}(X_1)
+$$
+
+\begin{equation}
+\begin{split}
+P (X_1 = 0) = & 0.7\\
+P (X_2 = 0) = & 0.55\\
+P (X_1 = 0, X_2 = 0) = & 0.45\\
+\frac{0.45}{0.55} = & 0.8182 \neq 0.7
+\end{split}
+\end{equation}
+
+Thus $X_1$ and $X_2$ are _dependent_.
+
+* Question 2
+
+#+begin_quote
+To test a new pesticide, experimenters will spray a field and record the number
+of moths caught in a trap placed in the center of the field for a week after
+spraying as the outcome variable of the study.
+#+end_quote
+
+
+** a
+
+#+begin_quote
+What is the appropriate parametric family of distributions for the outcome
+variable? Justify your answer
+#+end_quote
+
+The appropriate distribution to represent the outcome variable is the *Binomial*
+distribution. The statistic of interest is the number of moths caught in the
+trap which can be modeled as a number of /successes/ which is best modeled by
+the Binomial Distribution.
+
+** b
+
+#+begin_quote
+The parameter of interest is the mean number of moths. What is an appropriate
+parametric family of distributions for this parameter? Justify your answer.
+#+end_quote
+
+With repeated sampling of the number of moths caught in the trap, a *Normal*
+distribution could be used to estimate the mean number of moths since the
+sampling distribution converges to a Normal distribution per the Central Limit
+Theorem.
+
+* Question 3
+
+#+CAPTION: Problem 3
+#+ATTR_LaTeX: scale=0.95
+#+LABEL: fig:label
+[[./resources/quiz1_prob3.jpg]]
