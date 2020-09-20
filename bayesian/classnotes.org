@@ -207,4 +207,150 @@ Probability is the forward problems
 Statistics is the inverse problem
 - We use data to learn about the data-generating mechanism
 
-  For example, if we flipped five straight heads, can we conclude the coin is biased?
+  For example, if we flipped five straight heads, can we conclude the coin is
+  biased?
+* Probability & Introduction to Bayes (2020/09/17)
+
+
+if x and y are independent, then the following is true
+
+$$
+f(x | y) = \frac{f(x, y)}{f_Y (y)} = \frac{f_X(x) f_Y (y)}{f_Y (y)} = f_X (x)
+$$
+
+
+Cannot use $f(x,y)$ as PMF because $\sum_{1}^{Y} f(x,y) = f(x) \neq 1$. Need to
+scale by marginal probability in order to sum to 1 and thus be a proper PMF/PDF.
+
+|              |     1 |     2 |     3 |     4 |     5 | Total [p(y)] |
+|--------------+-------+-------+-------+-------+-------+--------------|
+| US           | .0972 | .0903 | .0694 | .0069 | .0069 |        .2708 |
+| Not US       | .3194 | .1319 | .1389 | .1181 | .0208 |        .7292 |
+| Total [p(x)] | .4167 | .2222 | .2083 | .1250 | .0278 |            1 |
+
+show that x and y are dependent
+
+$P(x = 1) = 0.4167$
+
+$P(y = 1) = 0.2708$
+
+$P(x = 1) \times P(y = 1) = 0.4167 (0.2708) = 0.1128$
+
+$P(x = 1, y = 1) = 0.0972 \neq 0.1128$ so dependent!
+
+** Calculating the Posterior Analytically
+
+*** Using an Arbitrary PDF
+
+1. Find Joint Probability (f(x,y))
+
+\begin{equation}
+\begin{split}
+P(x > 7, y > 40) = & \int_{7}^{10} \int_{40}^{50} \ 0.26 exp(- |x - 7| - |y - 40|) \ dx \ dy\\
+    = & 0.26 \ \int_{7}^{10} \int_{40}^{50} exp(- x + 7 - y + 40) \ dx \ dy \label{eq:21a} \ (\text{Since only interested in positive values})\\
+    = & 0.26 \ \int_{7}^{10} \int_{40}^{50} exp(- (x - 7) \ exp( - (y - 40)) \ dx \ dy\\
+    = & 0.26 \ \int_{7}^{10} \int_{0}^{10} exp(- (x - 7) \ exp(-u) \ dx \ du\\
+    = & 0.26 \ \int_{7}^{10} \int_{0}^{10} exp(- (x - 7) \ [- exp(-u)]_0^{10} \ dx \ du\\
+    = & 0.26 (1 - e^{-10}) \ \int_{7}^{10} exp(- (x - 7) dx\\
+    = & 0.26 (1 - e^{-10}) (1 - e^{-3}) \approx 0.247
+\end{split}
+\end{equation}
+
+2. Find Marginal Probability over the Data $f_X(x)$
+
+\begin{equation}
+\begin{split}
+f_X(x) = & int_{20}^{50} 0.26 + e^{- |x - 7| - |y - 40|} dy\\
+    = & 0.26 e ^{-|x - 7|} \int_{20}^{50} e^{- |y - 40|} dy\\
+    = & 0.26 e ^{-|x - 7|} [\int_{20}^{40} e^{- (40 - y)} dy +  \int_{40}^{50} e^{- (y - 40)} dy]\\
+    = & 0.26 e ^{-|x - 7|} [\int_{20}^{0} - e^{-u} du +  \int_{0}^{10} e^{- u} du]\\
+    = & 0.26 e ^{-|x - 7|} [1 - e^{-20} + 1 - e^{-10} \approx 2 ] \\
+    = & 0.52 e ^{- |x - 7|} \ \forall \ x \leq x \leq 10
+\end{split}
+\end{equation}
+
+3. Calculate Conditional Probability
+
+$$
+f(y | x) = \frac{f(x, y)}{f_X (x)} = \frac{1}{2} e^{- |y - 40|}
+$$
+
+#+begin_quote
+If integrating over an absolute value, break up the integral into two integrals:
+the first over the negative domain of the integration, the second over the
+positive domain.
+#+end_quote
+
+*** Using Normal Distribution
+
+1. Find Marginal Probability
+
+\begin{equation}
+\begin{split}
+f(x) = & \int_{- \infty}^{\infty} \frac{1}{2 \pi \sqrt{1 - \rho^2}} \ exp(- \frac{x^2 + y^2 - 2 \rho x y}{2 (1 - \rho^2)}) \ dy\\
+= & \frac{1}{2 \pi \sqrt{1 - \rho^2}} e^{-x^2 / 2(1 - \rho^2)} \ \int_{- \infty}^{\infty} \frac{1}{\sqrt{2 \pi}} exp(- \frac{y^2 - 2 \rho x y}{2 (1 - \rho^2)}) \ dy \label{eq:2b1} \ \text{(Move x's out of integral. Arrange terms so it looks like a Normal Distribution.)}\\
+= & \frac{1}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} e^{-x^2 / 2(1 - \rho^2)} \ \int_{- \infty}^{\infty} \frac{\sqrt{1 - \rho^2}}{\sqrt{2 \pi (1 - \rho^2)}} exp(- \frac{y^2 - 2 \rho x y + \rho^2 x^2 - (\rho x)^2}{2 (1 - \rho^2)}) \ dy\\
+= & \frac{1 \ \sqrt{1 - \rho^2}}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} e^{-x^2 / 2(1 - \rho^2)} \ e^{\frac{\rho x^2}{2 (1 - \rho^2)}} \ \int_{- \infty}^{\infty} \frac{1}{\sqrt{2 \pi (1 - \rho^2)}} exp(- \frac{(y - \rho x)^2}{2 (1 - \rho^2)}) \ dy, \label{eq:2b2} \ \mathnormal{N(\rho x, 1 - \rho^2)}\\
+= & \frac{1}{\sqrt{2 \pi}} e^{-0.5 \ \frac{x^2 - \rho^2 x^2}{1 - \rho^2}}\\
+= & \frac{1}{\sqrt{2 \pi}} e^{-0.5 x^2}, \label{eq:2b3} \mathnormal{X \sim N(0, 1)}\\
+\end{split}
+\end{equation}
+
+2. Assume Joint Normal PDF
+
+3. Find Conditional probability
+
+\begin{equation}
+\begin{split}
+f(y | x) = & \frac{f(x,y)}{f_X (x)}\\
+    = & \frac{\frac{1}{2 \pi \sqrt{1 - \rho^2}} exp(- \frac{x^2 + y^2 - 2 \rho x y}{2 (1 - \rho^2)})}{\frac{1}{\sqrt{2 \pi}} \ exp(- \frac{x^2}{2})}\\
+    = & \frac{1}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} \ exp(- \frac{x^2 + y^2 - 2 \rho x y}{2 (1 - \rho^2)} + \frac{x^2}{2})\\
+    = & \frac{1}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} \ exp(- \frac{1}{2} [\frac{x^2 + y^2 - 2 \rho x y}{1 - \rho^2} - x^2])\\
+    = & \frac{1}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} \ exp(- \frac{1}{2} [\frac{x^2 + y^2 - 2 \rho x y - (1 - \rho^2) x^2}{1 - \rho^2}])\\
+    = & \frac{1}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} \ exp(- \frac{1}{2} [\frac{y^2 - 2 \rho x y - \rho^2 x^2}{1 - \rho^2}])\\
+    = & \frac{1}{\sqrt{2 \pi} \sqrt{1 - \rho^2}} \ exp(- \frac{1}{2} [\frac{(y - \rho x)^2}{1 - \rho^2}]), \ \label{eq:2bd} y|x \sim N(\rho x, 1 - \rho^2)
+\end{split}
+\end{equation}
+
+** Bayes Theorem
+
+$$
+P(\theta | y) = \frac{P(y | \theta) P (\theta)}{P(y)}
+$$
+
+How do you know you are using Bayes Rule?
+
+Given $P(y | \theta)$, want to find $P(\theta | y)$
+
+
+- Bayesians quantify uncertainty about fixed but unknown parameters by treating
+them as random variables.
+- This requires that we set a prior distribution $\pi(\theta)$ to summarize
+  uncertainty before observing the data.
+- The distribution of the observed data given the model parameters is the
+  /likelihood function/, $f(Y | \theta)$
+  - The likelihood function is the most important piece of a Bayesian Analysis
+    because it links the data and the parameters.
+
+** Bayesian Learning
+
+The posterior distribution $P(\theta | Y)$ summarizes uncertainty about the
+parameters given the prior and data.
+
+Reduction in uncertainty from prior to posterior represents *Bayesian Learning*
+
+Bayes Theorem (again):
+
+$$
+P(\theta | Y) = \frac{f(Y | \theta) \pi (\theta)}{m(Y)}
+$$
+
+$m(Y) = \int F(Y | \theta) \pi (\theta) d \theta$: marginal distribution of the
+data and can usually be ignored.
+
+** Subjectivity
+
+Choosing Likelihood function and a prior distribution are subjective.
+
+If readers disagree with assumptions, findings will be rejected so assumptions
+must be justified theoretically and empirically.
