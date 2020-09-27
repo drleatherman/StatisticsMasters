@@ -1,0 +1,105 @@
+#+TITLE:     Quiz #2
+#+AUTHOR:    Dustin Leatherman
+#+OPTIONS: toc:nil
+
+* 1
+#+begin_quote
+Your daily commute is distributed normally with mean 10 minutes and standard
+deviation 2 minutes if there is no convention downtown. However, conventions are
+scheduled for roughly 1 in 5 days, and your commute time is distributed normally
+with mean 15 minutes and standard deviation 3 minutes if there is a convention.
+Let Y be your commute time and $\theta = 1$ indicate there is a convention and
+$\theta = 0$ if there is no convention.
+#+end_quote
+
+The following conditional probabilities are interpreted from the problem description.
+
+\begin{equation}
+\begin{split}
+f(y | \theta = 0) \sim & N(\mu = 10, \sigma = 2) \label{eq:1}\\
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+f(y | \theta = 1) \sim & N(\mu = 15, \sigma = 3) \label{eq:2}\\
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+f( \theta = 1) = & \frac{1}{5} \label{eq:3}
+\end{split}
+\end{equation}
+
+** a
+
+#+begin_quote
+Give an expression for the prior distribution of $\theta$
+#+end_quote
+
+Since $\theta$ is either 1 or 0, it can be expressed as a Bernoulli Random
+Variable.
+
+\begin{equation}
+\begin{split}
+f(\theta) = \frac{1}{5}^{\theta} \frac{4}{5}^{1 - \theta}
+\end{split}
+\end{equation}
+
+** b
+
+#+begin_quote
+Give an expression for the likelihood function. i.e. the PDF of Y given $\theta$
+#+end_quote
+
+Since $\theta$ is a Bernoulli random variable and the parameters for
+$\eqref{eq:2}$ assume $\theta = 1$ whereas $\eqref{eq:1}$ assumes $\theta = 0$,
+then
+
+\begin{equation}
+\begin{split}
+f(y | \theta) \sim N (\mu = 10 + 5 \theta, \sigma = \theta + 2) \label{eq:3}
+\end{split}
+\end{equation}
+
+
+Thus the likelihood function can be described as the PDF of $\eqref{eq:3}$
+
+\begin{equation}
+\begin{split}
+f(y | \theta) = & \frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(- \frac{(x - (10 + 5 \theta))^2}{2(\theta + 2)^2})\\
+= & \frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(- \frac{(x - 10 - 5 \theta)^2}{2(\theta + 2)^2})\\
+\end{split}
+\end{equation}
+
+** c
+
+#+begin_quote
+Give an expression for the probability there was a convention downtown given
+that your commute time was Y = 16 minutes.
+#+end_quote
+
+
+\begin{equation}
+\begin{split}
+f(\theta | Y = 16) = & \frac{f(Y = 16 | \theta) f(\theta)}{f(Y = 16 | \theta = 1) \times f(\theta = 1) + f(Y = 16 | \theta = 0) \times f(\theta = 0)}\\
+= & \frac{\frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(-\frac{(16 - 10 - 5 \theta)^2}{2 (\theta + 2)^2}) \cdot \frac{1}{5}^{\theta} \frac{4}{5}^{1 - \theta}}{\frac{1}{2 \sqrt{2 \pi}} exp(- \frac{6^2}{2 \times 2^2}) \frac{4}{5} + \frac{1}{2 \sqrt{2 \pi}} exp(- \frac{6^2}{2 \times 2^2}) \frac{4}{5}}\\
+= & \frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(-\frac{(6 - 5 \theta)^2}{2 (\theta + 2)^2}) \cdot \frac{1}{5}^{\theta} \frac{4}{5}^{1 - \theta} \cdot \frac{1}{0.02693}\\
+\end{split}
+\end{equation}
+
+
+** d
+
+#+begin_quote
+The answer to (c) is a probability assigned to $\theta$. Given we have observed
+$Y = 16$, is $\theta$ a random variable? In what sense is the answer to (c) a
+meaningful probability? (Answer this from a Bayesian perspective in 50 words or less)
+#+end_quote
+
+$\theta | Y = 16$ is /not/ a random variable. If Y is fixed, $\theta$
+becomes a constant which can be plugged into (c) to produce a probability. The
+result of (c) would be meaningful if, taking into consideration prior knowledge about convention
+frequency, contingency plans regarding the convention need to be made for
+traffic or otherwise.

@@ -260,7 +260,7 @@ P(x > 7, y > 40) = & \int_{7}^{10} \int_{40}^{50} \ 0.26 exp(- |x - 7| - |y - 40
 
 \begin{equation}
 \begin{split}
-f_X(x) = & int_{20}^{50} 0.26 + e^{- |x - 7| - |y - 40|} dy\\
+f_X(x) = & \int_{20}^{50} 0.26 + e^{- |x - 7| - |y - 40|} dy\\
     = & 0.26 e ^{-|x - 7|} \int_{20}^{50} e^{- |y - 40|} dy\\
     = & 0.26 e ^{-|x - 7|} [\int_{20}^{40} e^{- (40 - y)} dy +  \int_{40}^{50} e^{- (y - 40)} dy]\\
     = & 0.26 e ^{-|x - 7|} [\int_{20}^{0} - e^{-u} du +  \int_{0}^{10} e^{- u} du]\\
@@ -380,7 +380,6 @@ So? $dt = \frac{1}{24}$
 
 *Goal*: Fit SIR Model for given values of $\beta$ and $\Gamma$
 
-
 ** Summarize a univariate Posterior with Beta-Binomial
 
 Posterior = Likelihood $\times$ Prior
@@ -430,7 +429,9 @@ Confidence interval interpretation:
 
 With 95% Confidence, $\theta$ is between l and u.
 
-A Bayesian Posterior is a distribution for $\theta | Y$ whereas the sampling distribution is for $\hat \theta$. While their expected values are both $\mu$, the sampling distribution is not a distribution of $\theta$ hence why "Confidence" is used when in the interpretation. The Bayesian Posterior is a distribution of $\theta$ so the posterior can be used for the interpretation.
+A Bayesian Posterior is a distribution for $\theta | Y$ whereas the sampling
+distribution is for $\hat \theta$. While their expected values both represent
+the true mean, the sampling distribution is not a distribution of $\theta$ hence why "Confidence" is used when in the interpretation. The Bayesian Posterior is a distribution of $\theta$ so the posterior can be used for the interpretation.
 #+end_quote
 
 *** Credible Sets
