@@ -354,3 +354,318 @@ Choosing Likelihood function and a prior distribution are subjective.
 
 If readers disagree with assumptions, findings will be rejected so assumptions
 must be justified theoretically and empirically.
+* Summarizing a Posterior Distribution (2020/09/24)
+
+** SIR Model
+Susceptible-Infected-Recovered
+
+At time $t$ , $S_t + I_t + R_t = N$ where N is the population.
+
+States evolved according to the following differential equations
+
+\begin{equation}
+\begin{split}
+\frac{d S_t}{d t} = & -\beta \frac{S-t I_t}{N}\\
+\frac{d I_t}{d t} = & \beta \frac{S_t I_t}{N} - \Gamma I_t
+\end{split}
+\end{equation}
+
+$\beta$: Controls rate of new infections
+
+$\Gamma$: Controls recovery rate
+
+We will use a discrete approx to these curves with hourly time steps.
+
+So? $dt = \frac{1}{24}$
+
+*Goal*: Fit SIR Model for given values of $\beta$ and $\Gamma$
+
+
+** Summarize a univariate Posterior with Beta-Binomial
+
+Posterior = Likelihood $\times$ Prior
+
+Say there is a parameter $\theta$
+
+Likelihood: $Y | \theta \sim Bin(N, \theta)$
+
+Prior: $\theta \sim Uni(0, 1) \equiv Beta(1,1)$
+
+Posterior: $\theta | Y \sim Beta(Y + a, N - y + b)$
+
+#+begin_quote
+Peak of the Posterior is the MLE of the Likelihood function when using an
+uninformative prior.
+#+end_quote
+
+** MAP Estimator
+
+Posterior Mode is call the max a posterioiri (MAP) estimator
+
+\begin{equation}
+\begin{split}
+\hat \theta = \underset{\theta}{argmax} \ P (\theta | y) = \underset{\theta}{argmax} \ log[f(Y | \theta)] + log[\pi(\theta)]
+\end{split}
+\end{equation}
+
+if prior is uniform, MAP is MLE assuming $Y | \theta \sim Bin(\theta, n)$.
+
+** Uncertainty Measures
+
+Posterior Std. Dev. is one measure of uncertainty
+- If approx Gaussian, can use empirical rule
+- Analogous but fundamentally different than std error.
+  - Std err is the standard deviation of $\hat \theta$'s sampling distribution
+
+Do not call them call them *confidence* intervals. Called *Credible* Intervals
+in Bayesian Statistics.
+
+Interval $(l, u)$ is 100($1 - \alpha$)% posterior credible interval if $P(l < \theta < u | Y) = 1 - \alpha$
+
+Interpretation: "Given the data and the prior, the probability that $\theta$ is
+between l and u is 0.95."
+
+#+begin_quote
+Confidence interval interpretation:
+
+With 95% Confidence, $\theta$ is between l and u.
+
+A Bayesian Posterior is a distribution for $\theta | Y$ whereas the sampling distribution is for $\hat \theta$. While their expected values are both $\mu$, the sampling distribution is not a distribution of $\theta$ hence why "Confidence" is used when in the interpretation. The Bayesian Posterior is a distribution of $\theta$ so the posterior can be used for the interpretation.
+#+end_quote
+
+*** Credible Sets
+
+Not unique.
+
+Let $q_\tau$ be the $\tau$ quantile of the posterior of the posterior such that
+$P(\theta < q_\tau | Y) = \tau$. Then ($q_{00}, q_{0.95}$), ($q_{0.01},
+q_{0.96}$), etc. are all valid 95% credible sets.
+
+Equal-Tailed intervals: $(q_{\alpha/2}, q_{1 - \frac{\alpha}{2}})$
+
+*Highest posterior density* interval searches for the smallest interval  that
+contains the proper probability
+
+** Hypothesis Tests
+
+Conducted by computing posterior prob of each hypothesis.
+
+$$
+P(\theta < 0.5 | Y) = \int_{0}^{0.5} P(\theta | Y) d \theta
+$$
+
+analogous but different than a p-value.
+
+*p-value*: Assuming the null hypothesis is true, the probability we got X or a
+value more extreme is Y.
+
+*Bayesian Hypothesis Test*: Given the prior and the data, the probability the null
+hypothesis is true is Y.
+
+** Monte Carlo Sampling
+
+A useful tool for summarizing a posterior.
+
+In MC sampling, we draw S samples from the posterior;
+
+$$
+\theta', ..., \theta^{(s)} \sim P(\theta | Y)
+$$
+
+and use these samples to approx the posterior.
+
+*** Transformations
+
+MC sampling facilitates studying the *transformations* of parameters.
+
+For example, the odds corresponding to $\theta$ are $\gamma = \frac{\theta}{1 - \theta}$
+
+\begin{equation}
+\begin{split}
+\gamma^{(1)} = \frac{\theta^{(1)}}{1 - \theta^{(1)}}, ..., \gamma^{(S)} = \frac{\theta^{(S)}}{1 - \theta^{(S)}}
+\end{split}
+\end{equation}
+
+How to approximate the posterior mean and variance of $\gamma$?
+
+Transform the odds and use the draws to approximate $\theta$'s posterior!
+
+** Summarizing Multivariate Posteriors
+
+Univariate posteriors captured by a simple plot. Not easy or impossible to do
+with multivariate posteriors.
+
+Let $\theta = (\theta_1, ..., \theta_p)$.
+
+Ideally, we reduced to the univariate marginal posteriors. Then the same ideas
+for univariate models apply
+
+$$
+P(\theta_1 | Y) = \int ... \int P(\theta_1, ..., \theta_p | Y) d \theta_2, ...,
+d \theta_p
+$$
+
+#+begin_quote
+Can use Monte Carlo sampling to estimate these integrals.
+
+Need to confirm the above statement
+#+end_quote
+
+** Bayesian One Sample t-test
+
+Likelihood: $Y_i | \mu, \sigma \sim N(\mu, \sigma^2)$ idep over $i = 1, ..., n$
+Priors: $\mu \sim N(\mu_0, \sigma_0^2)$ independent of $\sigma^2 \sim InvGamma(a, b)$
+
+Typically we are interested in marginal posterior because it accounts for uncertainty about $\sigma^2$
+
+Marginal Posterior: $f(\mu | Y) = \int_{0}^{\infty} P(\mu, \sigma^2 | Y) d \sigma^2, \ Y = (Y_1, ..., Y_n)$
+
+if $\sigma$ is known, the posterior of $\mu | Y$ is Gaussian and 95% Credible
+Interval is $E(\mu | Y) \pm Z_{0.975} SD(\mu | Y)$
+
+if $\sigma$ is unknown, the marginal (over $\sigma^2$) posterior of $\mu$ is $t$
+with $\nu = n + 2 a$ degrees of freedom.
+
+$$
+E(\mu | Y) \pm t_{0.975} \ SD(\mu | Y)
+$$
+
+$SD(\mu | Y)$: Standard Deviation
+
+
+Can summarize results best in a table with Posterior Mean, Posterior SD, and 95%
+Credible Set.
+
+** Frequentist vs Bayesian Analysis of a Normal Mean
+
+*Frequentist*
+
+Estimate of the $\mu$ is $\bar Y$
+If $\sigma$ is known, the 95% C.I. is: $\bar Y \pm z_{0.975} \frac{\sigma}{\sqrt
+n}$
+
+If $\sigma$ is unknown, the 95% C.I. is: $\bar Y \pm t_{0.975, n - 1} \frac{s}{\sqrt{n}}$
+
+where $t$ is the quantile of a t-distribution.
+
+*Bayesian*
+
+Estimate of $\mu$ is its marginal posterior mean.
+
+Interval estimate is 95% Credible Interval.
+
+If $\sigma$ is known, Posterior of $\mu | Y$ is Gaussian
+
+$E(\mu | Y) \pm Z_{0.975} SD(\mu | Y)$
+
+If $\sigma$ is unknown, the marginal (over $\sigma^2$) posterior of $\mu$ is t
+with $\nu = n + 2a$ degrees of freedom.
+
+$E(\mu | Y) \pm t_{0.975, \nu} \ SD(\mu | Y)$
+
+** Multiple Parameters in Multivariate Posteriors
+
+Want to compute $P(\theta_2 > \theta_1 | Y_1, Y_2)$.
+
+Monte Carlo sampling of the posteriors a key tool!
+
+Model is:
+
+\begin{equation}
+\begin{split}
+Y_1 | \theta_1 \sim & Bin(N, \theta_1)\\
+Y_2 | \theta_2 \sim & Bin(N, \theta_2)\\
+\theta_1, \theta_2 \sim & Beta(1,1)
+\end{split}
+\end{equation}
+
+Marginal Posteriors both independent of each other.
+- $\theta_1 | Y_1, Y_2 \sim Beta(Y_1 + 1, N - Y_1 + 1)$
+- $\theta_2 | Y_1, Y_2 \sim Beta(Y_2 + 1, N - Y_2 + 1)$
+
+#+begin_R
+# Data
+N <- 10; Y1 <- 5; Y2 <- 8;
+
+# Num Samples for Monte Carlo
+S <- 10000
+
+# Posterior distributions
+theta1 <- rbeta(S, Y1 + 1, N - Y1 + 1)
+theta2 <- rbeta(S, Y2 + 1, N - Y2 + 1)
+
+# True posterior mean of theta_1 per Beta distribution
+(Y1 + 1) / (N + 2)
+
+# Monte Carlo Estimate of true posterior mean of theta_1
+mean(theta1)
+
+# Monte Carlo estimate of posterior prob theta_2 > theta_1
+mean(theta2 > theta1)
+#+end_R
+
+** Types of Uncertainty
+
+*Sampling*
+
+*Parametric*: Uncertainty about my guesses of the distribution of the parameter
+
+*** Resolving Uncertainty
+**** Plugin approach
+
+If $\hat \theta$ is an estimate, thus $Y^* \sim f(Y | \hat \theta)$
+
+For example, Let $\hat \theta = \frac{2}{10}$. Predict $P(Y > 0) = 1 - (1 -
+0.2)^{10}$.
+
+If $\hat \theta$ has small uncertainty, this is fine. Otherwise, this
+underestimated uncertainty in $Y^*$
+
+**** Posterior Predictive Distribution (PPD)
+
+For the sake of prediction, the parameters aren't of interest as the parameters
+are vehicles by which the data inform about the predictive model.
+
+PPD averages over their posterior uncertainty which /accounts/ for parametric uncertainty.
+
+$$
+f(Y^* | Y) = \int f(Y^* | \theta) p(\theta | Y) \ d \theta
+$$
+
+Input == data
+Output == prediction distribution
+
+#+begin_quote
+Given I've observed a certain amount of data Y, what is the distribution of the
+predictor values?
+#+end_quote
+
+Monte Carlo sampling approximates the PPD.
+
+***** Example
+
+Let $\theta^{(1)}, ..., \theta^{(S)}$ be samples from the posterior.
+
+Let $Y^{*(s)} \sim f(Y | \theta^{(s)})$ where $Y^{*(s)}$ are samples from the
+PPD for each $\theta^{(s)}$
+
+Posterior Predictive Mean $\approx$ sample mean of the $Y^{*(s)}$
+
+$P(Y^* > 0) \approx$ sample proportion of non-zero $Y^{*(s)}$
+
+#+begin_R options
+# Data
+Y < -2; n <- 10;
+
+# Posterior is theta | Y sim  Beta(A,B)
+A <- Y + 1;
+B <- N - Y + 1
+
+# Plugin estimate of P(Y* > 0)
+1-dbinom(0,10,0.2)
+
+# Approx PPD using MC Sampling
+theta <- rbeta(100000,A,B)
+Ystar <- rbinom(100000,10,theta)
+mean(Ystar>0)
+#+end_R
