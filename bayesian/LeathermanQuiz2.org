@@ -100,6 +100,5 @@ meaningful probability? (Answer this from a Bayesian perspective in 50 words or 
 
 $\theta | Y = 16$ is /not/ a random variable. If Y is fixed, $\theta$
 becomes a constant which can be plugged into (c) to produce a probability. The
-result of (c) would be meaningful if, taking into consideration prior knowledge about convention
-frequency, contingency plans regarding the convention need to be made for
-traffic or otherwise.
+result of (c) is meaningful because it quantifies the parametric uncertainty for
+whether or not a convention is occurring.
