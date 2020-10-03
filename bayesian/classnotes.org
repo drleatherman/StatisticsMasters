@@ -719,7 +719,7 @@ $SE(\hat \theta) = \sqrt{\frac{\hat \theta (1 - \hat \theta)}{n}}$
 
 ***** Short way
 
-The short proof uses "proportional to" ($\propto$) and handwaves the constants.
+The short proof uses "proportional to" ($\propto$) and hand waves the constants.
 
 
 Posterior:
@@ -811,3 +811,354 @@ f(\theta  | Y) \propto & {Y + n + 1 \choose Y} \theta^Y (1 - \theta)^{n} \frac{\
 \sim & Beta(Y + a, n + b)
 \end{split}
 \end{equation}
+
+*** Poisson-Gamma: One observation
+
+Goal: Estimate a rate!
+
+Let $\lambda > 0$ be the rate to be estimated.
+
+- Observations made over a period of N and observe $Y \in \{0,1,2,...\}$ events
+- expected number of events: $N \lambda$
+
+$\hat \lambda = \frac{Y}{n} = MLE$
+
+Likelihood: $Y | \lambda \sim Poisson(N \lambda)$
+
+Prior: $\lambda \sim Gamma(a, b)$
+
+#+begin_quote
+$\lambda$ is continuous and positive so Gamma is a natural distribution to use
+for estimating the rate.
+#+end_quote
+
+Posterior: $\lambda | Y \sim Gamma(a + Y, b + N)$
+
+*Interpretation*
+
+a: Prior number of events
+b: Prior observation time
+
+**** Proof (Short Way)
+
+\begin{equation}
+\begin{split}
+f(\lambda | Y) \propto & \frac{e^{-N \lambda} (N \lambda)^Y}{Y !} \frac{b^a}{\Gamma (a)} \lambda^{a - 1} e^{-b \lambda}\\
+\propto & e^{-N \lambda} \lambda^Y  \lambda^{a - 1} e^{-b \lambda}\\
+\propto & e^{-(N + b)\lambda} \lambda^{Y + a - 1} \label{eq:3} \ \text{(Looks like a Gamma)}\\
+\therefore & \ \lambda | Y \sim Gamma(Y + a, N + b)
+\end{split}
+\end{equation}
+
+
+**** Shrinkage
+
+The posterior mean is between the sample rate ($frac{Y}{N}$) and the prior mean
+($frac{a}{b}$)
+
+$\hat \lambda_b = E(\lambda | Y) = \frac{Y + a}{N + b}$
+
+$\hat \lambda_B = w \frac{Y}{N} + (1 - w) \frac{Y + a}{N + b}$
+
+where $w = \frac{N}{N + b}$
+
+
+What if we have no information about $\lambda$? In general, make PDF Wide
+
+What if $\lambda$ is likely between 0.6 and 0.8? $a = 7, \ b = 10$ because
+$E(Y) = \frac{a}{b} = \frac{7}{10} = 0.7$
+
+*** Poisson-Gamma: Two Observations
+
+Likelihood:
+
+\begin{equation}
+\begin{split}
+f(Y_1, Y_2 | \lambda) = & f(Y_1 | \lambda) \cdot f(Y_2 | \lambda) \ \text{(if Y's are independent)}\\
+= & \frac{(N \lambda)^{Y_1} e^{-N \lambda}}{Y_1 !} \cdot \frac{(N \lambda)^{Y_2} e^{-N \lambda}}{Y_2 !}\\
+= & \frac{(N \lambda)^{Y_1 + Y_2} e^{-2N \lambda}}{Y_1 ! \cdot Y_2 !}\\
+\end{split}
+\end{equation}
+
+Prior: $f(\lambda) = \frac{b^a}{\Gamma (a)} \lambda^{a - 1} e^{-b \lambda}$
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+f(\lambda | Y_1, Y_2) \propto & \frac{(N \lambda)^{Y_1 + Y_2} e^{-2N \lambda}}{Y_1 ! Y_2 !} \frac{b^a}{\Gamma (a)} \lambda^{a - 1} e^{-b \lambda}\\
+\propto & \lambda^{Y_1 + Y_2} e^{-2N \lambda} \lambda^{a - 1} e^{-b \lambda}\\
+= & \lambda^{Y_1 + Y_2 + a - 1} e^{- 2 N \lambda - b \lambda} \ \text{(Looks like a Gamma)}\\
+\therefore & \ \lambda | Y_1, Y_2 \sim Gamma(Y_1 + Y_2 + a, 2 N + b)
+\end{split}
+\end{equation}
+
+*** Poisson-Gamma: /m/ Observations
+
+Likelihood:
+
+\begin{equation}
+\begin{split}
+f(Y_1, ..., Y_m | \lambda) = & f(Y_1 | \lambda) \cdot ... \cdot f(Y_m | \lambda) \ \text{(if Y's are independent)}\\
+= & \Pi^{m}_{1} \frac{(N \lambda)^{Y_i} e^{-N \lambda}}{Y_i }\\
+= & \frac{(N \lambda)^{\Sigma Y_i} e^{-m N \lambda}}{\Pi^{1}_{m} Y_i !}\\
+\end{split}
+\end{equation}
+
+Prior: $f(\lambda) = \frac{b^a}{\Gamma (a)} \lambda^{a - 1} e^{-b \lambda}$
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+f(\lambda | Y_1, ..., Y_m) \propto & \frac{(N \lambda)^{\Sigma Y_i} e^{-2 m N \lambda}}{\Pi^{1}_^{m} Y_i !} \frac{b^a}{\Gamma (a)} \lambda^{a - 1} e^{-b \lambda}\\
+\propto & (N \lambda)^{\Sigma Y_i} e^{- m N \lambda} \lambda^{a - 1} e^{-b \lambda}\\
+\propto & (N \lambda)^{a - 1 + \Sigma Y_i} e^{- (m N + b) \lambda} \ \text{(Looks like a Gamma PDF)}\\
+\therefore & \ \lambda | Y_1, ..., Y_m \sim Gamma(\sum_{1}^{m} Y_i + a, m N + b)
+\end{split}
+\end{equation}
+
+
+*** Gaussian-Gaussian
+
+Goal: Estimate a mean! ($\mu$)
+
+Likelihood: $f(Y_1, ..., Y_n | \mu) = \frac{1}{\sigma^n (2 \pi)^{n/2}}
+exp(-\frac{1}{2 \sigma^2} \sum_{1}^{n} (Y_i - \mu)^2)$
+
+Prior:
+
+\begin{equation}
+\begin{split}
+f(\mu) = & \frac{1}{\sqrt{2 \pi} \frac{\sigma}{\sqrt{m}}} exp(- \frac{1}{2 \frac{\sigma^2}{m}} (\mu - \theta)^2)\\
+= & \frac{\sqrt{m}}{\sqrt{2 \pi} \sigma} \ exp(- \frac{m}{2 \sigma^2} (\mu - \theta)^2)
+\end{split}
+\end{equation}
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+f(\mu | Y_1, ..., Y_n) \propto & \frac{1}{\sigma^n (2 \pi)^{n/2}} exp(- \frac{1}{2 \sigma^2} \Sigma (Y_i - \mu)^2) \cdot \frac{\sqrt{m}}{\sqrt{2 \pi} \sigma}\\
+\propto & exp(- \frac{1}{2 \sigma^2} [ \Sigma (Y_i - \mu)^2 + m (\mu - \theta)^2])\\
+\propto & exp(- \frac{1}{2 \sigma^2} [ \Sigma (Y_i^2 - 2 \mu Y_i + \mu^2) + m (\mu^2 - 2 \mu \theta + \theta^2)])\\
+\propto & exp(- \frac{1}{2 \sigma^2} [ 2 \mu \Sigma Y_i + n \mu^2 + m \mu^2 - 2 m \mu \theta]) \ \text{(where does the square Yi go?)}\\
+\propto & exp(- \frac{1}{2 \sigma^2} [ 2 \mu n \bar Y + n \mu^2 + m \mu^2 - 2 m \mu \theta])\\
+= & exp(- \frac{n + m}{2 \sigma^2} [ - 2 \frac{n \bar Y + m \theta}{n + m} + \mu^2])\\
+\propto & exp(- \frac{n + m}{2 \frac{\sigma^2}{n + m}} [ \mu - \frac{n \bar Y + m \theta}{n + m}]^2) \ \text{(Looks like a Normal PDF)}\\
+\therefore & \ \mu | Y_1, ..., Y_n \sim N(\frac{n \bar Y + m \theta}{n + m}, \frac{\sigma^2}{n + m})
+\end{split}
+\end{equation}
+
+This can also be written as
+
+Let $w = \frac{n}{n+m}$, then $\mu | Y_1, ..., Y_m \sim N(w \bar Y + (1 - w)
+\theta, \frac{\sigma^2}{n + m})$
+
+m can /loosely/ be interpreted as the prior number of observations
+
+**** Shrinkage
+
+$\hat \mu_B = E(\mu | Y_1, ..., Y_n) = w \bar Y + (1 - w) \theta$ where $w =
+\frac{n}{n + m}$
+
+If no prior information available, make m small to make the prior uninformative.
+This is because a small m makes the variance large which makes the bell curve
+wide.
+
+*** Gaussian-Gaussian: Known $\mu$
+If $\mu$ is known, then we should be estimating $\sigma^2$.
+
+$\sigma^2 \sim Gamma(a, b)$ since Gamma is continuous over (0, $\infty$) which
+matches the domain of the variance.
+
+The math is easier if using a gamma prior for the inverse variance ($\tau$).
+
+Inverse Variance is also known as /precision/ $\frac{1}{\sigma^2}$
+
+If $\frac{1}{\sigma^2} \sim Gamma(a, b)$, then $\sigma^2 \sim InvGamma(a, b)$
+
+Likelihood: $f(Y_1, ..., Y_n | \sigma^2) = \frac{1}{(\sqrt{2 \pi})^n
+(\sigma^2)^{n/2}} exp(- \frac{1}{2 \sigma^2} \sum^{1}_{n} (Y_i - \mu)^2)$
+
+Prior: $f(\sigma^2) = \frac{b^a (\sigma^2)^{-a - 1} e^{-b / \sigma^2}}{\Gamma (a)}$
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+f(\sigma^2 | Y_1, ..., Y_n) \propto & \frac{1}{\sqrt{2 \pi}^n (\sigma^2)^{n/2}} exp(- \frac{1}{2 \sigma^2} \sum_{1}^{n} (Y_i - \mu)^2) \cdot \frac{b^a (\sigma^2)^{-b - 1}}{\Gamma (a)} exp(\frac{-b}{\sigma^2})\\
+\propto & (\sigma^2)^{-n / 2} exp(\frac{- 1}{2 \sigma^2} \sum_{1}^{n} (Y_i - \mu)^2)\\
+\propto & (\sigma^2)^{- (\frac{n}{2} + a) - 1} exp(\frac{- 1}{\sigma^2} [\frac{\sum_{1}^{n} (Y_i - \mu)^2}{2} + b])\\
+\end{split}
+\end{equation}
+
+
+#+begin_quote
+if $\mu$ is known, then $SSE = \sum_{1}^{n} (Y - \mu)^2$
+#+end_quote
+
+$\sigma^2 | Y_1, ..., Y_n \sim InvGamma(\frac{n}{2} + a, \frac{SSE}{2} + b)$
+
+
+*Using $\tau$*
+
+If $Y_i$ has mean $\mu$ and precision $\tau$, then likelihood is proportional
+to:
+
+$$
+\Pi^{1}_{n} f(y_i | \mu) \propto \ \tau^{n / 2} exp(- \frac{\tau}{2}
+\sum_{1}^{n} (y_i - \mu)^2)
+$$
+
+If $\tau \sim Gamma(a,b)$, then $\tau | Y \sim Gamma(\frac{n}{2} + a,
+\frac{SSE}{2} + b)$
+
+This matches the results when using an Envisages for Variance.
+**** Shrinkage
+
+Mean of InvGamma only exists for $a > 1$.
+
+Prior mean: $\frac{b}{a - 1}$
+
+Posterior mean: $\frac{SSE + b}{n + 2a - 2}$
+
+common to make a,b small to give an uninformative prior. Then posterior mean
+converges towards sample variance.
+
+** Informative vs Uninformative
+
+Can use informative priors from literature reviews, pilot studies, expert
+opinions, etc.
+
+*Prior Elicitation*: Process of converting expert information /into/ a prior.
+ Experts may not know what an InvGamma is but their information can be converted
+ into one!
+
+Weak/Uninformative Priors commonplace. Easier to defend.
+
+Strong Priors typically used for nuisance parameters. i.e. parameters we don't
+care about. The idea being that we don't care about it and really only want to
+affect the analysis if its /really/ strong.
+
+
+*Sensitivity Analysis* used to compare the posterior against several priors.
+ This lets readers know how the prior exactly affects the analysis.
+
+*** Mixture of Experts
+
+Combine several priors into a single prior. For example, there are three studies
+which promote three different priors. These can be combined into a single prior.
+
+$$
+\pi(\theta) = \sum_{j = 1}^{J} w_j \pi_j(\theta)
+$$
+
+where $w_j$ is a weight with the constraints $w_j > 0$ and $\Sigma w_j = 1$
+
+** Improper Priors
+
+A prior that doesn't integrate to 1. e.g. $\pi(\mu) = 1 \forall \mu \in \mathbb{R}$
+
+It is okay to use an improper prior as long as you verify the posterior integrates to 1.
+
+** Subjective vs Objective Bayes
+
+An objective analysis requires no subjective decisions by the analyst such as
+picking a prior, picking a likelihood function, treatment of outliers or
+transforms, etc.
+
+Objective analysis may be feasible in a tightly controlled study but generally
+impossible for most analysis.
+
+*** Objective Bayes
+
+Lets an algorithm choose prior.
+
+*Examples*
+- Jeffrey's Prior
+- Probability matching
+- Maximum Entropy
+- Empirical Bayes
+- Penalized Complexity
+
+Jeffrey's priors are most common.
+
+Most of these are /improper/ so posterior needs to be checked that it integrates
+to 1.
+
+**** Jeffrey's Prior
+
+Jeffrey's Prior for $\theta$: $p(\theta) = \sqrt{I(\theta)}$ where $I(\theta)$
+is the Fisher Information Matrix.
+
+
+$$
+I(\theta) = - E_{Y | \theta} [\frac{d^2}{d \theta^2} log p(Y | \theta)]
+$$
+
+Once the likelihood is specified, Jefferey's prior is determined with no
+additional input hence being objective about prior.
+
+*Examples*
+
+Likelihood: $Y \sim Bin(n, \theta)$
+
+Jefferey's Prior: $\theta \sim Beta(0.5, 0.5)$
+
+Likelihood: $Y \sim N(\mu, 1)$
+
+Jefferey's Prior: $p(\mu) \propto 1$
+
+Likelihood: $Y \sim N(0, \sigma^2)$
+
+Jefferey's Prior: $p(\sigma) \propto 1/\sigma$
+
+**** Reference Priors
+
+Try to be uninformative. Univariate models give Jeffreys Priors. Multivariate
+models give different priors. Harder to compute than Jeffrey's.
+
+**** Probability Matching Priors (PMP)
+
+Designed so Posterior Credible Intervals have correct frequentist coverage.
+
+For example, if $Y_i | \mu \sim N(\mu, 1)$, the PMP is $p(\mu) = 1$. Then, Posterior
+is $\mu | Y \sim N(\bar Y, 1 / n)$
+
+Only a few cases where this can be used.
+
+**** Empirical Bayes
+
+Pick priors based on data.
+
+Ex: Maybe $\sigma^2$ has prior mean $s^2$
+
+Criticized for using data twice: once for the prior, and once for the likelihood.
+
+**** Penalized Complexity Priors (PCP)
+
+A PCP prior begins with a simple base model. e.g linear regression with all
+slopes equal to 0.
+
+Full model is shrunk towards base model. e.g regression with non-zero slopes.
+
+*Distance* from full to base model has exponential prior to penalize the more
+ complex model from deviating from the base.
+
+Requires picking the parameter in the exponential prior and setting priors for
+the parameters in the base model *so not purely objective*
+
+**** Maximum Entropy Priors
+
+Entropy is a measure of uncertainty. The entropy of the PMF $f(x)$ is
+
+$$- \Sigma_{x \in S} f(x) log[f(x)]$$
+
+1. Fix a few quantities of the prior distribution. e.g. $E(\theta) = 0.5$
+2. Find the prior with maximum entropy that satisfies these constraints.
+
+If $\theta$ has support $\mathbb{R}$ and mean and variance are known, maximum
+entropy prior is Gaussian.
+
+*Not purely objective because you have to set the constraints*
