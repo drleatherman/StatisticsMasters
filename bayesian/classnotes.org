@@ -670,3 +670,144 @@ theta <- rbeta(100000,A,B)
 Ystar <- rbinom(100000,10,theta)
 mean(Ystar>0)
 #+end_R
+* Conjugate and Objective Priors (2020/10/01)
+
+How do we choose priors? This is the most important step of a Bayesian Analysis.
+
+*Key Terms*
+- Conjugate vs Non-conjugate
+- Informative vs Uninformative
+- Proper vs Improper
+- Subjective vs Objective
+
+** Conjugate
+*Def*: Prior and Posterior Distribution are from the same parametric family. This is done through a pairing of the Likelihood Distribution and the Prior Distribution.
+
+*** Beta-Binomial
+
+Use Case: Estimating a Proportion!
+
+- What is the probability of success for a new cancer treatment?
+- What proportion of voters support a candidate?
+
+Let $\theta \in [0, 1]$ be a proportion we are trying to estimate.
+
+Likelihood: $Y | \theta \sim Bin(n, \theta)$
+
+Prior: $\theta \sim Beta(a, b)$
+
+a: Prior number of successes
+b: Prior number of failures
+
+**** Frequentist Appraoch
+
+MLE: $\hat \theta = \frac{Y}{n}$
+
+$\hat \theta \sim N(\theta, \frac{\theta (1 - \theta)}{n})$ for large Y and $n -Y$
+
+Rule of Thumb for large enough $n$ for proportions: At least 10-15 failures and 10-15 successes
+depending on which text book you read.
+
+This is slightly different than the magic number 30 which is considered large
+enough for the mean.
+
+
+$SE(\hat \theta) = \sqrt{\frac{\hat \theta (1 - \hat \theta)}{n}}$
+
+**** Proof
+
+
+***** Short way
+
+The short proof uses "proportional to" ($\propto$) and handwaves the constants.
+
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+f(\theta | Y) \propto & f(Y | \theta) f(\theta) = {n \choose Y} \theta^Y (1 - \theta)^{n - Y} \cdot \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \theta^{a - 1} (1 - \theta)^{b - 1}\\
+\propto & \theta^Y (1 - \theta)^{n - Y} \theta^{a - 1} (1 - \theta)^{b - 1}\\
+= & \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1} \label{eq:1} \ \text{(Looks like a Beta PDF)}\\
+\therefore & \ \theta | Y \sim Beta(Y + a, n - Y + b)
+\end{split}
+\end{equation}
+
+
+***** Long way
+
+\begin{equation}
+\begin{split}
+f(Y | \theta) = \frac{f(Y | \theta) \cdot f(\theta)}{f(Y)} =  \frac{f(Y | \theta) \cdot f(\theta)}{\int_{0}^{1} f(Y, \theta) d \theta}
+\end{split}
+\end{equation}
+
+Numerator:
+
+\begin{equation}
+\begin{split}
+f(Y | \theta) f(\theta) = & {n \choose Y} \theta^Y (1 - \theta)^{n - Y} \cdot \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \theta^{a - 1} (1 - \theta)^{b - 1}\\
+= & {n \choose Y} \cdot \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)}  \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1}\\
+\end{split}
+\end{equation}
+
+Denominator:
+
+\begin{equation}
+\begin{split}
+f(Y) = & \int_{0}^{1} {n \choose Y} \theta^Y (1 - \theta)^{n - Y} \cdot \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \theta^{a - 1} (1 - \theta)^{b - 1} d \theta\\
+= & {n \choose Y} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \int_{0}^{1} \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1} d \theta\\
+= & {n \choose Y} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \cdot \frac{\Gamma (Y + a) \Gamma (n - Y + b)}{\Gamma (n + a + b)} \int_{0}^{1} \frac{\Gamma (n + a + b)}{\Gamma (Y + a) \Gamma (n - Y + b)} \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1} d \theta \label{eq:2} \ \text{(Beta PDF Integrates to 1)}\\
+\text{So?} & \ f(y) = {n \choose Y} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \cdot \frac{\Gamma (Y + a) \Gamma (n - Y + b)}{\Gamma (n + a + b)}
+\end{split}
+\end{equation}
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+f(\theta | Y) = & \frac{{n \choose Y} \cdot \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)}  \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1}}{{n \choose Y} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \cdot \frac{\Gamma (Y + a) \Gamma (n - Y + b)}{\Gamma (n + a + b)}}\\
+= & \frac{\Gamma (n + a + b)}{\Gamma (Y + a) \Gamma (n - Y + b)} \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1}\\
+\theta \sim & Beta(Y + a, n - Y + b)
+\end{split}
+\end{equation}
+
+**** Shrinkage
+
+
+Posterior mean: $\hat \theta_B = E(\theta | Y) = \frac{Y + a}{n + a + b}$
+
+Posterior mean is between the sample proportion ($frac{Y}{n}$) and the prior
+mean: $\frac{a}{a + b}$
+
+$\hat \theta_B = w \frac{Y}{n} + (1 - w) \frac{a}{a + b}$
+
+where $w = \frac{n}{n + a + b}$
+
+- When n is large, $\hat \theta_B$ is closer to $frac{Y}{n}$.
+- as a and b grow, posterior mean more dependent on the prior.
+
+*Definition*: The gravitation between the Likelihood function and the prior
+data. If there is
+
+What prior to select if research show $\theta$ is between 0.6 and 0.8? a = 7, b
+= 3 because $\frac{7}{7 + 3} = 0.7$
+
+*** Related Problem using NegBin
+
+Estimate the number of successes ($Y$) before n failures.
+
+$\theta$: probability of success
+
+$\theta \sim Beta(a, b)$
+
+$Y | \theta \sim NegBin(n, \theta)$
+
+\begin{equation}
+\begin{split}
+f(\theta  | Y) \propto & {Y + n + 1 \choose Y} \theta^Y (1 - \theta)^{n} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \theta^{a - 1} (1 - \theta)^{b - 1}\\
+\propto & \theta^Y (1 - \theta)^{n} \theta^{a - 1} (1 - \theta)^{b - 1}\\
+= & \theta^{Y + a - 1} (1 - \theta)^{n + b - 1}\\
+\sim & Beta(Y + a, n + b)
+\end{split}
+\end{equation}
