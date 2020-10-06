@@ -1,0 +1,69 @@
+---
+title: 'Homework #3'
+author: "Dustin Leatherman"
+date: "October 5, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom)
+
+clutch <- read.csv("~/Downloads/NBAclutchFT.csv")
+```
+
+# 1
+
+> The data set NBAclutchFT.csv has the overall free throw proportion and results of free throws taken in pressure situations, defined as "clutch", for ten National Basketball Association players (those that received the most votes for the Most Valuable Player award) for the 2019-2020 season. Since the overall proportion is computed using a large sample size, assume it is fixed and analyze the clutch data for each player separately using Bayesian methods
+
+## a
+
+> Describe your model including the likelihood and prior
+
+The reponse variable is the proportion of successful "clutch" shots. A Binomial Distribution with n = attempts and $\theta$ = clutch.makes / clutch.attempts is a reasonable Likelihood distribution. The Prior information known about a given player is their overall free throw percentage. Bounded between 0 and 1, this can be represented by a Beta Prior so we can take advantage of the Beta-Binomial conjugate prior and likelihood.
+
+```{r}
+# 5 percentage points of error allowed
+acceptable_error <- 0.05
+
+clutch.plus <-
+  # estimate beta parameters for each player since they have varying Freethrow Percentages
+  cbind(clutch, t(sapply(clutch$FT.Pct, function(x) beta.prior(x, acceptable_error)))) %>% 
+  mutate(
+    clutch.pct = clutch.makes / clutch.attempts
+  ) %>% 
+  mutate(
+    prior.a = unlist(a),
+    prior.b = unlist(b)
+  ) %>% 
+  select(-a, -b)
+
+theta <- seq(0, 1, 0.001)
+
+# TODO: produce density function for each row.
+post.density <- dbeta(theta, shape1 = clutch.plus$clutch.makes + clutch.plus$prior.a, shape2 = clutch.plus$clutch.attempts - clutch.plus$clutch.makes + clutch.plus$prior.b)
+```
+
+The parameters for the prior beta distribution can be estimated using the overall free throw percentage as the mean and an acceptable range of error as the standard deviation.
+
+
+## b
+
+> Plot your posteriors of the clutch success probability
+
+## c
+
+> Summarize the Posteriors in a table
+
+## d
+
+> Test the Hypothesis that the clutch proportion is less than the overall proportion
+
+## e
+
+> Are the results sensitive to your prior?
+
+# 2
+
+> Say that $Y | \theta \sim Bin(n, \theta)$, and $Z | \theta \sim Bin(M, \theta)$ and that Y,Z are independent given $\theta$. Identify a conjugate prior for $\theta$ and find the corresponding Posterior Distribution.

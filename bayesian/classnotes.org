@@ -699,7 +699,9 @@ Prior: $\theta \sim Beta(a, b)$
 a: Prior number of successes
 b: Prior number of failures
 
-**** Frequentist Appraoch
+Posterior: $\theta | Y \sim Beta(Y + a, n - Y + b)$
+
+**** Frequentist Approach
 
 MLE: $\hat \theta = \frac{Y}{n}$
 
@@ -777,14 +779,14 @@ f(\theta | Y) = & \frac{{n \choose Y} \cdot \frac{\Gamma (a + b)}{\Gamma (a) \Ga
 
 Posterior mean: $\hat \theta_B = E(\theta | Y) = \frac{Y + a}{n + a + b}$
 
-Posterior mean is between the sample proportion ($frac{Y}{n}$) and the prior
+Posterior mean is between the sample proportion ($\frac{Y}{n}$) and the prior
 mean: $\frac{a}{a + b}$
 
 $\hat \theta_B = w \frac{Y}{n} + (1 - w) \frac{a}{a + b}$
 
 where $w = \frac{n}{n + a + b}$
 
-- When n is large, $\hat \theta_B$ is closer to $frac{Y}{n}$.
+- When n is large, $\hat \theta_B$ is closer to $\frac{Y}{n}$.
 - as a and b grow, posterior mean more dependent on the prior.
 
 *Definition*: The gravitation between the Likelihood function and the prior
