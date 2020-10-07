@@ -6,11 +6,14 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10, message = FALSE, warning = FALSE)
 library(tidyverse)
 library(broom)
+library(knitr)
+library(kableExtra)
 
 clutch <- read.csv("~/Downloads/NBAclutchFT.csv")
+source("~/Downloads/beta.prior.R")
 ```
 
 # 1
@@ -35,14 +38,11 @@ clutch.plus <-
   ) %>% 
   mutate(
     prior.a = unlist(a),
-    prior.b = unlist(b)
+    prior.b = unlist(b),
+    post.a = clutch.makes + prior.a, 
+    post.b = clutch.attempts - clutch.makes + prior.b
   ) %>% 
   select(-a, -b)
-
-theta <- seq(0, 1, 0.001)
-
-# TODO: produce density function for each row.
-post.density <- dbeta(theta, shape1 = clutch.plus$clutch.makes + clutch.plus$prior.a, shape2 = clutch.plus$clutch.attempts - clutch.plus$clutch.makes + clutch.plus$prior.b)
 ```
 
 The parameters for the prior beta distribution can be estimated using the overall free throw percentage as the mean and an acceptable range of error as the standard deviation.
@@ -52,17 +52,170 @@ The parameters for the prior beta distribution can be estimated using the overal
 
 > Plot your posteriors of the clutch success probability
 
+```{r}
+theta <- seq(0, 1, 0.001)
+
+# produce density function for each row. Each column corresponds to a row
+post.density <- 
+  apply(clutch.plus, 1, function(x){ 
+    dbeta(
+        theta, 
+        shape1 = as.numeric(x["post.a"]), 
+        shape2 = as.numeric(x["post.b"])
+    )
+  })
+
+prior.density <- 
+  apply(clutch.plus, 1, function(x){ 
+    dbeta(
+        theta, 
+        shape1 = as.numeric(x["prior.a"]), 
+        shape2 = as.numeric(x["prior.b"])
+    )
+  })
+
+# associate the player with the function and make it a dataframe
+# Format density to a single column by player for nice graphing
+density.formatted <-
+  inner_join(
+    as.data.frame(t(post.density)) %>% mutate(Player = clutch.plus$Player), 
+    as.data.frame(t(prior.density)) %>% mutate(Player = clutch.plus$Player), 
+    clutch.plus, 
+    by = "Player",
+    suffix = c(".prior", ".posterior")
+  ) %>% 
+  select(starts_with("V"), Player) %>% 
+  pivot_longer(starts_with("V"), names_to = "columnName", values_to = "density") %>% 
+  # remake theta. This is gross but dealing with this format has also been unpleasant
+  mutate(
+    distr_obj = unlist(str_split_fixed(columnName, pattern = "\\.", n = 2)),
+    distr = distr_obj[,2],
+    theta = (as.numeric(str_remove(columnName, "V") %>% str_remove(".posterior") %>% str_remove(".prior")) / 1000) - 0.001
+  )
+
+ggplot(density.formatted, aes(x = theta, y = density, color = Player, linetype = distr)) + 
+  geom_line() + 
+  facet_wrap(~Player) +
+  labs(x = "Theta", y = "Density") + 
+  ggtitle("Clutch % Per Player with Informative Prior")
+
+```
+
+
 ## c
 
 > Summarize the Posteriors in a table
+
+```{r}
+credible.int <- 
+  apply(clutch.plus, 1, function(x){ 
+    qbeta(
+        c(0.025, 0.975), 
+        shape1 = as.numeric(x["post.a"]), 
+        shape2 = as.numeric(x["post.b"])
+    )
+  })
+
+density.formatted.plus <-
+  density.formatted %>% 
+  inner_join(
+    as.data.frame(t(credible.int)) %>% 
+      mutate(Player = clutch.plus$Player) %>% 
+      rename(ucl = V2, lcl = V1), 
+    by = "Player"
+  )
+
+
+density.formatted.plus %>% 
+  inner_join(clutch.plus, by = "Player") %>% 
+  select(Player, lcl, ucl, post.a, post.b) %>% 
+  distinct() %>% 
+  mutate(
+    post.mean = post.a / (post.a + post.b), 
+    post.sd = sqrt(post.a*post.b/((post.a+post.b)^2*(post.a+post.b+1)))
+  ) %>% 
+  select(Player, post.mean, post.sd, lcl, ucl) %>% 
+  kable(
+    col.names = c("Player", "Mean", "Std. Dev", "95th Lower C.I.", "95th Upper C.I.")  
+  ) %>% 
+  kable_styling(bootstrap_options = "striped", latex_options = "hold_position")
+```
 
 ## d
 
 > Test the Hypothesis that the clutch proportion is less than the overall proportion
 
+```{r}
+hyp.means <- density.formatted %>% select(Player, distr, density) %>% pivot_wider(id_cols = Player, names_from = "distr", values_from = "density", values_fn = list)
+
+data.frame("clutch.prob" = apply(hyp.means, 1, function(x) mean(x$posterior > x$prior))) %>% 
+  kable(
+    col.names = c("Probability"),
+    caption = "Estimate of Posterior Probability that Clutch Percentages are greater than Overall Percentages"
+  ) %>% 
+  kable_styling(bootstrap_options = "striped", latex_options = "hold_position")
+```
+
 ## e
 
 > Are the results sensitive to your prior?
+
+```{r}
+clutch.plus.uninf <- 
+  clutch.plus %>% 
+  mutate(
+    prior.a = 1, 
+    prior.b = 1,
+    post.a = clutch.makes + prior.a, 
+    post.b = clutch.attempts - clutch.makes + prior.b
+  )
+
+# produce density function for each row. Each column corresponds to a row
+post.density.uninf <- 
+  apply(clutch.plus.uninf, 1, function(x){ 
+    dbeta(
+        theta, 
+        shape1 = as.numeric(x["post.a"]), 
+        shape2 = as.numeric(x["post.b"])
+    )
+  })
+
+prior.density.uninf <- 
+  apply(clutch.plus.uninf, 1, function(x){ 
+    dbeta(
+        theta, 
+        shape1 = as.numeric(x["prior.a"]), 
+        shape2 = as.numeric(x["prior.b"])
+    )
+  })
+
+# associate the player with the function and make it a dataframe
+# Format density to a single column by player for nice graphing
+density.formatted <-
+  inner_join(
+    as.data.frame(t(prior.density.uninf)) %>% mutate(Player = clutch.plus.uninf$Player), 
+    as.data.frame(t(post.density.uninf)) %>% mutate(Player = clutch.plus.uninf$Player), 
+    clutch.plus.uninf, 
+    by = "Player",
+    suffix = c(".prior", ".posterior")
+  ) %>% 
+  select(starts_with("V"), Player) %>% 
+  pivot_longer(starts_with("V"), names_to = "columnName", values_to = "density") %>% 
+  # remake theta. This is gross but dealing with this format has also been unpleasant
+  mutate(
+    distr_obj = unlist(str_split_fixed(columnName, pattern = "\\.", n = 2)),
+    distr = distr_obj[,2],
+    theta = (as.numeric(str_remove(columnName, "V") %>% str_remove(".posterior") %>% str_remove(".prior")) / 1000) - 0.001
+  )
+
+ggplot(density.formatted, aes(x = theta, y = density, color = Player, linetype = distr)) + 
+  geom_line() + 
+  facet_wrap(~Player) +
+  labs(x = "Theta", y = "Density") + 
+  ggtitle("Clutch % Per Player with Uninformative Prior")
+```
+
+Comparing the graphs in b with graphs using an uninformative prior, the results appear to be sensitive to the prior. The distributions are flatter, with smaller means, and generally smaller modes using the uninformative prior compared to the informative prior.
 
 # 2
 
