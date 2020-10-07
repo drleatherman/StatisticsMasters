@@ -2,7 +2,9 @@
 title: 'Homework #3'
 author: "Dustin Leatherman"
 date: "October 5, 2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -27,9 +29,10 @@ source("~/Downloads/beta.prior.R")
 The reponse variable is the proportion of successful "clutch" shots. A Binomial Distribution with n = attempts and $\theta$ = clutch.makes / clutch.attempts is a reasonable Likelihood distribution. The Prior information known about a given player is their overall free throw percentage. Bounded between 0 and 1, this can be represented by a Beta Prior so we can take advantage of the Beta-Binomial conjugate prior and likelihood.
 
 ```{r}
-# 5 percentage points of error allowed
+# 5 percentage points of error allowed. I don't know if this is actually a good number. I don't really follow basketball or sports statistics.
 acceptable_error <- 0.05
 
+# add
 clutch.plus <-
   # estimate beta parameters for each player since they have varying Freethrow Percentages
   cbind(clutch, t(sapply(clutch$FT.Pct, function(x) beta.prior(x, acceptable_error)))) %>% 
@@ -47,15 +50,15 @@ clutch.plus <-
 
 The parameters for the prior beta distribution can be estimated using the overall free throw percentage as the mean and an acceptable range of error as the standard deviation.
 
-
 ## b
 
 > Plot your posteriors of the clutch success probability
 
 ```{r}
+# base thetas to compute densities
 theta <- seq(0, 1, 0.001)
 
-# produce density function for each row. Each column corresponds to a row
+# produce posterior density function for each row.
 post.density <- 
   apply(clutch.plus, 1, function(x){ 
     dbeta(
@@ -65,6 +68,7 @@ post.density <-
     )
   })
 
+# produce prior density for each row.
 prior.density <- 
   apply(clutch.plus, 1, function(x){ 
     dbeta(
@@ -77,19 +81,28 @@ prior.density <-
 # associate the player with the function and make it a dataframe
 # Format density to a single column by player for nice graphing
 density.formatted <-
+  # add "player" column to densities. This assumes that the 
+  # density and player lists match order. As in player 1 is associated
+  # with density 1, etc. Since this is doing matrix operations, this is a safe assumption
   inner_join(
+    # since there are a bunch of unnamed columns, dynamic columns of the form
+    # V1, V2, ..., V1000 are created for each theta.
     as.data.frame(t(post.density)) %>% mutate(Player = clutch.plus$Player), 
     as.data.frame(t(prior.density)) %>% mutate(Player = clutch.plus$Player), 
     clutch.plus, 
     by = "Player",
+    # add suffix so its easier to tell which var is which
     suffix = c(".prior", ".posterior")
   ) %>% 
+  # Get the density columns and turn them into rows.
   select(starts_with("V"), Player) %>% 
   pivot_longer(starts_with("V"), names_to = "columnName", values_to = "density") %>% 
-  # remake theta. This is gross but dealing with this format has also been unpleasant
   mutate(
+    # had trouble with getting correct values for str_split 
+    # so needed to do a roundabout way to get the distribution
     distr_obj = unlist(str_split_fixed(columnName, pattern = "\\.", n = 2)),
     distr = distr_obj[,2],
+    # remake theta. This is gross but dealing with this format has also been unpleasant
     theta = (as.numeric(str_remove(columnName, "V") %>% str_remove(".posterior") %>% str_remove(".prior")) / 1000) - 0.001
   )
 
@@ -116,6 +129,7 @@ credible.int <-
     )
   })
 
+# join credible interval back onto our normal data
 density.formatted.plus <-
   density.formatted %>% 
   inner_join(
@@ -126,6 +140,7 @@ density.formatted.plus <-
   )
 
 
+# build summary table for posterior distribution
 density.formatted.plus %>% 
   inner_join(clutch.plus, by = "Player") %>% 
   select(Player, lcl, ucl, post.a, post.b) %>% 
@@ -146,8 +161,19 @@ density.formatted.plus %>%
 > Test the Hypothesis that the clutch proportion is less than the overall proportion
 
 ```{r}
-hyp.means <- density.formatted %>% select(Player, distr, density) %>% pivot_wider(id_cols = Player, names_from = "distr", values_from = "density", values_fn = list)
+# convert density rows back into columns so means can be compared.
+# produces a DataFrame with 3 columns: name, posterior (list), prior (list)
+hyp.means <- 
+  density.formatted %>% 
+    select(Player, distr, density) %>% 
+    pivot_wider(
+      id_cols = Player, 
+      names_from = "distr", 
+      values_from = "density", 
+      values_fn = list
+    )
 
+# compute probability that posterior is greater than the prior
 data.frame("clutch.prob" = apply(hyp.means, 1, function(x) mean(x$posterior > x$prior))) %>% 
   kable(
     col.names = c("Probability"),
@@ -161,6 +187,8 @@ data.frame("clutch.prob" = apply(hyp.means, 1, function(x) mean(x$posterior > x$
 > Are the results sensitive to your prior?
 
 ```{r}
+# redo our analysis with an uninformative prior.
+# TODO: If this is useful, turn these into functions for reuse later.
 clutch.plus.uninf <- 
   clutch.plus %>% 
   mutate(
@@ -170,7 +198,6 @@ clutch.plus.uninf <-
     post.b = clutch.attempts - clutch.makes + prior.b
   )
 
-# produce density function for each row. Each column corresponds to a row
 post.density.uninf <- 
   apply(clutch.plus.uninf, 1, function(x){ 
     dbeta(
@@ -220,3 +247,21 @@ Comparing the graphs in b with graphs using an uninformative prior, the results 
 # 2
 
 > Say that $Y | \theta \sim Bin(n, \theta)$, and $Z | \theta \sim Bin(M, \theta)$ and that Y,Z are independent given $\theta$. Identify a conjugate prior for $\theta$ and find the corresponding Posterior Distribution.
+
+Uninformative Prior: $\theta \sim Beta(1,1)$
+
+Posteriors:
+
+$$
+  Y | \theta \sim Beta(Y + 1, n - Y  + 1)
+$$
+
+$$
+  Z | \theta \sim Beta(Z + 1, M - Z + 1)
+$$
+
+$$
+ \theta | Y,Z \sim Beta(Y + Z + 1, n + M - Y - Z + 1)
+$$
+
+Since $Y | \theta$ and $Z | \theta$ are independent, their product is a beta distribution.
