@@ -1164,3 +1164,271 @@ If $\theta$ has support $\mathbb{R}$ and mean and variance are known, maximum
 entropy prior is Gaussian.
 
 *Not purely objective because you have to set the constraints*
+
+*
+
+* Deterministic Methods & MCMC Sampling (2020/10/08)
+
+The big question is *How to summarize the Posterior*?
+
+We need point estimates, credible sets, etc.
+
+*Algorithms to Estimate Complicated Joint Posteriors*
+
+- Use a point estimate (e.g. MAP), ignore uncertainty
+- Approximate Posterior as Gaussian using Bayesian Central Limit Theorem
+- Numerical Integration. Not touched on much here. Moreso in Numerical Analysis
+- Markov-Chain Monte Carlo Sampling
+
+** MAP Estimation (Maximum a Posteriori)
+
+Sometimes you don't need an entire posterior distribution. A single point
+estimate will do. For example, prediction in Machine Learning.
+
+MAP Estimate is the posterior *mode*. AKA the peak of the posterior
+distribution.
+
+$$
+\hat \theta_{MAP} = \underset{\theta}{argmax} \ p(\theta | Y) =
+\underset{\theta}{argmax} \ log[f(Y | \theta)] + log(\pi (\theta))
+$$
+
+Similar to MLE but includes prior.
+
+*** Example
+
+Let $Y | \theta \sim Gamma(Y + a, N + b)$ and $\theta \sim Gamma(a, b)$. Find
+$\hat \theta_{MAP}$
+
+$$
+p(\theta | Y) = \frac{(N + b)^}{Y + a}{\Gamma (Y + a)} \theta^{Y + a - 1} \ e^{-
+(N + b) \theta}
+$$
+
+
+\begin{equation}
+\begin{split}
+\hat \theta_{MAP} = & \underset{\theta}{argmax} \ log[f(\theta | Y)]\\
+= & \underset{\theta}{argmax} \{ (Y + a) log(N + b) - log (\Gamma (Y + a)) + (Y + a - 1) log (\theta) - (N + b) \theta\}\\
+= & \frac{d}{d\theta} \ log(p(\theta | Y)) = \frac{y + a - 1}{\theta} - (N + b) = 0\\
+= & \frac{Y + a - 1}{N + b}
+\end{split}
+\end{equation}
+
+** Bayesian Central Limit Theorem
+
+Berstein-Von Mises Theorem: As the sample size grows, the posterior doesn't
+depend on the prior. i.e. Shrinkage.
+
+Def: For large N and some other conditions, $\theta | Y \approx Normal$
+
+$$
+\theta | Y \sim N(\hat \theta_{MAP}, I(\hat \theta_{MAP})^{-1})
+$$
+
+$I$ is Fisher's Information Matrix, aka the Hessian Matrix.
+
+$$
+I_{jk} = \frac{- d^2}{d \theta_j \ d \theta_k} log[p(\theta | Y)]
+$$
+
+evaluated at $\hat \theta_{MAP}$
+
+*** Example
+
+Let $\theta \sim Beta(0.5, 0.5)$ and $Y | \theta \sim Bin(n, \theta)$. Find
+Gaussian approximation for $p(\theta | Y)$.
+
+#+begin_quote
+In this case, $Beta(0.5, 0.5)$ is Jeffreys Prior.
+#+end_quote
+
+Posterior: $\theta | Y \sim Beta(Y + 0.5, n - Y + 0.5)$
+
+Need a MAP Estimator.
+
+$$
+\frac{\Gamma (Y + 1 + n - Y)}{\Gamma (Y + 0.5) \Gamma (n - Y + 0.5)} \Theta^{Y -
+0.5} (1 - \theta)^{n - Y - 0.5}
+$$
+
+\begin{equation}
+\begin{split}
+log p (\theta | Y) = & log \Gamma (n + 1) - log \Gamma (Y + 0.5) - log \Gamma (n - y + 0.5) + (y - 0.5) log \theta + (n - y - 0.5) log \theta\\
+\frac{d}{d \theta} \ log p(\theta | Y) = & \frac{Y - 0.5}{\theta} - \frac{n - y - 0.5}{1 - \theta} = 0\\
+=> & \frac{Y - 0.5}{\theta} = \frac{n - Y - 0.5}{1 - \theta}\\
+=> & \hat \theta (n - Y - 0.5) = (1 - \hat \theta)(Y - 0.5)\\
+=> & \hat \theta (n - Y - 0.5) + \hat \theta (Y - 0.5) = Y - 0.5 - \hat \theta (Y - 0.5)\\
+=> & \hat \theta (n - Y - 0.5) = Y - 0.5\\
+=> & \hat \theta (n - Y - 0.5 + Y - 0.5) = Y - 0.5\\
+=> & \hat \theta (n - 1) = Y - 0.5\\
+\therefore & \hat \theta_{MAP} = \frac{Y - 0.5}{n - 1}
+\end{split}
+\end{equation}
+
+
+*Finding the Variance via the Information Matrix*
+
+\begin{equation}
+\begin{split}
+\frac{- d^2}{d \theta^2} log \ p(\theta | Y) = & \frac{- d}{d \theta} [\frac{d}{d \theta} log p(\theta | Y)]\\
+= & \frac{- d}{d \theta} [\frac{Y - 0.5}{\theta} - \frac{n - Y - 0.5}{1 - \theta}]\\
+= & - [- \frac{Y - 0.5}{\theta^2} - \frac{n - Y - 0.5}{(1 - \theta)^2}]\\
+= & \frac{Y - 0.5}{\theta^2} + \frac{n - Y - 0.5}{(1 - \theta)^2}\\
+= & \frac{Y - 0.5}{\theta^2} + \frac{n - Y - 0.5}{[1 - (\frac{Y - 0.5}{n - 1})]^2}\\
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+I(\hat \theta_{MAP}) = & \frac{Y - 0.5}{[\frac{Y - 0.5}{n - 1}]^2} + \frac{n - Y - 0.5}{[1 - \frac{Y - 0.5}{n - 1}]^2}\\
+= & \frac{(n - 1)^2}{Y - 0.5} + \frac{n - Y - 0.5}{[\frac{n - 1}{n - 1} - \frac{Y - 0.5}{n - 1}]^2}\\
+= & \frac{(n - 1)^2}{Y - 0.5} + \frac{n - Y - 0.5}{[\frac{n - Y - 0.5}{n - 1}]^2}\\
+= & \frac{(n - 1)^2}{Y - 0.5} + \frac{(n - 1)^2}{n - Y - 0.5}\\
+= & (n - 1)^2 \frac{1}{Y - 0.5} + \frac{1}{n - Y - 0.5}\\
+= & (n - 1)^2 \frac{n - 1}{(Y - 0.5)(n - Y - 0.5)}\\
+= & \frac{(n - 1)^3}{(Y - 0.5)(n - Y - 0.5)}\\
+\end{split}
+\end{equation}
+
+$\therefore & \theta | Y \approx N(\frac{Y - 0.5}{n - 1}, \frac{(Y - 0.5) (n -
+Y - 0.5)}{(n - 1)^3})$
+
+#+begin_quote
+Note that $I(\hat \theta_{MAP})$ produces the Inverse Variance hence why the
+Variance of the approximation is flipped.
+#+end_quote
+Normal Approximation for Beta-Binomial using Bayesian Central Limit Theorem.
+
+For large Datasets with small number of params, the Normal approximation is good.
+
+** Numerical Integration
+
+Only feasible for small p.
+
+Iteratively Nested Laplace Approximation (INLA) combines Gaussian approximation
+with numerical integration. It works well if most parameters are approximately normal.
+
+** Monte Carlo Sampling
+
+Collection of all params in model: $\theta = (\theta_1, ..., \theta_p)$
+
+Dataset: $Y = (Y_1, ..., Y_n)$
+
+Posterior Distribution: $f(\theta | Y)$
+
+If $\theta^{(1)}, ..., \theta^{(s)}$ are samples from $f(\theta | Y)$, then mean
+of the S samples approximate a posterior mean.
+
+Most common MCMC Algorithms: Gibbs, Metropolis
+
+*** Gibbs Sampling
+
+- Sample from High dimension Posteriors
+- Break problem of sampling from the high dimension joint distribution into a
+  series of samples from low dimensional conditional distributions.
+
+Samples are not independent. The dependencies form a Markov Chain.
+
+*Full Conditional (FC) Distribution*: Distribution of one parameter taking all other
+ parameters as /fixed and known/.
+
+**** MCMC for Bayesian T-Test
+
+$Y_i \sim N(\mu, \sigma^2)$ where $\mu \sim N(0, \sigma_0^2)$ and $\sigma^2 \sim
+InvGamma(a,b)$
+
+*FC Distribution 1*
+
+$$\mu | \sigma^2, Y \sim N(\frac{n \bar Y \sigma^{-2} + \mu_0 \sigma_0^{-2}}{n
+\sigma^{-2} + \sigma_0^{-2}}, \frac{1}{n \sigma^{-2} + \sigma_0^{-2}})$$
+
+*FC Distribution 2*
+
+$$
+\sigma^2 | \mu, Y \sim InvGamma(\frac{n}{2} + a, \frac{1}{2} \sum_{i = 1}^{n}
+(Y_i - \mu)^2 + b)
+$$
+
+**** Algorithm
+
+1. Set Initial values for all parameters: $\theta_1^{(0)}, ..., \theta_p^{(0)}$
+2. Sample variables one at a time from Full Conditional: $p(\theta_j | \theta_1,
+   ..., \theta_{j - 1}, \theta_{j + 1}, ..., \theta_p, Y)$
+   - Rather than 1 p-dimensional samples, we produce p 1-dimensional samples
+   - Repeat until required number of samples are generated.
+
+*Example*
+
+1. Set initial values
+2. For iteration /t/
+   - FC1: Draw $\theta_1^{(t)} | \theta_2^{(t - 1)}, ..., \theta_p^{(t - 1)}, Y$
+   - FC2: Draw $\theta_2^{(t)} | \theta_1^{(t)}, \theta_3^{(t - 1)}, ..., \theta_p^{(t - 1)}, Y$
+   - ...
+   - FCp: Draw $\theta_p^{(t)} | \theta_1^{(t)}, ..., \theta_{p - 1}^{(t)}, Y$
+
+Repeat 2 $\mathbb{S}$ times giving posterior draws $\theta^{(1)}, ..., \theta^{(S)}$
+
+
+*Why does it work?*
+
+*Theorem*: For any initial values, the chain will eventually converge to the
+posterior.
+
+*Theorem*: If $\theta^{(s)}$ is a sample from the posterior, then $\theta^{(s +
+1)}$ is too.
+
+Once the chain has /converged/, then discard the first T samples as "burn in".
+Use remaining S - T to approximate the Posterior.
+
+#+begin_quote
+I have also heard "burn in" described as annealing in my Monte Carlo class.
+#+end_quote
+
+**** Practice Problem
+
+Work out the full conditionals for $\lambda$ and $b$ for the following model:
+
+\begin{equation}
+\begin{split}
+Y | \lambda, b \sim & Poisson(\lambda)\\
+\lambda | b \sim & Gamma(1, b)\\
+b \sim & Gamma(1, 1) \sim exp(1)
+\end{split}
+\end{equation}
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+P(\lambda, b | Y) \propto & f(Y | \lambda, b) f(\lambda | b) = f(Y | \lambda, b) f(b) f(\lambda | b)\\
+ = & \frac{e^{- \lambda} \lambda^Y}{Y !} \cdot e^{-b} \cdot b \ e^{-b \lambda}\\
+\propto & e^{- \lambda} \lambda^Y e^{-b} b \ e^{-b \lambda}\\
+= & b e^{- \lambda - b - b \lambda} \lambda^Y
+\end{split}
+\end{equation}
+
+*Full Conditional Distributions*
+
+
+1.
+
+   Write in terms of $\lambda$.  Everything else is fixed.
+
+\begin{equation}
+\begin{split}
+\lambda | b, Y \propto & \lambda^Y e^{- \lambda} e ^{- b \lambda}\\
+= & \lambda^{(y + 1) - 1} e^{-(b + 1) \lambda}\\
+\text{So?} \ & \lambda | b, Y \sim Gamma(y+ 1, b + 1)
+\end{split}
+\end{equation}
+
+2.
+    Write in terms of $b$. Everything else is fixed.
+
+\begin{equation}
+\begin{split}
+b | \lambda, Y \propto & b e^{-b} e^{-b \lambda} = b \ e^{-(\lambda + 1)b}\\
+\text{So?} \ & b | \lambda, Y \sim Gamma(2, \lambda + 1)
+\end{split}
+\end{equation}
