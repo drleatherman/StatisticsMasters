@@ -174,7 +174,7 @@ hyp.means <-
     )
 
 # compute probability that posterior is greater than the prior
-data.frame("clutch.prob" = apply(hyp.means, 1, function(x) mean(x$posterior > x$prior))) %>% 
+data.frame("clutch.prob" = pbeta(mean(clutch.plus$FT.Pct), clutch.plus$post.a, clutch.plus$post.b)) %>% 
   kable(
     col.names = c("Probability"),
     caption = "Estimate of Posterior Probability that Clutch Percentages are greater than Overall Percentages"
