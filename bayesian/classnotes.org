@@ -1454,16 +1454,25 @@ and sample from candidate distributions (barring Gibbs).
 
 Generic case which allows for Asymmetric Candidate Distributions.
 
-Let $\theta_j^c$ be a candidate distribution where
+Let $\theta_j^c$ be a Random Variable from the candidate distribution
 $$\theta_j^c \sim q(\theta | \theta^*)$$
+
+For example, if $\theta_j^c \sim N(\theta_j^*, s_j^2)$, then
+
+$$
+q(\theta_j^c | \theta^*) = \frac{2}{s_j \sqrt{2 \pi}}exp[- \frac{(\theta_j^c -
+\theta_j^*)^2}{2 s_j^2}] = q(\theta^* | \theta_j^c)
+$$
 
 High correlation cases cause slow convergence. If high correlation is present,
 *Blocked Gibbs/Metropolis* can help.
 
-#+begin_quote
-TODO: Fill out more here from slides when posted.
-#+end_quote
+Ex. Linear Regression iterates between sampling the block $(\beta_1, ...,
+\beta_p)$ and $\sigma^2$
 
+#+begin_quote
+Blocked still not clear. Follow up with more.
+#+end_quote
 ** Gibbs Sampling
 
 Gibbs samples each parameter from its conditional distribution. Which makes use
@@ -1479,7 +1488,8 @@ No known conjugate prior for some likelihoods. e.g. Logistic Regression.
 This is where Metropolis Sampling comes in!
 
 #+begin_quote
-Special Case of Metropolis sampling where acceptance rate is always 1.
+Special Case of Metropolis sampling where acceptance rate is always 1 and the
+proposal distributions are the posterior conditionals.
 #+end_quote
 
 ** Metropolis Sampling
@@ -1546,7 +1556,11 @@ $|Z| > 2$ == poor convergence.
 *** Gelman-Rubin
 
 By running multiple chains, hopefully to see the same result. The measurements
-between chains should agree. Very similar to ANOVA!
+between chains should agree. Essentially an ANOVA test of whether the chains
+have the same mean.
+
+1 is perfect
+1.1 is decent but not great convergence.
 
 *** Effective Sample Size (ESS)
 
