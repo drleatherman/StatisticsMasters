@@ -1369,7 +1369,6 @@ $$
 
 Repeat 2 $\mathbb{S}$ times giving posterior draws $\theta^{(1)}, ..., \theta^{(S)}$
 
-
 *Why does it work?*
 
 *Theorem*: For any initial values, the chain will eventually converge to the
