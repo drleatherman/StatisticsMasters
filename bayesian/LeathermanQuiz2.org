@@ -84,7 +84,7 @@ that your commute time was Y = 16 minutes.
 \begin{equation}
 \begin{split}
 f(\theta | Y = 16) = & \frac{f(Y = 16 | \theta) f(\theta)}{f(Y = 16 | \theta = 1) \times f(\theta = 1) + f(Y = 16 | \theta = 0) \times f(\theta = 0)}\\
-= & \frac{\frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(-\frac{(16 - 10 - 5 \theta)^2}{2 (\theta + 2)^2}) \cdot \frac{1}{5}^{\theta} \frac{4}{5}^{1 - \theta}}{\frac{1}{2 \sqrt{2 \pi}} exp(- \frac{6^2}{2 \times 2^2}) \frac{4}{5} + \frac{1}{2 \sqrt{2 \pi}} exp(- \frac{6^2}{2 \times 2^2}) \frac{4}{5}}\\
+= & \frac{\frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(-\frac{(16 - 10 - 5 \theta)^2}{2 (\theta + 2)^2}) \cdot \frac{1}{5}^{\theta} \frac{4}{5}^{1 - \theta}}{\frac{1}{3 \sqrt{2 \pi}} exp(- \frac{1^2}{2 \times 3^2}) \frac{1}{5} + \frac{1}{2 \sqrt{2 \pi}} exp(- \frac{6^2}{2 \times 2^2}) \frac{4}{5}}\\
 = & \frac{1}{(\theta + 2) \sqrt{2 \pi}} exp(-\frac{(6 - 5 \theta)^2}{2 (\theta + 2)^2}) \cdot \frac{1}{5}^{\theta} \frac{4}{5}^{1 - \theta} \cdot \frac{1}{0.02693}\\
 \end{split}
 \end{equation}
