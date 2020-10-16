@@ -1431,3 +1431,163 @@ b | \lambda, Y \propto & b e^{-b} e^{-b \lambda} = b \ e^{-(\lambda + 1)b}\\
 \text{So?} \ & b | \lambda, Y \sim Gamma(2, \lambda + 1)
 \end{split}
 \end{equation}
+* MCMC Sampling & Convergence (2020/10/15)
+
+
+*Adaptive MCMC*: Uses same candidate distribution throughout the chain but
+adjusts hyper-parameters to tune Acceptance Rate.
+
+*Hamiltonian MCMC*: Uses gradient of the posterior to adjust hyper-parameters
+throughout the chain. Default MCMC method in STAN.
+
+*3 Main Decisions for MCMC Algo*
+1. Select Initial Values
+   - Use Method of Moments or MLE
+   - Pick purposefully bad values to demonstrate convergence.
+2. Determine the chain convergence
+3. Determine how many samples you need (Effective Sample Size)
+
+The following MCMC Sampling methods can be mixed and matched as needed to use
+and sample from candidate distributions (barring Gibbs).
+
+** Metropolis-Hastings Sampling
+
+Generic case which allows for Asymmetric Candidate Distributions.
+
+Let $\theta_j^c$ be a candidate distribution where
+$$\theta_j^c \sim q(\theta | \theta^*)$$
+
+High correlation cases cause slow convergence. If high correlation is present,
+*Blocked Gibbs/Metropolis* can help.
+
+#+begin_quote
+TODO: Fill out more here from slides when posted.
+#+end_quote
+
+** Gibbs Sampling
+
+Gibbs samples each parameter from its conditional distribution. Which makes use
+of conjugate priors. It is not obvious to use without conjugate priors.
+
+$$P(\mu | Y ) \propto exp[- \frac{1}{2} (Y - \mu)^2] \cdot \mu^{a - 1} (1 -
+\mu)^{b - 1}$$
+
+Where $Y \sim N(\mu, 1), \mu \sim Beta(a,b)$
+
+No known conjugate prior for some likelihoods. e.g. Logistic Regression.
+
+This is where Metropolis Sampling comes in!
+
+#+begin_quote
+Special Case of Metropolis sampling where acceptance rate is always 1.
+#+end_quote
+
+** Metropolis Sampling
+
+A version of rejection Sampling
+
+Let $\theta_j^*$ be the current value of the parameter being updated and
+$\theta_j$ be the current value for all parameters.
+
+Let $\theta_j^c$ be the candidate value where
+
+$$
+\theta_j^c \sim N(\theta_j^*, s_j^2)
+$$
+
+
+Let $R$ be the probability of accepting a move where
+
+$$
+R = min \{ 1, \frac{P(\theta_j^c | \theta_{(j)}, Y)}{P(\theta_j^* |
+\theta_{(j)}, Y)} \}
+$$
+
+#+begin_quote
+This is a special case of Metropolis-Hastings sampling where the candidate
+distribution is *symmetric*.
+#+end_quote
+
+*** Tuning $s_j$
+
+$s_j$ is a hyper-parameter for the Metropolis Algorithm. Ideally, it is
+somewhere between 0.3 and 0.4. This is because we don't want to accept or reject
+/too/ much.
+
+If $s_j$ is small
+- proposed distribution is narrow
+- Nearly all candidates are accepted
+
+If $s_j$ is large
+- proposed distribution is wide
+- nearly all candidates rejected. As in, there are a lot of straight lines on
+  the trend graph.
+
+*** Logistic Regression Example
+
+This is how Bayesians see Logistic Regression.
+
+$$
+Y_i | \theta \sim Bern(logit^{-1}(\theta)) = Bern(\frac{e^\theta}{1 + e^\theta})
+$$
+
+Where $\theta \sim N(\mu_0, \sigma_0^2)$
+
+** Convergence Diagnostics
+
+*** Geweke
+
+Compares mean at beginning of chain with mean at end of chain.
+
+Test statistic: Z-score.
+
+$|Z| > 2$ == poor convergence.
+
+*** Gelman-Rubin
+
+By running multiple chains, hopefully to see the same result. The measurements
+between chains should agree. Very similar to ANOVA!
+
+*** Effective Sample Size (ESS)
+
+*Idea*
+
+Highly correlated samples have less information than independent samples. ESS
+accounts for this autocorrelation. For example, you may think you have 10,000
+sampes but you actually have less than 10K /good/ samples because you need to
+account for autocorrelation.
+
+
+$S$: Number of MCMC Samples
+
+$\rho(h)$: Autocorrelation with Lag h.
+
+For example, $\rho(1)$ is autocorrelation coefficient with the first Lag.
+
+$$
+ESS = \frac{S}{1 + 2 \sum_{h = 1}^{\infty} \rho (h)}
+$$
+
+
+ESS should be at least a few *thousand*.
+
+Naive SE: $SE = \frac{S}{\sqrt{S}}$
+
+Time Series SE is more realistic.
+
+$SE = \frac{S}{\sqrt {ESS}}$
+
+** Handling Massive Datasets
+- MAP Estimate (Prediction only. Good for ML)
+- Bayesian CLT
+- Variation Bayes: Approximate Posterior by assuming posterior independent
+  across all parameters. (Fast but questionable statistical properties).
+- Parallel Computing
+- Batch Datasets to Divide and Conquer
+
+
+#+begin_quote
+Misc thing about JAGS, STAN.
+
+Sometimes people use a cauchy distribution to do a standard deviation in JAGS, STAN.
+#+end_quote
