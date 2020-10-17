@@ -1572,6 +1572,9 @@ sampes but you actually have less than 10K /good/ samples because you need to
 account for autocorrelation.
 
 
+Ideally, samples independent across iterations but sometimes not the case. Lower
+values are better but if chains are long enough, then large values can be ok.
+
 $S$: Number of MCMC Samples
 
 $\rho(h)$: Autocorrelation with Lag h.
@@ -1590,6 +1593,8 @@ Naive SE: $SE = \frac{S}{\sqrt{S}}$
 Time Series SE is more realistic.
 
 $SE = \frac{S}{\sqrt {ESS}}$
+
+*Thinning*: Use every K iterations to reduce autocorrelation.
 
 ** Handling Massive Datasets
 - MAP Estimate (Prediction only. Good for ML)
