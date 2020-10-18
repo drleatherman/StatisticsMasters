@@ -15,13 +15,74 @@ knitr::opts_chunk$set(echo = TRUE)
 
 > Derive the full conditional distribution of $\lambda_1$.
 
+\begin{equation}
+\begin{split}
+\label{eq:1}
+f(\lambda_1 | Y, \theta) \propto & f(Y, | \lambda_1, \theta) f(\lambda_1 | \theta)\\
+= & f(Y | \lambda_1, \theta) f(\theta) f(\lambda_1 | \theta)\\
+= & \frac{e^{-\lambda_1} \lambda_1^{Y}}{Y !} \cdot \theta^{0.1 - 1} e^{- 0.1 \theta} \cdot \theta e^{- \theta \lambda_1}\\
+\propto & \theta^{0.1} e^{\lambda_1 - 0.1 \theta - \theta \lambda_1}
+\end{split}
+\end{equation}
+
+When holding $\lambda_1$ fixed, then
+
+$$
+f(\lambda_1 | Y, \theta) \propto \theta^{1.1 - 1} e^{- \lambda_1 (\theta + 1)} \sim Gamma(1.1, \theta + 1)
+$$
+
 # 2
 
 > Derive the full conditional distribution of $\theta$.
 
+Following the result in (a) and holding $\theta$ fixed,
+
+\begin{equation}
+\begin{split}
+f(\theta | Y, \lambda_1, ..., \lambda_p) \propto & \Pi_{i = 1}^{p} \theta^{0.1} e^{-\theta(0.1 + \lambda_i)}\\
+= & \theta^{\frac{p}{10}} exp(-\theta[- \frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
+= & \theta^{\frac{p}{10} + 1 - 1} exp(-\theta[- \frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
+\sim & Gamma(\frac{p}{10} + 1, \sum_{i = 1}^{p} \lambda_i - \frac{p}{10})
+\end{split}
+\end{equation}
+
+Where p = 32.
+
 # 3
 
 > Write Gibbs sampling code to draw samples from the joint distribution of $(\lambda_1, ..., \lambda_{32}, \theta)$.
+
+```{r}
+num.teams <- 32
+num.params <- num.teams + 1 # for theta
+n.iters <- 100
+
+res <- matrix(0,n.iters, num.params)
+lambda.names <- sapply(1:num.teams, function(x) paste0("lambda_", x))
+colnames(res) <- c(lambda.names,"theta")
+
+# initial values for first row
+lambdas <- concussions %>% 
+  mutate(total = X2012 + X2013) %>% 
+  group_by(X) %>% 
+  summarize_at("total", mean) %>% 
+  select(total)
+theta <- 0.1
+
+res[1,] <- c(lambdas.init$total, theta)
+# The loop to perform Gibbs sampling
+for(i in 2:n.iters){
+  # Random draw from full conditional distribution of lambdas
+  lambdas <- rgamma(num.teams, 1.1, theta + 1)
+  
+  # Random draw from full conditional distribution of theta
+  theta <- rgamma(1, (num.teams/10) + 1, sum(lambdas) - (num.teams/10))
+
+  res[i,] <- c(lambdas, theta)
+}
+res <- as.data.frame(res)
+
+```
 
 # 4
 
