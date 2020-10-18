@@ -1,0 +1,32 @@
+---
+title: "Homework #5"
+author: "Dustin Leatherman"
+date: "October 18, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+> Refer to the dataset ConcussionsByTeamAndYear.csv found under the Week Six course content of D2L. Let $Y_i$ be the number of concussions from team $i = 1, ..., 32$. The model is $Y_i | \lambda_i \sim Poisson(\lambda_i)$ and the prior is $\lambda_i | \theta \sim Gamma(1, \theta)$ where $\theta \sim Gamma(0.1, 0.1)$.
+
+# 1
+
+> Derive the full conditional distribution of $\lambda_1$.
+
+# 2
+
+> Derive the full conditional distribution of $\theta$.
+
+# 3
+
+> Write Gibbs sampling code to draw samples from the joint distribution of $(\lambda_1, ..., \lambda_{32}, \theta)$.
+
+# 4
+
+> Show trace plots of the samples for $\lambda_1$ and $\theta$. (These plots of the value of the parameter on the y-axis and the iteration number on the x-axis).
+
+# 5
+
+> Plot the estimated posterior mean of $\lambda_i$ versus $Y_i$ and comment on whether the code is returning reasonable estimates

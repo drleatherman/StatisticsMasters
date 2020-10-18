@@ -1473,6 +1473,7 @@ Ex. Linear Regression iterates between sampling the block $(\beta_1, ...,
 #+begin_quote
 Blocked still not clear. Follow up with more.
 #+end_quote
+
 ** Gibbs Sampling
 
 Gibbs samples each parameter from its conditional distribution. Which makes use
