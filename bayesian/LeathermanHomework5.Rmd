@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+concussions <- read.csv("~/Downloads/ConcussionsByTeamAndYear.csv")
 ```
 
 > Refer to the dataset ConcussionsByTeamAndYear.csv found under the Week Six course content of D2L. Let $Y_i$ be the number of concussions from team $i = 1, ..., 32$. The model is $Y_i | \lambda_i \sim Poisson(\lambda_i)$ and the prior is $\lambda_i | \theta \sim Gamma(1, \theta)$ where $\theta \sim Gamma(0.1, 0.1)$.
@@ -21,14 +24,14 @@ knitr::opts_chunk$set(echo = TRUE)
 f(\lambda_1 | Y, \theta) \propto & f(Y, | \lambda_1, \theta) f(\lambda_1 | \theta)\\
 = & f(Y | \lambda_1, \theta) f(\theta) f(\lambda_1 | \theta)\\
 = & \frac{e^{-\lambda_1} \lambda_1^{Y}}{Y !} \cdot \theta^{0.1 - 1} e^{- 0.1 \theta} \cdot \theta e^{- \theta \lambda_1}\\
-\propto & \theta^{0.1} e^{\lambda_1 - 0.1 \theta - \theta \lambda_1}
+\propto & \theta^{0.1} \lambda^Y e^{-\lambda_1 - 0.1 \theta - \theta \lambda_1}
 \end{split}
 \end{equation}
 
-When holding $\lambda_1$ fixed, then
+When holding everything but $\lambda_1$, then
 
 $$
-f(\lambda_1 | Y, \theta) \propto \theta^{1.1 - 1} e^{- \lambda_1 (\theta + 1)} \sim Gamma(1.1, \theta + 1)
+f(\lambda_1 | Y, \theta) \propto \lambda^{Y + 1} e^{- \lambda_1 (\theta + 1)} \sim Gamma(Y + 1, \theta + 1)
 $$
 
 # 2
@@ -39,10 +42,10 @@ Following the result in (a) and holding $\theta$ fixed,
 
 \begin{equation}
 \begin{split}
-f(\theta | Y, \lambda_1, ..., \lambda_p) \propto & \Pi_{i = 1}^{p} \theta^{0.1} e^{-\theta(0.1 + \lambda_i)}\\
-= & \theta^{\frac{p}{10}} exp(-\theta[- \frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
-= & \theta^{\frac{p}{10} + 1 - 1} exp(-\theta[- \frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
-\sim & Gamma(\frac{p}{10} + 1, \sum_{i = 1}^{p} \lambda_i - \frac{p}{10})
+f(\theta | Y, \lambda_1, ..., \lambda_p) \propto & \prod_{i = 1}^{p} \theta^{0.1} e^{-\theta(0.1 + \lambda_i)}\\
+= & \theta^{\frac{p}{10}} exp(-\theta[\frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
+= & \theta^{\frac{p}{10} + 1 - 1} exp(-\theta[\frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
+\sim & Gamma(\frac{p}{10} + 1, \sum_{i = 1}^{p} \lambda_i + \frac{p}{10})
 \end{split}
 \end{equation}
 
@@ -55,39 +58,70 @@ Where p = 32.
 ```{r}
 num.teams <- 32
 num.params <- num.teams + 1 # for theta
-n.iters <- 100
+n.iters <- 30000
 
-res <- matrix(0,n.iters, num.params)
+res.2012 <- res.2013 <- matrix(0,n.iters, num.params)
 lambda.names <- sapply(1:num.teams, function(x) paste0("lambda_", x))
-colnames(res) <- c(lambda.names,"theta")
+colnames(res.2012) <- colnames(res.2013) <- c(lambda.names,"theta")
 
 # initial values for first row
-lambdas <- concussions %>% 
-  mutate(total = X2012 + X2013) %>% 
-  group_by(X) %>% 
-  summarize_at("total", mean) %>% 
-  select(total)
-theta <- 0.1
+lambdas.init <- concussions %>% 
+  mutate(mean = (X2012 + X2013) / 2)
 
-res[1,] <- c(lambdas.init$total, theta)
+theta <- 0.1
+lambdas <- lambdas.init
+res.2012[1,] <- res.2013[1,] <- c(lambdas.init$mean, theta)
+
 # The loop to perform Gibbs sampling
 for(i in 2:n.iters){
   # Random draw from full conditional distribution of lambdas
-  lambdas <- rgamma(num.teams, 1.1, theta + 1)
+  lambdas.2012 <- rgamma(num.teams, lambdas.init$X2012 + 1, theta + 1)
+  lambdas.2013 <- rgamma(num.teams, lambdas.init$X2013 + 1, theta + 1)
   
   # Random draw from full conditional distribution of theta
-  theta <- rgamma(1, (num.teams/10) + 1, sum(lambdas) - (num.teams/10))
+  theta.2012 <- rgamma(1, (num.teams/10) + 1, sum(lambdas.2012) + (num.teams/10))
+  theta.2013 <- rgamma(1, (num.teams/10) + 1, sum(lambdas.2013) + (num.teams/10))
 
-  res[i,] <- c(lambdas, theta)
+  res.2012[i,] <- c(lambdas.2012, theta.2012)
+  res.2013[i,] <- c(lambdas.2013, theta.2013)
 }
-res <- as.data.frame(res)
-
+res.2012 <- as.data.frame(res.2012)
+res.2013 <- as.data.frame(res.2013)
 ```
+
 
 # 4
 
 > Show trace plots of the samples for $\lambda_1$ and $\theta$. (These plots of the value of the parameter on the y-axis and the iteration number on the x-axis).
 
+
 # 5
 
 > Plot the estimated posterior mean of $\lambda_i$ versus $Y_i$ and comment on whether the code is returning reasonable estimates
+
+```{r, fig.width=10}
+lambdas.mean.2012 <- colMeans(res.2012) %>% head(-1)
+concussions %>% 
+  bind_cols(Posterior.Mean = lambdas.mean.2012) %>% 
+  select(X, Actual = X2012, Posterior.Mean) %>% 
+  pivot_longer(-X, names_to = "Category", values_to = "value") %>% 
+  mutate(X = str_remove(X, "\xa0")) %>% 
+  ggplot(aes(x = X, color = Category, y = value)) + 
+  geom_point() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(x = "Team", y = "Number of Concussions")
+
+lambdas.mean.2013 <- colMeans(res.2013) %>% head(-1)
+concussions %>% 
+  bind_cols(Posterior.Mean = lambdas.mean.2013) %>% 
+  select(X, Actual = X2013, Posterior.Mean) %>% 
+  pivot_longer(-X, names_to = "Category", values_to = "value") %>% 
+  mutate(X = str_remove(X, "\xa0")) %>% 
+  ggplot(aes(x = X, color = Category, y = value)) + 
+  geom_point() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  labs(x = "Team", y = "Number of Concussions")
+
+```
+
+The posterior mean is pretty close to the actual estimates for each year indicating that this is not a bad model.
