@@ -1,14 +1,17 @@
 ---
-title: "Homework #5"
+title: 'Homework #5'
 author: "Dustin Leatherman"
 date: "October 18, 2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-
+library(grid)
+library(gridExtra)
 concussions <- read.csv("~/Downloads/ConcussionsByTeamAndYear.csv")
 ```
 
@@ -94,6 +97,45 @@ res.2013 <- as.data.frame(res.2013)
 
 > Show trace plots of the samples for $\lambda_1$ and $\theta$. (These plots of the value of the parameter on the y-axis and the iteration number on the x-axis).
 
+```{r, fig.width=10}
+p1 <- 
+  res.2012 %>% 
+    ggplot(aes(x = 1:n.iters, y = lambda_1)) + 
+    geom_line() +
+    labs(x = "Iteration", y = expression(lambda[1])) +
+    ggtitle("2012")
+
+p2 <-
+  res.2013 %>% 
+    ggplot(aes(x = 1:n.iters, y = lambda_1)) + 
+    geom_line() +
+    labs(x = "Iteration", y = expression(lambda[1]))+
+    ggtitle("2013")
+
+p3 <- 
+  res.2012 %>% 
+    ggplot(aes(x = 1:n.iters, y = theta)) + 
+    geom_line() +
+    labs(x = "Iteration", y = expression(theta))+
+    ggtitle("2012")
+
+p4 <-
+  res.2013 %>% 
+    ggplot(aes(x = 1:n.iters, y = theta)) + 
+    geom_line() +
+    labs(x = "Iteration", y = expression(theta))+
+    ggtitle("2013")
+grid.arrange(
+  p1, 
+  p2,
+  p3,
+  p4,
+  ncol = 1, 
+  top = textGrob("Trace Plots",
+                            gp=gpar(fontsize=14,font=1),just=c("center"))
+)
+```
+
 
 # 5
 
@@ -109,7 +151,8 @@ concussions %>%
   ggplot(aes(x = X, color = Category, y = value)) + 
   geom_point() + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(x = "Team", y = "Number of Concussions")
+  labs(x = "Team", y = "Number of Concussions") +
+  ggtitle("Posterior Mean vs. Actual Values - 2012")
 
 lambdas.mean.2013 <- colMeans(res.2013) %>% head(-1)
 concussions %>% 
@@ -120,7 +163,8 @@ concussions %>%
   ggplot(aes(x = X, color = Category, y = value)) + 
   geom_point() + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
-  labs(x = "Team", y = "Number of Concussions")
+  labs(x = "Team", y = "Number of Concussions") +
+  ggtitle("Posterior Mean vs. Actual Values - 2013")
 
 ```
 
