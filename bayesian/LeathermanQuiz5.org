@@ -35,7 +35,7 @@ under this prior.
 \lambda | Y \propto & \lambda^Y e^{- \lambda} \cdot \lambda^{-1/2}\\
 \propto & \lambda^{Y - 1/2} e^{- \lambda}\\
 \propto & \lambda^{(Y + 1/2) - 1} e^{- \lambda}\\
-\sim & Gamma(Y + \frac{1}{2}, 1) \sim Gamma(\frac{11}{2}, 1)
+\sim & Gamma(Y + \frac{1}{2}, 1) \sim Gamma(\frac{21}{2}, 1)
 \end{split}
 \end{equation}
 
@@ -81,9 +81,9 @@ Assuming large n, derive the posterior distribution of $\sigma^2$.
 \begin{split}
 f(\sigma^2 | Y_1, ..., Y_n) \propto & f(Y_1| \sigma^2) \cdot ... \cdot f(Y_n | \sigma^2) f( \sigma^2)\\
 \propto & (\sigma^2)^{- 1/2} e^{- \frac{1}{2 \sigma^2} y_1^2} \cdot ... \cdot  (\sigma^2)^{- 1/2} e^{- \frac{1}{2 \sigma^2} y_n^2} \cdot 1\\
-\propto & (\sigma^2)^{-\frac{n}{2}} e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^{n} Y_i^2}\\
-\propto & (\sigma^2)^{-(\frac{n}{2} - 1) - 1} e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^{n} Y_i^2}\\
-\sim & InvGamma(\frac{n}{2} - 1, \frac{1}{2} \sum_{i = 1}^{n} Y_i^2)
+\propto & (\sigma^2)^{-\frac{n}{2}} e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^{n} y_i^2}\\
+\propto & (\sigma^2)^{-(\frac{n}{2} - 1) - 1} e^{- \frac{1}{2 \sigma^2} \sum_{i = 1}^{n} y_i^2}\\
+\sim & InvGamma(\frac{n}{2} - 1, \frac{1}{2} \sum_{i = 1}^{n} y_i^2)
 \end{split}
 \end{equation}
 
