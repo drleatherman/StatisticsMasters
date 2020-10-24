@@ -1611,3 +1611,298 @@ Misc thing about JAGS, STAN.
 
 Sometimes people use a cauchy distribution to do a standard deviation in JAGS, STAN.
 #+end_quote
+* Bayesian Linear Modeling (2020/10/22)
+
+** Linear Regression
+
+$$
+Y_i = \beta_0 + \sum_{1}^{p} \beta_i X_i + \epsilon_i, \ \epsilon_i \sim iid
+N(0, \sigma^2)
+$$
+$Y_i \sim N(\beta_0 + \sum_{1}^{p} \beta_i X_i, \sigma^2)$
+
+Bayesian and classical Linear Regression are similar if $n >> p$ and the priors
+are uninformative. Results can be different for challenging problems though.
+
+#+begin_quote
+$n >> p$: n is much, much larger than p
+#+end_quote
+
+Metric-predicted Variable on 1-2 groups == One sample, Two Sample t-test.
+
+*** Bayesian One-Sample t-test
+
+$$
+Y_i, ..., Y_n \sim N(\mu, \sigma^2)
+$$
+
+Typically $Y_i$ is a difference (post - pre) and checking if average $\neq$ 0
+
+
+**** Known Sigma
+
+Under Jeffreys Prior, $\pi(\mu) = 1$ with fixed $\sigma$.
+
+$$
+\mu | Y, \sigma \sim N (\bar Y, \frac{\sigma^2}{n})
+$$
+
+Posterior Mean: $\bar Y$
+
+Credible Set: $\bar Y \pm 1.96 \frac{\sigma}{\sqrt n}$
+
+$P(H_0 | Y) = P(\mu \leq 0 | Y) = \Phi \left( \frac{\sqrt n \bar Y}{\sigma} \right)$
+
+**** Unknown Sigma
+
+Jeffreys Prior is $\pi (\mu, \sigma^2) \propto \left( \frac{1}{\sigma^2} \right)^{3/2}$
+
+Marginal Posterior integrating over uncertainty in $\sigma^2$ is $\mu | Y \sim
+t_n (\bar Y,\frac{\hat \sigma^2}{n})$
+
+where $\hat \sigma^2 = \frac{1}{n} \sum_{1}^{n}(y_i - \bar Y)^2$
+
+#+begin_quote
+The main difference between Frequentist and Bayesian t-test is n-1 vs n
+respectively for the degrees of freedom for the t-distribution.
+#+end_quote
+
+*** Bayesian Two-Sample t-test
+
+$n_1$ observations from group 1: $Y_i \sim N (\mu, \sigma^2)$
+
+
+$n_2$ observations from group 2: $Y_i \sim N (\mu + \delta, \sigma^2)$
+
+Goal: Compare $\delta$ to 0.
+
+**** Sigma Known
+
+Jeffreys prior: $\pi(\mu, \delta) = 1$
+
+/Identical to the two-sample z-test/
+
+
+**** Sigma unknown
+
+Jeffreys prior: $\pi (\mu, \delta, \sigma^2) \propto \left( \frac{1}{\sigma^2}
+\right)^2$
+
+
+
+Marginal Posterior integrating uncertainty in $\sigma^2$ and $\mu$
+
+$$
+\delta | Y \sim t_n (\bar Y_2 - \bar Y_1, \frac{\hat \sigma^2}{n_1} + \frac{\hat
+\sigma^2}{n_2})
+$$
+
+where $\hat \sigma^2 = \frac{1}{n} \left[ \sum_{1}^{n_1} (Y_i - \bar Y_1)^2 +
+\sum_{1}^{n_2} (Y_i - \bar Y_2)^2 \right]$
+
+#+begin_quote
+The main difference between Frequentist and Bayesian two-sample t-test is $n -
+2$ compared to $n = n_1 + n_2$ respectively for the degrees of freedom for the t-distribution.
+#+end_quote
+
+** Review of Least Squares
+
+For Simple Linear Regression
+
+\begin{equation}
+\begin{split}
+\vec \beta_{OLS} = & \underset{\vec \beta}{argmin} \sum_{i = 1}^{n} \left[ (Y_i - [\beta_0 + \beta_1 X_i])^2 \right], \ \text{Considered Q(B0, B1)}\\
+\frac{\partial}{\partial \beta_0} Q(\beta_0, \beta_1) = & \sum_{i = 1}^{n} \left[ -2 (Y_i - [\beta_0 + \beta_1 X_i]) \right] = 0\\
+\frac{\partial}{\partial \beta_1} Q(\beta_0, \beta_1) = & \sum_{i = 1}^{n} \left[ -2 X_i (Y_i - [\beta_0 + \beta_1 X_i]) \right] = 0\\
+\end{split}
+\end{equation}
+
+** Bayesian Regression
+
+$$
+Y_i \sim N(\beta_0 + \sum_{1}^{p} X_i \beta_i, \sigma^2)
+$$
+
+Crucial to verify appropriateness with QQ Plots, Added Variable Plots, etc.
+
+Since this is a *Bayesian* analysis, priors for $\beta, \sigma$ are required.
+
+For the purpose of setting priors, it is helpful to standardize both the
+response and the covariates to have mean 0 and std. dev 1.
+
+Many priors have been considered:
+1. Improper
+2. Gaussian. Make it uninformative.
+3. Double Exponential Priors. Bayesian version of Lasso
+4. Many more
+
+*** Improper Priors
+
+**** Known Sigma
+
+With $\sigma$ fixed, Jeffreys prior is flat. $P(\beta) = 1$.
+
+$$
+\beta | Y \sim N (\hat \beta_{OLS}, \sigma^2 (X^T X)^{-1})
+$$
+
+Likelihood: $\vec Y \sim N (X \vec \beta, \sigma^2 I)$
+
+Prior: $P(\vec \beta) = 1$
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+P(\vec \beta | \vec Y) \propto & P(\vec Y | \vec \beta) P(\vec \beta)\\
+\propto & exp(- \frac{1}{2 \sigma^2} (\vec Y - X \vec \beta)^T (\vec Y - X \vec \beta)) \text{Kernel of Multivariate Normal}
+\end{split}
+\end{equation}
+
+
+Recall: $\hat \beta = (X^T X)^{-1} X^T Y$
+
+\begin{equation}
+\begin{split}
+(\vec Y - X \vec \beta)^T (\vec Y - X \vec \beta) = & (\vec Y^T - \vec \beta^T X^T) (\vec Y - X \vec \beta)\\
+= & Y^T Y - Y^T X \beta - \beta^T X^T Y + \beta^T X^T X \beta\\
+= & Y^T Y - \underset{\hat \beta^T}{\underline{Y^T X (X^T X)^{-1}}} (X^T X) \beta - \beta^T (X^T X) \underset{\hat \beta}{\underline{(X^T X)^{-1} X^T Y}} + \beta^T X^T X \beta \ \text{(multiply 3rd term by 1 matrix)}\\
+= & Y^T Y - \hat \beta^T (X^T X) \beta - \beta^T (X^T X) \hat \beta + \hat \beta^T (X^T X) \beta\\
+= & Y^T Y - \hat \beta^T (X^T X) \hat \beta - \hat \beta^T (X^T X) \beta - \beta^T (X^T X) \hat \beta + \beta^T (X^T X) \beta + \hat \beta^T (X^T X) \hat \beta \ \text{(Add and subtract} \ \hat \beta^T (X^T X) \hat \beta \text{)}\\
+= & Y^T Y - \hat \beta^T (X^T X) \hat \beta + \beta^T (X^T X) \beta - \beta^T (X^T X) \hat \beta - \beta^T (X^T X) \beta + \hat \beta^T (X^T X) \hat \beta \ \text{(rearrange terms)}\\
+= & Y^T Y - \hat \beta^T (X^T X) \hat \beta + (\beta^T - \hat \beta^T) (X^T X)(\beta - \hat \beta)\\
+= & Y^T Y - \hat \beta^T (X^T X) \hat \beta + (\beta - \hat \beta)^T (X^T X)(\beta - \hat \beta)\\
+\end{split}
+\end{equation}
+
+Posterior:
+
+\begin{equation}
+\begin{split}
+P(\vec \beta | \vec Y) \propto & exp \left(- \frac{1}{2 \sigma^2} \left[ Y^T Y - \hat \beta^T (X^T X) \hat \beta + (\beta - \hat \beta)^T (X^T X)(\beta - \hat \beta) \right] \right)\\
+\propto & exp \left(- \frac{1}{2 \sigma^2} \left[ (\beta - \hat \beta)^T (X^T X) (\beta - \hat \beta) \right] \right)\\
+\therefore & \vec \beta | Y \sim N (\hat \beta, \sigma^2 (X^T X)^{-1})
+\end{split}
+\end{equation}
+
+**** Unknown Sigma
+
+Sigma is rarely known so $\sigma^2 \sim InvGamma(a, b)$ where $a = b = 0.1$ so
+that the prior is uninformative.
+
+The Posterior of $\beta$ is a Multivariate t-distribution centered on $\beta$.
+
+Jeffreys Prior: $P(\beta, \sigma^2) \propto \left( \frac{1}{\sigma^2} \right)^{\frac{P}{2} + 1} \sim InvGamma(P/2, 0)$
+
+Posterior: $\beta | Y \sim t_n (\hat \beta_{OLS}, \hat \sigma^2 (X^T X)^{-1})$
+
+where $\hat \sigma^2 = (Y - X \hat \beta_{OLS})^T (Y - \hat \beta_{OLS}) / n$
+
+The posterior is proper if the Least Squares solution exists.
+
+*** Gaussian Priors
+**** Multivariate Gaussian Prior
+
+Zellner's g-prior: $\beta \sim N(\vec 0, \frac{\sigma^2}{g} (X^T X)^{-1})$.
+Shrinkage of variance by a factor of g.
+
+Posterior mean: $\frac{1}{1 + g}  \hat \beta_{OLS}$
+
+g shrinks Least Squares estimate towards 0.
+
+$g = \frac{1}{n}$ is common. It is called the /Unit Information/ Prior.
+
+**** Univariate Gaussian Priors
+
+If there are many covariates or the covariates are collinear, then $\hat
+\beta_{OLS}$ is unstable.
+
+Independent priors can counteract collinearity.
+
+$$
+\beta_j \sim N(0, \frac{\sigma^2}{g})
+$$
+
+independent over $j$
+
+Posterior Mode: $\underset{\beta}{argmin} \sum_{1}^{n} (Y_i - \mu_i)^2 + g \sum_{1}^{p} \beta_j^2$
+
+This is known as *Ridge Regression* in Frequentist Statistics and is used to
+stabilize the Least Squares solution.
+
+*** Bayesian Lasso (BLASSO)
+
+Prior: $\beta_j \sim DE (\tau)$
+
+$f(\beta) \propto exp \left( - \frac{|\beta|}{\tau} \right)$
+
+- Square in the Gaussian Prior is replaced with an absolute value.
+- Shape more peaked at 0
+- Favors settings where many $\beta_j$ are near zero and a few large $\beta_j$
+- p is large but most covariates are noise
+
+Posterior mode: $\underset{\beta}{argmin} \sum_{1}^{n} (Y_i - \mu_i)^2 + g \sum_{1}^{p} |\beta_j|$
+
+Adds stability by shrinking estimates towards zero, sets some coefficients to
+zero.
+
+Performs variable selection *and* estimation making it convenient.
+
+*Sampling*
+
+- Full conditionals don't exist in closed form but there's a trick to make Gibbs
+  Sampling work.
+- Metropolis sampling works
+
+Can use `BLR` R package.
+
+** Summarization
+
+Table with marginal means and 95% Credible Intervals useful but unwieldy for
+large p.
+
+Picking a subset of covariates is very important.
+
+Cross-validation, stochastic searches, and information critera can be used to
+vet covariates.
+
+
+** Predictions
+
+Given a new covariate vector $X_{new}$, we would like to predict the response
+$Y_{new}$.
+
+Cannot just "plug-in" $\hat \beta, \ \hat \sigma$ for $\beta, \ \sigma^2$ in
+
+$$
+Y_{new} | \hat \beta, \hat \sigma \sim N (X_{new} \hat \beta, \hat \sigma^2)
+$$
+
+The prediction intervals will be too narrow. Also, Uncertainty about $\beta, \ \sigma$ needs to be accounted for when making predictions.
+
+*** Posterior Predictive Distribution (PPD)
+
+\begin{equation}
+\begin{split}
+P(Y_{new} | Y) = & \int f(Y_{new}, \beta, \sigma | Y) d \beta d \sigma\\
+ = & \int f(Y_{new} | \beta, \sigma) f(\beta, \sigma | Y) d \beta d \sigma\\
+\end{split}
+\end{equation}
+
+Marginalizing over the model parameters accounts for their uncertainty.
+
+The concept of PPD applies generally (e.g. logistic regression) and means the
+distribution of the predicted value marginally over model parameters.
+
+
+MCMC naturally draws from $Y_{new}$'s PPD.
+
+For a given MCMC iteration t:
+- $\beta^{(t)}, \ \sigma^{(t)}$ are samples
+- $Y_{new}^{(1)}, ..., \Y_{new}^{(S)}$ are sampled from the PPD
+
+$$
+Y_{new}^{(t)} \sim N(X \beta^{(t)}, \sigma^{(t)2})
+$$
+
+This is an example of the claim that "Bayesian methods naturally quantify uncertainty."
