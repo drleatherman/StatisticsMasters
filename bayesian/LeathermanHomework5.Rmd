@@ -1,8 +1,10 @@
 ---
-title: "Homework #5"
+title: 'Homework #5'
 author: "Dustin Leatherman"
 date: "October 18, 2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -42,14 +44,16 @@ Following the result in (a) and holding $\theta$ fixed,
 
 \begin{equation}
 \begin{split}
-f(\theta | Y, \lambda_1, ..., \lambda_p) \propto & \prod_{i = 1}^{p} \theta^{0.1} e^{-\theta(0.1 + \lambda_i)}\\
-= & \theta^{\frac{p}{10}} exp(-\theta[\frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
-= & \theta^{\frac{p}{10} + 1 - 1} exp(-\theta[\frac{p}{10} + \sum_{i = i}^{p} \lambda_i])\\
-\sim & Gamma(\frac{p}{10} + 1, \sum_{i = 1}^{p} \lambda_i + \frac{p}{10})
+P(\theta | Y, \lambda) \propto & p (Y | \lambda, \theta) p (\lambda | \theta) p(\theta)\\
+= & \prod_{i = 1}^n \left[ \frac{\lambda_i^{y_i} e^{- \lambda_i}}{y_i !} \right] \prod_{i = 1}^n \left[ \theta e^{-\theta \lambda_i} \right] \frac{0.1^{0.1}}{\Gamma (0.1)} \theta^{0.1 - 1} e^{-0.1 \theta}\\
+\propto & \theta^n e^{- \theta \sum_{i = 1}^{n} \lambda_i} \theta^{0.1 - 1} e^{-0.1 \theta}\\
+= & \theta^{n + 0.1 - 1} e^{- (0.1 + \sum_{i = 1}^{n} \lambda_i) \theta}
 \end{split}
 \end{equation}
 
-Where p = 32.
+$$
+\theta | Y, \lambda \sim Gamma(n + 0.1, 0.1 + \sum_{i = 1}^{n} \lambda_i)
+$$
 
 # 3
 
@@ -79,8 +83,8 @@ for(i in 2:n.iters){
   lambdas.2013 <- rgamma(num.teams, lambdas.init$X2013 + 1, theta + 1)
   
   # Random draw from full conditional distribution of theta
-  theta.2012 <- rgamma(1, (num.teams/10) + 1, sum(lambdas.2012) + (num.teams/10))
-  theta.2013 <- rgamma(1, (num.teams/10) + 1, sum(lambdas.2013) + (num.teams/10))
+  theta.2012 <- rgamma(1, n.iters + 0.1, sum(lambdas.2012) + 0.1)
+  theta.2013 <- rgamma(1, n.iters + 0.1, sum(lambdas.2013) + 0.1)
 
   res.2012[i,] <- c(lambdas.2012, theta.2012)
   res.2013[i,] <- c(lambdas.2013, theta.2013)
