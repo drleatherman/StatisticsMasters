@@ -81,24 +81,13 @@ distribution for the posterior probability of $H_1$. Note that you do not need
 to give an equation for p.
 #+end_quote
 
-Likelihood: $Y | \mu, \sigma^2 \sim N(\mu, \sigma^2)$
-
-Priors:
 
 \begin{equation}
 \begin{split}
-\mu \sim & N(0, 100)\\
-\sigma^2 \sim & InvGamma(0.01, 0.01)
+P(\mu < 0, \sigma^2 | Y) = \int_{- \infty}^{0} \int_{0}^{\infty} P(\mu, \sigma^2 | Y) d \sigma^2 d \mu
 \end{split}
 \end{equation}
 
-\begin{equation}
-\begin{split}
-P(\mu, \sigma^2 | Y) = & \frac{P(Y | \mu, \sigma^2) P(\mu, \sigma^2)}{\int P(Y | \mu, \sigma^2) P(\mu, \sigma^2) d \mu d \sigma^2}\\
-= & \frac{P(Y | \mu, \sigma^2) P(\mu) P(\sigma^2)}{\int P(Y | \mu, \sigma^2) P(\mu) P(\sigma^2) d \mu d \sigma^2} \ \text{(Assumes $\mu$ and $\sigma^2$ are independent)}\\
-= &  \frac{\int_{- \infty}^{\infty} P(Y | \mu, \sigma^2) \cdot \int_{- \infty}^{0} P(\mu) \cdot \int_{0}^{\infty} P(\sigma^2)}{\int P(Y | \mu, \sigma^2) P(\mu) P(\sigma^2) d \mu d \sigma^2}
-\end{split}
-\end{equation}
 ** b
 
 #+begin_quote
