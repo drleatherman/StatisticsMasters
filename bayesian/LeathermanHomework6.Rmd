@@ -1,0 +1,47 @@
+---
+title: 'Homework #6'
+author: "Dustin Leatherman"
+date: "October 25, 2020"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(rjags)
+
+election <- read.csv("~/Downloads/election2016NCSC.csv")
+```
+
+
+```{r}
+
+X <- scale(election[,-1])
+Y <- election$Z
+
+n <- length(Y)
+p <- ncol(X)
+
+data <- list(Y=Y,X=X,n=n,p=p)
+params <- c("beta")
+
+# Settings (automatically calculates the number of iterations needed based on inputs)
+nBurn <- 10000
+nChains <- 2
+nSave <- 4000
+nThin <- 10
+nIter <- ceiling((nSave*nThin)/nChains)
+```
+
+```{r}
+model_str <- textConnection("model{
+  
+  # Likelihood
+  Z[i] ~ dbern(prob[i])
+
+  # Prior
+  a[i] <- alpha + inprod(X[i,],beta[])
+  prob[i] <- 1 / (1 + exp(-a[i]))
+}")
+```
+
