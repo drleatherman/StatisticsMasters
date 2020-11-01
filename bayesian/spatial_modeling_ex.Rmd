@@ -1,0 +1,159 @@
+---
+title: 'Spatial modeling of gun-related homicide rates'
+author: "Phillip Yates"
+date: "10/29/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+**Storing this here as a reference because it's a good example of Modeling for Spatial Correlation and it hasn't been covered in any class yet so I will want to look at this later.**
+
+First we will load the `tidyverse` library for data reshaping and visualization.
+```{r,message=FALSE}
+library(tidyverse)
+```
+
+The data from this analysis come from "Firearm legislation and firearm morality in the USA: a cross-sectional, state-level study" by Kalesan et al. (2016). The response variable, $Y_{i}$, is the log firearm-related death rate (i.e., the log of the number of deaths divided by the population) in 2010 in state $i$. This is regressed onto five potential cofounders.
+
+  1. log 2009 firearm death rate per 10,000 people
+  2. Firearm ownership rate quartile
+  3. Unemployment rate quartile
+  4. Non-firearm homicide rate quartile
+  5. Firearm export rate quartile
+  
+The covariate of interest is the number of gun control laws in effect in the state. This gives $p=6$ covariates.
+
+We fit the linear model
+$$Y_{i}=\beta_{0}+\sum^{p}_{j=1}X_{i}\beta_{j}+\epsilon_{i}.$$ We compute the usual non-spatial model with $\epsilon_{i}\sim\mbox{Normal}\left(0,\sigma^{2}\right)$ with the spatial model $\mbox{Cov}\left(\epsilon_{1},\ldots,\epsilon_{n}\right)\sim\mbox{Normal}(\mathbf{0},\pmb{\Sigma})$. The covariance
+$$\pmb{\Sigma}=\tau^{2}\mathbf{S}+\sigma^{2}\mathbf{I}_{n}$$ is decomposed into a spatial covariance $\tau^{2}\mathbf{S}$ and a non-spatial covariance $\sigma^{2}\mathbf{I}_{n}$ where $\mathbf{I}_{n}$ is the $n\times n$ identity matrix. The spatial covariance follows the conditionally-autoregressive model $\mathbf{S}=\left(\mathbf{M}-\rho\mathbf{A}\right)^{-1}$, where $\mathbf{A}$ is the adjacency matrix with $(i,j)$ element equal 1 if states $i$ and $j$ are neighbors and zero otherwise, and $M$ is the diagonal matrix with $i^{th}$ diagonal element equal to the number of states that neighbor state $i$.
+
+# Load the data
+
+```{r}
+load("~/StatisticsMasters/bayesian/guns.rdata")
+Y <- log(10000*Y/N)
+Z[,1] <- log(Z[,1]) # Z is also the 2nd column in X
+X <- cbind(1,Z,rowSums(X))
+
+# Remove Alaska and Hawaii
+Y <- Y[-c(2,11)]
+X <- X[-c(2,11),]
+
+n <- length(Y)
+p <- ncol(X)
+```
+
+# Fit the non-spatial model
+
+```{r,message=FALSE}
+ns_model <- "model{
+
+  # Likelihood
+  for(i in 1:n){
+    Y[i] ~ dnorm(mu[i],taue)
+    mu[i] <- inprod(X[i,],beta[])
+  }
+  # Priors
+  for(j in 1:p){
+    beta[j] ~ dnorm(0,0.01)
+  }
+  taue ~ dgamma(0.1,0.1)
+  sig <- 1/sqrt(taue)
+}"
+
+library(rjags)
+dat <- list(Y=Y,n=n,X=X,p=p)
+init <- list(beta=rep(0,p))
+model1 <- jags.model(textConnection(ns_model),inits=init,data=dat,quiet=TRUE)
+update(model1,10000,progress.bar="none")
+samp1 <- coda.samples(model1,variable.name=c("beta","sig"),n.iter=20000,
+                      progress.bar="none")
+summary(samp1)
+```
+
+# Create an adjacency matrix for the states in the US
+
+```{r,message=FALSE}
+library(maps)
+library(spdep)
+library(maptools)
+usa.state <- map(database="state",fill=TRUE,plot=FALSE)
+# The strsplit function splits the elements of a character vector into substrings
+state.ID <- sapply(strsplit(usa.state$names,":"),function(x) x[1])
+usa.poly <- map2SpatialPolygons(usa.state,IDs=state.ID)
+# The poly2nb function builds a neighbors list from a "polygon" list
+usa.nb <- poly2nb(usa.poly)
+# The nb2mat function builds a spatial weights matrix for neighbors list
+A <- nb2mat(usa.nb,style="B")
+A <- A[-8,] # Take out DC
+A <- A[,-8]
+M <- diag(rowSums(A))
+```
+
+# Fit the spatial model
+
+```{r}
+sp_model <- "model{
+  # Likelihood
+    for(i in 1:n){
+      Y[i] ~ dnorm(mu[i]+S[i],taue)
+    }
+    S[1:n] ~ dmnorm(zero[1:n],taus*Omega[1:n,1:n])
+    for(i in 1:n){
+      mu[i] <- inprod(X[i,],beta[])
+      zero[i] <- 0
+    }
+    Omega[1:n,1:n] <- M[1:n,1:n]-rho*A[1:n,1:n]
+    
+  # Priors
+    for(j in 1:p){
+      beta[j] ~ dnorm(0,0.01)
+    }
+    taue ~ dgamma(0.1,0.1)
+    taus ~ dgamma(0.1,0.1)
+    rho ~ dunif(0,1)
+    sig[1] <- 1/sqrt(taue)
+    sig[2] <- 1/sqrt(taus)
+}"
+
+dat <- list(Y=Y,n=n,X=X,A=A,M=M,p=p)
+init <- list(rho=0.99,beta=lm(Y~X-1)$coef)
+model2 <- jags.model(textConnection(sp_model),inits=init,data=dat,quiet=TRUE)
+update(model2,10000,progress.bar="none")
+samp2 <- coda.samples(model2,variable.names=c("beta","rho","sig"),n.iter=20000,
+                      progress.bar="none")
+summary(samp2)
+```
+
+```{r}
+rho <- samp2[[1]][,8]
+ggplot(NULL,aes(x=rho))+geom_histogram(bins=16,color="white")+
+  labs(x=expression(rho),y="Count")
+```
+
+**Summary:** The spatial dependence parameter is estimated to be near 0.35, indicating weak spatial dependence
+
+# Compare the results across models
+
+The objective is to determine if the coefficient corresponding to the number of gun laws, $\beta_{7}$, is non-zero. Below we compare its posterior distribution for the spatial and non-spatial models.
+
+```{r}
+b1 <- samp1[[1]][,7]
+b2 <- samp2[[1]][,7]
+d1 <- density(b1)
+d2 <- density(b2)
+Model <- c(rep("Non-spatial",length(d1$x)),rep("Spatial",length(d2$x)))
+x <- c(d1$x,d2$x)
+y <- c(d1$y,d2$y)
+density.data <- as.data.frame(x=x,y=y,Model=Model)
+ggplot(density.data,aes(x=x,y=y,color=Model))+geom_line()+
+  labs(x=expression(beta[7]),y="Posterior Density")
+```
+
+```{r}
+mean(b1<0)
+mean(b2<0)
+```
+
+**Summary:** Both models provide evidence of a negative relationship between the number of gun laws and the firearm-related death rate. However, there is more uncertainty in the spatial model, which is likely more realistic.

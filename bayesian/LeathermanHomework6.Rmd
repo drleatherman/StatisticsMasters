@@ -2,27 +2,34 @@
 title: 'Homework #6'
 author: "Dustin Leatherman"
 date: "October 25, 2020"
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.width = 10)
 
 library(tidyverse)
 library(rjags)
+library(knitr)
+library(kableExtra)
 
 election <- read.csv("~/Downloads/election2016NCSC.csv")
 ```
 
+# Load Parameters
+
+Scale the covariates and set upfront settings
 
 ```{r}
 
 X <- scale(election[,-1])
-Y <- election$Z
+Z <- election$Z
 
-n <- length(Y)
+n <- length(Z)
 p <- ncol(X)
+names <- colnames(X)
 
-data <- list(Y=Y,X=X,n=n,p=p)
+data <- list(Z=Z,X=X,n=n,p=p)
 params <- c("beta")
 
 # Settings (automatically calculates the number of iterations needed based on inputs)
@@ -33,15 +40,157 @@ nThin <- 10
 nIter <- ceiling((nSave*nThin)/nChains)
 ```
 
-```{r}
-model_str <- textConnection("model{
-  
-  # Likelihood
-  Z[i] ~ dbern(prob[i])
+# 1 & 2
 
-  # Prior
-  a[i] <- alpha + inprod(X[i,],beta[])
-  prob[i] <- 1 / (1 + exp(-a[i]))
+> Fit the model using $\tau = 1$ and $\tau = 100$. Assess convergence of samplers for each prior.
+
+Let's fit some models using JAGS.
+
+## $\tau = 100$
+
+
+```{r, fig.height=9, fig.width=6,  fig.pos='htb!'}
+model_string <- textConnection("model{
+  for(i in 1:n) {
+    # Likelihood
+    Z[i] ~ dbern(prob[i])
+    prob[i] <- 1 / (1 + exp(-a[i]))
+    a[i] <- alpha + inprod(X[i,],beta[])
+  }
+
+  # Priors
+  for(j in 1:p) {
+    beta[j] ~ dnorm(0, tau)
+  }
+
+  alpha ~ dnorm(0,0.01)
+  tau ~ dgamma(0.01, 0.01)
 }")
+
+model <- jags.model(model_string,data=data,n.chains=nChains,quiet=TRUE)
+update(model,burn=nBurn,progress.bar="none")
+samples1 <- coda.samples(model,variable.names=params,thin=nThin,n.iter=nIter,
+                         progress.bar="none")
+
+plot(samples1)
 ```
 
+The trace plots don't have any noticable patterns and are roughly caterpillar-shaped which provide a good indication that the plots have converged.
+
+## $\tau = 1$
+
+
+```{r, fig.height=9, fig.width=6,  fig.pos='htb!'}
+model_string <- textConnection("model{
+  for(i in 1:n) {
+    # Likelihood
+    Z[i] ~ dbern(prob[i])
+    prob[i] <- 1 / (1 + exp(-a[i]))
+    a[i] <- alpha + inprod(X[i,],beta[])
+  }
+
+  # Priors
+  for(j in 1:p) {
+    beta[j] ~ dnorm(0, tau)
+  }
+
+  alpha ~ dnorm(0, 1)
+  tau ~ dgamma(1, 1)
+}")
+
+model <- jags.model(model_string,data=data,n.chains=nChains,quiet=TRUE)
+update(model,burn=nBurn,progress.bar="none")
+samples2 <- coda.samples(model,variable.names=params,thin=nThin,n.iter=nIter,
+                         progress.bar="none")
+
+plot(samples2)
+```
+
+The trace plots don't have any noticable patterns and are roughly caterpillar-shaped which provide a good indication that the plots have converged. 
+
+# Summary Statistics
+
+```{r, fig.width=10}
+round(effectiveSize(samples1),1) %>% 
+  as_tibble(rownames = NA) %>% 
+  rownames_to_column() %>% 
+  kable(
+    col.names = c("Variable", "ESS"),
+    caption = "Effective Sample Size for Tau = 100"
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+round(effectiveSize(samples2),1) %>% 
+  as_tibble(rownames = NA) %>% 
+  rownames_to_column() %>% 
+  kable(
+    col.names = c("Variable", "ESS"),
+    caption = "Effective Sample Size for Tau = 1"
+  ) %>% 
+  kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+```
+
+The Effective Sample Sizes are large enough given the number of iterations that we can feel confident that the chains appropriately fit the underlying distributions.
+
+# 3
+
+> Compare the distributions of $\beta_j$ under these two priors. Are the results sensitive to the prior?
+
+
+```{r, fig.width=10}
+# Format the model summary
+sum1 <- summary(samples1)
+rownames(sum1$statistics) <- names
+rownames(sum1$quantiles) <- names
+sum1$statistics <- round(sum1$statistics,3)
+sum1$quantiles <- round(sum1$quantiles,3)
+sum1
+
+# Format the model summary
+sum2 <- summary(samples2)
+rownames(sum2$statistics) <- names
+rownames(sum2$quantiles) <- names
+sum2$statistics <- round(sum2$statistics,3)
+sum2$quantiles <- round(sum2$quantiles,3)
+sum2
+```
+
+# Compare the Fits
+
+```{r, fig.width=10, fig.height=15}
+library(cowplot)
+plot_list <- list()
+
+for(j in 1:p){
+  
+  # Collect the MCMC iteration from both chains for the three priors
+  s1 <- c(samples1[[1]][,j],samples1[[2]][,j])
+  s2 <- c(samples2[[1]][,j],samples2[[2]][,j])
+  
+  # Get smooth density estimates for each prior
+  d1 <- density(s1)
+  d2 <- density(s2)
+  
+  Prior <- c(rep("Tau = 100",length(d1$x)),
+             rep("Tau = 1",length(d2$x)))
+  x <- c(d1$x,d2$x)
+  y <- c(d1$y,d2$y)
+  d.data <- data.frame(x=x,y=y,Prior=Prior)
+  
+  # Plot the density estimates
+  max.y <- max(y)
+  plot.title <- names[j]
+  g <- ggplot(d.data,aes(x=x,y=y,color=Prior))+geom_line()+
+    labs(x=expression(beta),y="Posterior density")+ggtitle(plot.title)+
+    ylim(c(0,max.y))+geom_vline(xintercept=0)
+  plot_list[[j]] <- g+theme(legend.position="none")
+}
+prow <- plot_grid(plotlist=plot_list,nrow=4)
+legend <- get_legend(g+guides(color=guide_legend(reverse=TRUE,nrow=1))+
+                       theme(legend.position="bottom"))
+plot_grid(prow,legend,nrow=5,rel_heights = c(1,0.1))
+```
+
+
+The fits are close but still provide a potentially noticable difference for some covariates. e.g. BachGradPct, HispanicPct, MerchantSales. This shows that there is *some* sensitivity to the prior for some covariates. 

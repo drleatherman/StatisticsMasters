@@ -1906,3 +1906,293 @@ Y_{new}^{(t)} \sim N(X \beta^{(t)}, \sigma^{(t)2})
 $$
 
 This is an example of the claim that "Bayesian methods naturally quantify uncertainty."
+* Advanced Modeling (2020/10/29)
+
+Advanced Modeling meaning not just Linear models.
+
+** GLMs (Logistic)
+
+$$
+logit = log \left( \frac{P(Y= 1)}{P(Y = 0)} \right) = log \left( \frac{X}{1 - X}
+\right) \ \text{log-odds}
+$$
+
+
+$\beta_j$ represents the increase in the log-odds of an event corresponding to a
+one-unit increase in the covariate.
+
+$$
+logit \left[ P(Y_i = 1) \right] = \eta_i = \beta_0 + \sum_{1}^{p} \beta_{ij} X_{i1}
+$$
+
+The inverse of the logit transformation is the expit
+
+$$
+expit(x) = \frac{exp(x)}{exp(x) + 1}
+$$
+
+$$
+P(Y_i = 1) = expit(\eta_i) \in [0, 1]
+$$
+
+*** Logistic Regression - Bayesian
+
+Logistic Regression requires a prior for $\beta$. Zellner, BLASSO, etc. can be
+used. Full conditional distributions are not conjugate so Metropolis Sampling
+must be used.
+
+*** Beta Regression - Bayesian
+
+Can be used when the response takes on values between 0 and 1.
+
+
+** Random Effects
+
+Linear Regression assumes error terms are independent; however, this is violated
+if there are observations that are grouped. e.g. multiple classrooms of students
+may be independent but students within a class may not be.
+
+Random effects are a natural way to account for this independence.
+
+#+begin_quote
+See GLM notes. Much of this was covered in Generalized Linear Models
+#+end_quote
+
+
+*** One-way Random Effects Models
+
+Let the score for student i in class j be represented as:
+
+$Y_{ij} = \alpha_j +  \epsilon_{ij}$
+
+Random effect for classroom j is a considered a random draw from a population: $\alpha_j \sim N(\mu, \tau^2)$
+
+$\epsilon_{ij} \sim N(0, \sigma^2)$: irreducible random error for each observation.
+
+**** Bayesian Modeling
+
+$\mu, \sigma^2, \tau$ are parameters and thus must have priors.
+
+
+
+$\mu \sim N()$ with some Large variance
+
+$\sigma^2, \tau^2 \sim InvGamma(a, b)$
+
+Full Conditionals are conjugate making MCMC Sampling very fast *BUT* under the
+Inverse Gamma Prior for the variances, the induced priors for $\sigma, \tau$
+have no mass at zero. e.g. the density is not flat around zero.
+
+The *Half-Cauchy Prior* is recommended for the Standard Deviation to rectify
+this.
+
+$$
+P(\sigma) = \frac{2}{\pi (1 = \sigma^2)}
+$$
+
+The Half-Cauchy prior is essentially a Student-t distribution with 1 degree of
+freedom restricted to be positive. This is flat around zero with heavy tails
+which is desirable for a prior.
+
+Examples will likely give similar results but it is preferred to use Half-Cauchy.
+
+MCMC treats Random Effects like other parameters. i.e. all parameters are
+random. But it's still considered a Random Effect from the Model perspective.
+
+
+** Linear Mixed Models (LMM)
+
+Linear Model /with/ Random Effects.
+
+$$
+Y_{ij} = \beta_0 + X_{ij} \beta_1 + \alpha_j + \epsilon_{ij}
+$$
+
+$X_{ij}$: Age of student i in class j
+
+Regression coefficients $\beta_0, \beta_1$ that apply to all students are called
+/fixed effects/. $\alpha_j$ is the random effect.
+
+*** Random Slopes Models
+
+Let $Y_{ij}$ be the j-th observation for subject i.
+
+Sometimes specifying a different regression for each subject to capture
+variability over a population makes sense.
+
+**** Example
+
+Let $Y_{ij}$ be the bone density for child i and at $X_j$
+
+Bone Density can be modeled for a different regression for each child to capture
+the variability over a population of children.
+
+$$
+Y_{ij} \sim N(\gamma_{0i} + X_i \gamma_{1i}, \sigma^2)
+$$
+
+$\gamma_{i} = (\gamma_{i0}, \gamma_{i1})^T$ controls the growth curve for child
+$i$.
+
+The prior $\gamma_i \sim N(\beta, \Sigma)$ ties all the separate regressions
+together. $\gamma_i$ are the random effects specific to one child. $\beta$ are
+fixed effects common to all children.
+
+The hierarchical Model is:
+
+- $Y_{ij} \sim N(\gamma_{0i} + X_{i} \gamma_{i 1}, \sigma^2)$
+- $\gamma \sim N(\beta, \Sigma)$
+- $p(\beta) \propto 1$
+- $\sigma^2 \sim InvGamma(a, b)$
+- $\Sigma \sim InvW(k, R)$
+
+The full conditionals are all conjugate!
+
+**** Random Effects Covariance Matrix
+
+$$
+\Sigma = \begin{bmatrix}
+\sigma_1^2 & \sigma_{12}\\
+\sigma_{12} & \sigma_2^2
+\end{bmatrix}
+$$
+
+Using the above example,
+
+$\sigma_1^2$: Variance of the *intercepts* across children
+
+$\sigma_2^2$: Variance of the *slopes* across children
+
+$\sigma_{12}$: Covariance between intercepts and slopes
+
+*Prior 1*
+
+$\sigma_1^2, \sigma_2^2 \sim InvGamma(a, b), \rho = \frac{\sigma_{12}}{\sigma_1 \sigma_2} \sim Uni(-1, 1)$
+
+Works better for smaller dimensions.
+
+*Prior 2*
+
+Inverse Wishart is most common prior for a $p \times p$ covariance matrix. Works
+better in higher dimensions.
+
+Reduces to Inverse Gamma if $p = 1$.
+
+Let $\Sigma \sim InvW(k, R), \ k > p + 1$ and R is a $p \times p$ covariance
+matrix. $k, R$ are hyper-parameters.
+
+PDF:
+
+$$
+f(\Sigma) \propto  |\Sigma|^{-(k + p + 1)/2} exp \left[ \frac{1}{2} trace(R \Sigma^{-1}) \right]
+$$
+
+$E(\Sigma) = \frac{1}{k - p - 1} R$
+
+** Linear Models with Correlated Errors
+
+One can model correlated errors directly as an alternative to Random Effects.
+
+Let $Y_i$ be some measurement at $s_i$ where $s_i$ is a latitude/longitude.
+
+$Y_i = \beta_0 + \beta_1 X_i + \epsilon_i$
+
+would have spatially correlated errors $\epsilon_i$.
+
+It is common to model this correlation as
+
+$$
+Cov(\epsilon_i, \epsilon_j) = \sigma^2 exp(-d_{ij}/\phi)
+$$
+
+$\phi$: controls exponential decay of correlation as distance between sites
+$d_{ij}$ increases,
+
+Likelihood: $Y | \beta, \sigma^2, \rho \sim N(X \beta, \sigma^2 \Sigma (\phi))$
+
+$\underset{n \times n}{\Sigma(\phi)}$ has $(i, j)$ relevant $exp(-d_{ij}/\phi_{ij})$
+
+Prior for $\phi$: Uni(0, max(distance point))
+
+
+#+begin_quote
+See spatial_modeling_ex.pdf for more details. It's really good.
+#+end_quote
+
+
+** Flexible Regression Modeling
+
+Bayesian can't be /truly/ Non-parametric because a Likelihood distribution needs to
+be specified in order to get a posterior, but one can make as generic a distribution as possible.
+
+Goal: Specify a model that is so flexible that it certainly captures the /true/
+model.
+
+A Bayesian Non-parametric (BNP) model may have infinite parameters.
+
+Useful in cases where NP models are difficult conceptually and computationally
+so these Semi-parametric models can provide good approximations.
+
+** Turning a Parametric Model Non-paramatric
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + \epsilon_i, \ \epsilon \sim N(0, \sigma^2)
+$$
+
+*Assumptions*
+
+1. $\epsilon_i$ are independent
+2. $\epsilon_i$ are Gaussian
+3. Mean of $Y_i$ is linear in X
+4. The residual distribution doesn't depend on X
+
+*Alternatives*
+
+1. Parametric Alternatives such as a Time Series model.
+2. Let $\epsilon_i \sim F$ and place a prior on the distribution F.
+3. Let $E(Y | X) = g(X)$ and put a prior on function g.
+4. Hereoskedastic regression $Var(\epsilon_i) = exp(\alpha_0 + \alpha_1 X)$
+
+
+Relax assumption about Linearity in the Mean (3). Non-parametric regressions
+puts a prior on the curve rather than the parameters that determine the model.
+
+** Semiparametric Regression
+
+Approximate the function using a finite basis expansion
+
+$$
+g(X) = \sum_{j = 1}^{J} \mathbb{B}_j (X) \beta_j
+$$
+
+$\mathbb{B}_j (X)$: Known basis functions
+
+$\beta_j$: Unknown coefficients that determine the shape of g.
+
+*Ex*
+
+Cubic Spline Basis Function: $\mathbb{B}_j (X) = (X - \nu_j)^3_+$
+
+$\nu_j$: fixed knots that span the range of X.
+
+
+Other basis expansions include Wavelets, Fourier, etc.
+
+A basis expansion of J terms can match the true curve f at any J points $X_1,
+..., X_j$. So? Increasing J gives an arbitrary flexible model!
+
+*** Fitting a Model
+
+The model is $Y_i \sim N(\mathbb{B}^T_i \beta, \sigma^2)$ where $\beta_j \sim
+N(0, \tau^2)$ and $\mathbb{B}_i$ is comprised of known basis functions $\mathbb B_j (X_i)$
+
+- How to pick J?
+
+- Can we have more basis functions than observations?
+
+- What would you do if your prior was g that was probably quadratic, but you are
+  not 100% sure?
+
+  #+begin_quote
+These questions were not answered. Get them from office hours?
+  #+end_quote
