@@ -1,0 +1,278 @@
+---
+title: 'Homework #7'
+author: "Dustin Leatherman"
+date: "November 1, 2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 6)
+
+library(tidyverse)
+library(rjags)
+library(knitr)
+library(kableExtra)
+
+```
+
+> Let $Y_i$ be the precipitation for observation $i$ and $X_{ij}$ equal one if OTU j is present in sample $i$.  First, extract the 50 OTU with the largest absolute correlation between $X_{ij}$ and $Y_i$. Then fit a Bayesian linear regression model with precipitation as the response and with these 50 covariates (and an intercept term) using three priors:
+
+> 1. Uninformative Normal Priors: $\beta_j \sim N(0, 100^2)$
+>
+> 2. Hierarchical Normal Priors: $\beta_j | \tau \sim N(0, \tau^2), \ \tau^2 \sim InvGamma(0.01, 0.01)$
+>
+> 3. Bayesian LASSO: $\beta_j | \tau^2 \sim DE (0, \tau^2), \ \tau^2 \sim InvGamma(0.01, 0.01)$
+
+> Compare convergence and the posterior distribution of the regression coefficients under these three priors. In particular, are the same OTU’s significant in all three fits?
+
+```{r}
+load("~/StatisticsMasters/bayesian/homes.rdata")
+
+# Join OTU dataset with Homes metadata 
+sorted_data <- 
+  # Indicator if OTU is present
+  as.data.frame(ifelse(OTU > 0, 1, 0)) %>% 
+  rownames_to_column(var = "ID") %>% 
+  # data cleansing
+  mutate(
+    ID = as.integer(str_remove(ID, ".I"))
+  ) %>% 
+  # join with metadata and sort by ids
+  inner_join(homes, by = "ID") %>% 
+  arrange(ID)
+
+
+X <- sorted_data %>% select(starts_with("OTU")) %>% as.matrix()
+Y <- sorted_data %>% select(MeanAnnualPrecipitation) %>% as.matrix()
+
+# calculate top 50 OTUs by absolute correlation with rainfall
+top_otu <- 
+  as.data.frame(cor(X, Y)) %>% 
+    rownames_to_column(var = "OTU") %>% 
+    rename(corr = MeanAnnualPrecipitation) %>% 
+    arrange(desc(abs(corr))) %>% 
+    head(n = 50) %>% 
+    select("OTU")
+
+# Put the data in JAGS format
+X <- 
+  sorted_data %>% 
+    #mutate(intercept = 0) %>% 
+    #select(intercept, top_otu$OTU) %>% 
+    select(top_otu$OTU) %>% 
+    as.matrix()
+    
+
+Y <- sorted_data %>% select(MeanAnnualPrecipitation)
+Y <- Y$MeanAnnualPrecipitation
+
+# utility function to union the output of JAGS
+unionJagsOutput <- function(jags_data, names) {
+  colnames(jags_data[[1]]) <- names
+  colnames(jags_data[[2]]) <- names
+  return (
+    jags_data[[1]] %>% 
+      as_tibble() %>% 
+      mutate(chain = "1", row_num = row_number()) %>%
+      pivot_longer(starts_with("OTU"), names_to = "var", values_to = "value") %>% 
+      union_all(
+        jags_data[[2]] %>% 
+        as_tibble() %>% 
+        mutate(chain = "2", row_num = row_number()) %>% 
+        pivot_longer(starts_with("OTU"), names_to = "var", values_to = "value")
+      )
+  )
+}
+
+convergenceDiags <- function(jags_data, names) {
+  p1 <- 
+    unionJagsOutput(jags_data, names) %>%
+      ggplot(aes(x = row_num, y = value, color = chain)) + 
+        geom_line() + 
+        facet_wrap(~var, ncol = 5) +
+        labs(x = "Iteration", y = "Posterior Value") + 
+        ggtitle("Trace of OTU Covariates")
+
+  # Geweke Statistic
+  p3 <- geweke.diag(jags_data)
+  
+  list(p1 = p1, p3 = p3)
+}
+```
+
+
+# Fitting the Models
+
+Let's fit our different Models. First, some setup though.
+
+
+```{r}
+n <- length(Y)
+p <- ncol(X)
+
+data <- list(Y=Y,X=X,n=n,p=p)
+names <- colnames(X)
+
+params <- c("beta")
+
+# Settings (automatically calculates the number of iterations needed based on inputs)
+
+nBurn <- 10000
+nChains <- 2
+nSave <- 4000
+nThin <- 10
+nIter <- ceiling((nSave*nThin)/nChains)
+```
+
+
+
+## Uninformative Normal Prior
+
+$\beta_j \sim N(0, 100^2)$
+
+
+```{r, fig.height=10}
+model_string1 <- textConnection("model{
+  # Likelihood
+  for(i in 1:n){
+    Y[i] ~ dnorm(alpha + inprod(X[i,], beta[]), taue)
+  }
+  # Priors
+  for(j in 1:p){
+    beta[j] ~ dnorm(0,0.01)
+  }
+  alpha ~ dnorm(0,0.01)
+  taue ~ dgamma(0.1,0.1)
+}")
+
+model <- jags.model(model_string1,data=data,n.chains=nChains,quiet=TRUE)
+update(model,burn=nBurn,progress.bar="none")
+samples1 <- coda.samples(model,variable.names=params,thin=nThin,n.iter=nIter, progress.bar="none")
+```
+
+
+### Convergence
+
+```{r, fig.width=10, fig.height=12}
+convergenceDiags(samples1, names)
+
+# gelmen-rubin statistics
+gelman.diag(samples1)$psrf %>% 
+      kable(
+        caption = "Gelman-Rubin Statistics for convergence"
+      ) %>% 
+      kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+```
+
+According to the Gelman-Rubin diagnostics, all the coefficients converge. The Geweke statistics show  convergence and the Trace plots support this conclusion.
+
+
+## Hierarchical Normal Prior
+
+$\beta_j | \tau \sim N(0, \tau^2), \ \tau^2 \sim InvGamma(0.01, 0.01)$
+
+```{r, fig.height=10}
+model_string2 <- textConnection("model{
+  # Likelihood
+  for(i in 1:n){
+    Y[i] ~ dnorm(alpha + inprod(X[i,], beta[]), taue)
+  }
+  # Priors
+  for(j in 1:p){
+    beta[j] ~ dnorm(0, taub)
+  }
+  alpha ~ dnorm(0,0.01)
+  taue ~ dgamma(0.01,0.01)
+  taub ~ dgamma(0.01,0.01)
+}")
+
+model <- jags.model(model_string2,data=data,n.chains=nChains,quiet=TRUE)
+update(model,burn=nBurn,progress.bar="none")
+samples2 <- coda.samples(model,variable.names=params,thin=nThin,n.iter=nIter, progress.bar="none")
+```
+
+### Convergence
+
+```{r, fig.width=10, fig.height=12}
+convergenceDiags(samples2, names)
+gelman.diag(samples2)$psrf %>% 
+      kable(
+        caption = "Gelman-Rubin Statistics for convergence"
+      ) %>% 
+      kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+```
+
+According to the Gelman-Rubin diagnostics, all the coefficients converge. The Geweke statistics show  convergence and the Trace plots support this conclusion.
+
+## Bayesian LASSO
+
+$\beta_j | \tau^2 \sim DE (0, \tau^2), \ \tau^2 \sim InvGamma(0.01, 0.01)$
+
+```{r, fig.height=10}
+model_string3 <- textConnection("model{
+  # Likelihood
+  for(i in 1:n){
+    Y[i] ~ dnorm(alpha + inprod(X[i,], beta[]), taue)
+  }
+  # Priors
+  for(j in 1:p){
+    beta[j] ~ ddexp(0, taub)
+  }
+  alpha ~ dnorm(0,0.01)
+  taue ~ dgamma(0.01,0.01)
+  taub ~ dgamma(0.01,0.01)
+}")
+
+model <- jags.model(model_string3,data=data,n.chains=nChains,quiet=TRUE)
+update(model,burn=nBurn,progress.bar="none")
+samples3 <- coda.samples(model,variable.names=params,thin=nThin,n.iter=nIter, progress.bar="none")
+```
+
+
+### Convergence
+
+```{r, fig.width=10, fig.height=11}
+convergenceDiags(samples3, names)
+gelman.diag(samples3)$psrf %>% 
+      kable(
+        caption = "Gelman-Rubin Statistics for convergence"
+      ) %>% 
+      kable_styling(full_width = T, bootstrap_options = "striped", latex_options = "hold_position")
+
+```
+
+According to the Gelman-Rubin diagnostics, all the coefficients converge. There are a few covariates that don't show signs of convergence in the Geweke Statistics; however the Trace plots show that there does appear to be convergence.
+
+## Plot Comparison
+
+```{r, fig.width=10, fig.height=15}
+
+getDensity <- function(jags_data, names) {
+  return (
+    unionJagsOutput(jags_data, names) %>% 
+      group_by(var) %>% 
+      summarise(den_x = density(value)$x, den_y = density(value)$y)
+  )
+}
+
+
+d1 <- getDensity(samples1, names) %>% mutate(prior = "uninformative")
+d2 <- getDensity(samples2, names) %>% mutate(prior = "Hierarchical Gaussian")
+d3 <- getDensity(samples3, names) %>% mutate(prior = "BLASSO")
+
+d_all <- union_all(d1, d2) %>% union_all(d3)
+
+d_all %>% 
+  ggplot(aes(x = den_x, y = den_y, color = prior)) + 
+  geom_line() + 
+  geom_vline(xintercept = 0) + 
+  facet_wrap(~var, ncol = 5) +
+  labs(x = expression(beta), y = "Posterior Density") +
+  ggtitle("Comparing Posterior Densities across Priors")
+
+```
+
+There does not appear to be a big difference in the posterior distributions with different priors. Since the density lines have similar peaks, it does appear that these 50 OTUs are significant in all three fits.

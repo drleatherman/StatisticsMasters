@@ -2196,3 +2196,334 @@ N(0, \tau^2)$ and $\mathbb{B}_i$ is comprised of known basis functions $\mathbb 
   #+begin_quote
 These questions were not answered. Get them from office hours?
   #+end_quote
+* Model Comparisons & Hierarchical Linear Models (2020/11/05)
+
+** Model Comparisons
+
+Deviance, Adjusted $R^2$, AIC, BIC are /frequentist/ statistics for comparing
+models.
+
+For a given dataset, how do we determine whether a simple model is sufficient or
+if we need to bring in "another tool"?
+
+A statistical model is a mathematical representation of the system that includes
+and biases in the observation process.
+
+Ideally, we want a simple and accurate model.
+
+*** Bayesian Model Criteria
+
+- Bayesian Factors
+- Stochastic Search Variable Selection
+- Cross Validation
+- Deviance Information Criteria (DIC)
+- WAIC
+
+**** Bayesian Factors (Bayesian Hypothesis Test)
+
+Gold standard.
+
+*Example*
+
+$M_1, M_2$ are models
+
+$Y \sim Bin(n, \theta)$
+
+$M_1 : \theta = 0.5$
+
+$M_2 : \theta \neq 0.5$
+
+Compute the posterior of each model. This requires prior probabilities
+$P(M_1)$ and $P(M_2)$. Note that this is a prior *on the model* instead of on
+the parameters!.
+
+$$
+BF = \frac{Posterior Odds}{Prior Odds} = \frac{P(M_2|Y)/P(M_1 | Y)}{P(M_2)/
+P(M_1)} = \frac{P(Y | M_2)}{P(Y | M_1)}
+$$
+
+*Rule of Thumb*
+- BF > 10, strong evidence for $M_2$
+- BF > 100, decisive evidence for $M_2$
+
+Using the above example.
+
+$\theta \sim Beta(a,b)$
+
+\begin{equation}
+\begin{split}
+P(Y | M_1) = & {n \choose Y} 0.5^Y (1 - 0.5)^{n-Y} = {n \choose Y} 0.5^n\\
+P(Y | M_2) = & \int_{0}^{1} P(Y, \theta) d \theta = \int_{0}^{1} P(Y | \theta) P(\theta) d \theta\\
+= & \int_{0}^{1} \left[ {n \choose Y} \theta^Y (1 - \theta)^{n-Y} \right] \left[ \frac{\Gamma(a + b)}{\Gamma (a) \Gamma (b)} \theta^{a - 1} (1 - \theta)^{b - 1} \right] d \theta\\
+= & {n \choose Y} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \int_{0}^{1} \theta^{Y + a - 1} (1 - \theta)^{n - Y + b - 1} d \theta \ \text{(Beta(Y + a, n - Y + b))}\\
+= & {n \choose Y} \frac{\Gamma (a + b)}{\Gamma (a) \Gamma (b)} \frac{\Gamma (Y + a) \Gamma (n - Y + b)}{\Gamma (n + a + b)} \int_{0}^{1} \frac{\Gamma (n + a + b)}{\Gamma (Y + a) \Gamma (n - Y + b)} \theta^{Y + n - 1} (1 - \theta)^{n - Y + 1 - 1} d \theta \ \text{(Integrates to 1)}\\
+\end{split}
+\end{equation}
+
+So?
+
+$P(Y | M_2) = {n \choose Y} \frac{\Gamma(a + b)}{\Gamma (a) \Gamma (b)} \frac{\Gamma (Y + a) \Gamma(n - Y + b)}{\Gamma (n + a + b)}$
+
+Then:
+
+$BF = \frac{P(Y | M_2)}{P (Y | M_1)} = \frac{\Gamma (a + b) \Gamma(Y + a) \Gamma
+(n - Y + b)}{\Gamma(a) \Gamma (b) \Gamma(n + a + b) \times 0.5^n}$
+
+
+**** Issues with Bayes Factors
+
+- Can be hard to compute integrals which is only feasible for simple models.
+- Requires proper priors
+- Can be very sensitive to Priors (Lindsey's Paradox)
+
+**** Bayes Factors - MCMC
+
+If models can be written as nested, then MCMC can be used to approximate model
+probabilities.
+
+$M_1 : E(Y) = \beta_0 + \beta_1 X$
+
+$M_2 : \beta_0 + \beta_1 X_1 + \beta_2 X^2$
+
+Then the model can be written as $E(Y) = \beta_0 + \beta_1 X + \gamma \beta_2
+X^2$ where $\gamma \in \{ 0, 1\}$ and $\gamma$ is the model.
+
+The prior on the model becomes $\gamma \sim Bern(0.5)$ which then $P(\gamma =
+1 | Y)$ and $P(\gamma = 0 | Y)$ can be approximated using MCMC.
+
+*** Stochastic Search Variable Selection
+
+Bayesian equivalent of forward, backward, and stepwise selection.
+
+Place a prior on all $2^P$ models us P variable inclusion indicators $\gamma_j$
+
+Very Sensitive to priors.
+
+*** Model Averaging
+
+$M_1 : E(Y) = \beta_0 + \beta_1 X$
+
+$M_2 : \beta_0 + \beta_1 X_1 + \beta_2 X^2$
+
+Situation: We prefer to use $M_1$ because it is simpler but both are _equally_
+likely. If $M_1$ is chosen, we are suppressing uncertainty about the model form.
+
+
+Let $\hat Y_k$ be the prediction from Model $M_k$ for $k = 1,2$
+
+$$
+\hat Y = w \hat Y_1 + (1 - w) \hat Y_2
+$$
+
+
+The optimal weight $w$ is the posterior probability of $M_1$. This adds
+stability to the model.
+
+#+begin_quote
+Is this the same as an ensemble model?
+#+end_quote
+
+*** Cross Validation
+
+Same approach as in classical statistics.
+
+Operates under the assumption that the "true" model likely produces better
+out-of-sample predictions than competing models.
+
+**** K-Fold Cross Validation
+0. Split data into K Groups
+1. Set K aside as the test set and fit on K- 1 groups
+2. Make prediction son test set K
+3. Repeat 1-2 for K = 1, ..., K
+4. Measure Prediction Accuracy
+
+*Variants*
+- k = 5, 10
+- k = n. i.e. leave-one-out validation
+- $\hat Y_i$ can be the posterior predictive mean or median.
+- MSE can be replaced with MAD.
+
+*** Information Criteria
+
+Usually a function of the deviance: $P(Y | \theta) = -2 log \left[ f(Y | \theta)
+\right]$
+
+Ideally a small deviance is chosen.
+
+If a model is too complex with a small deviance, overfitting can happen.
+
+$$
+AIC = D(Y | \hat \theta) + 2p, \ \hat \theta = MLE
+$$
+
+$$
+BIC = D(Y | \hat \theta) + log(n) p
+$$
+
+The BIC is an approximation to the log Bayes Factor of the model compared to the
+null model. However, it is only good for large $n$.
+
+
+**** Deviance Information Criteria (DIC)
+
+- popular among Bayesians
+- Only fits one model
+- Can be applied to complex models
+
+But! Only applies when posterior is approximately normal. Also, tends to favor
+overly complex models. Can only be used to compare models with the same likelihood.
+
+Effective Number of Parameters is a way to measure model complexity.
+
+
+Let $\bar D = E[ D(Y | \theta)]$ and $\hat \theta$ be the posterior mean of
+$\theta$
+
+Effective number of parameters: $P_D = \bar D - D(Y | \hat \theta)$
+
+Thus
+
+$$
+DIC = \bar D + P_D = D(Y | \hat \theta) + 2 P_D
+$$
+
+
+Want a small $\bar D$ and small $P_D$
+
+
+$P_D \approx P$ when uninformative priors are used. $P_D << P$ with strong priors.
+
+
+*Rule of Thumb*
+
+Difference less than 5 is not definitive.
+Difference greater than 10 is substantial.
+
+***** DIC - One Way Random Effects Model (Proof)
+
+$Y_{ij} = \mu_j + \epsilon_{ij}$ where
+
+- $Y_{ij}$: observation i for subject j
+- $\mu_j$: mean for subject j
+- $i = 1, ..., n$
+- $j = 1, ..., p$
+
+$\epsilon_{ij} \sim N(0, \tau_{\epsilon})$ where $\tau_{\epsilon} =
+\frac{1}{\sigma^2}$
+
+$\mu_j \sim iid N(0, \tau_\mu)$ where $\tau_\mu = \frac{1}{\sigma_\mu^2}$
+
+*We assume $\tau_\epsilon, \tau_\mu$ are known*
+
+#+begin_quote
+Recall: $\mu_j | \vec Y \sim N (E_j, P_j)$ where $E_j = \frac{n \tau_\epsilon}{n
+\tau_\epsilon + \tau_\mu} \bar Y_j$ and $P_j = n \tau_\epsilon + \tau_\mu$
+#+end_quote
+
+Deviance: $D(\vec Y | \vec \mu) = -2 log[f(\vec Y | \vec \mu)]$
+
+So?
+
+\begin{equation}
+\begin{split}
+f(\vec Y | \vec \mu) = & \prod_{i = 1}^{n} \prod_{j = 1}^{p} \frac{\tau_\epsilon^{0.5}}{\sqrt{2 \pi}} exp \left[ - \frac{\tau_\epsilon}{2} (Y_{ij} - \mu_j)^2 \right]\\
+= & \left[\frac{\tau_\epsilon}{\sqrt{2 \pi}} \right]^{np/2} exp \left[ - \frac{\tau_\epsilon}{2} \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - \mu_j)^2 \right]\\
+log f(\vec Y | \vec \mu) = & \frac{np}{2} log\left[\frac{\tau_\epsilon}{\sqrt{2 \pi}} \right]  - \frac{\tau_\epsilon}{2} \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - \mu_j)^2\\
+\end{split}
+\end{equation}
+
+So?
+
+\begin{equation}
+\begin{split}
+D(\vec Y | \vec \mu) = & -np log \left[ \frac{\tau_a}{2 \pi} \right] + \tau_\epsilon \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - \mu_j)^2\\
+= & -np log \left[ \frac{\tau_a}{2 \pi} \right] + \tau_\epsilon \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - E_j)^2\\
+\bar D =  E_{\hat \mu | \hat Y} [D(\vec Y | \vec \mu)] = & -np log \left[ \frac{\tau_a}{2 \pi} \right] + \tau_\epsilon E \left[ \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - \mu_j)^2 \right]\\
+\end{split}
+\end{equation}
+
+
+#+begin_quote
+Note: $E(\mu_j) = E_j E(\mu_j^2) = E(\mu_j^2) + Var(\mu_j) = E_j^2 + \frac{1}{P_j}$
+#+end_quote
+
+\begin{equation}
+\begin{split}
+P_D = \bar D - D(\vec Y | \vec \mu) = & \tau_\epsilon E \left[ \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - \mu_j)^2 \right] - \tau_\epsilon  \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - E_j)^2\\
+= & \tau_\epsilon \left[ E \left[ \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij} - \mu_j)^2 \right] - \sum_{i = 1}^{n} \sum_{j = 1}^{p} (Y_{ij}^2 - 2 Y_{ij} E_j + E_j^2) \right]\\
+= & \tau_\epsilon \left[ \sum_{i = 1}^{n} \sum_{j = 1}^{p} Y_{ij}^2 -  \sum_{i = 1}^{n} \sum_{j = 1}^{p}  2 Y_{ij} \mu_j +  \sum_{i = 1}^{n} \sum_{j = 1}^{p} E(\mu_j^2) - \sum_{i = 1}^{n} \sum_{j = 1}^{p} Y_{ij}^2 +  \sum_{i = 1}^{n} \sum_{j = 1}^{p} 2 Y_{ij} E_j -  \sum_{i = 1}^{n} \sum_{j = 1}^{p} E_j^2 \right]\\
+= & \tau_\epsilon \left[ \sum_{i = 1}^{n} \sum_{j = 1}^{p} Y_{ij}^2 -  \sum_{i = 1}^{n} \sum_{j = 1}^{p}  2 Y_{ij} E_j +  \sum_{i = 1}^{n} \sum_{j = 1}^{p} (E_j + \frac{1}{P-j}) - \sum_{i = 1}^{n} \sum_{j = 1}^{p} Y_{ij}^2 +  \sum_{i = 1}^{n} \sum_{j = 1}^{p} 2 Y_{ij} E_j -  \sum_{i = 1}^{n} \sum_{j = 1}^{p} E_j^2 \right]\\
+= & \tau_\epsilon \sum_{i = 1}^{n} \sum_{j = 1}^{p} \frac{1}{P_j}\\
+= & \tau_\epsilon \sum_{j = 1}^{p} \frac{n}{P_j}\\
+= & \tau_\epsilon n \sum_{j = 1}^{p} \frac{1}{n \tau_\epsilon + \tau_\mu}\\
+\to & P \frac{n \tau_\epsilon}{n \tau_\epsilon + \tau_\mu}
+\end{split}
+\end{equation}
+
+What this proves
+
+1. $0 < P_d < P \forall n, \tau_\epsilon, \tau_\mu$
+2. $\tau_\mu = 0$ gives a flat prior. $P_D = P$
+3. $\tau_\mu = \infty$ gives a tight prior. $P_D = 0$
+
+*** Watanabe-Akaike Information Criteria
+
+Alternative to DIC
+
+Gives similar results but is arguably more theoretically justified.
+
+Aims to be an approximation of leave-one-out CV.
+
+Written in terms of the posterior of the likelihood rather than the parameters.
+
+Let $m_i$ and $v_i\$ be the posterior mean, variance of $log[f(Y_i | \theta)]$
+
+Effective Model Size: $p_W = \sum_{i = 1}^{n} \nu_i$
+
+$$
+WAIC = -2 \sum_{i = 1}^{n} m_i + 2 p_W
+$$
+
+*** Posterior Predictive Checks
+
+*** Posterior Predictive Distribution
+
+1. After comparing a few models, choose one that fits best.
+2. Verify model is adequate.
+   - QQ Plots, added variable plts, etc.
+3. Posterior Predictive Check. Leads to a Bayesian p-value.
+
+Need Posterior Predictive Distribution
+
+$$
+f(Y_{new} | Y) = \int f(Y_{new}m \theta | Y) d \theta = \int f(Y_{new} | \theta)
+f(\theta | Y) d \theta
+$$
+
+To make S draws from the PPD, for each S of the MCMC draws of $\theta$, we draw
+$Y_{new}$. This gives draws from the PPD and clearly accounts for uncertainty in $\theta$
+
+*** Posterior Predictive Checks
+
+Sample many datasets from PPD with identical design  (Same X. Same n).
+
+Define a statistic describing the Dataset: $d(Y) = max \{ Y_!, ..., Y_n\}$
+
+Statistic from original dataset: $d_0$
+
+Statistic from simulated dataset s: $d_s$
+
+If the model is correct, $d_0$ falls between $d_1$ and $d_s$
+
+**** Bayesian P-value
+
+A measure of how extreme the observed data are relative to this sampling
+distribution
+
+$$
+p = \frac{1}{\mathbb S} \sum_{s = 1}^{\mathbb S} I (d_s > d_0)
+$$
+
+If p is near 0 or 1, the model does not fit.
+
+This is repeated for several d to give a comprehension for model fit.
