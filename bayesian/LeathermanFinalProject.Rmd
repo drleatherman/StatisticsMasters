@@ -1,0 +1,751 @@
+---
+title: "Heatwaves"
+author: "Dustin Leatherman"
+date: "November 15, 2020"
+output:
+  pdf_document: default
+  html_document: default
+bibliography: LeathermanFinalProject.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.width = 10, message = FALSE, warning = FALSE,error = FALSE)
+
+library(tidyverse)
+library(knitr)
+library(rjags)
+library(kableExtra)
+library(aTSA)
+
+load("~/Downloads/heatwaves.rdata")
+
+# return TRUE if two integers in a vector are consecutive. e.g. 1, 2, 3
+# is.consecutive(c(1, 2, 3, 5) => c(TRUE, TRUE, TRUE, FALSE)
+is.consecutive <- function(x) replace_na((x + 1 == lead(x, 1)) | (x - 1 == lag(x, 1)), FALSE)
+
+# add months calculations so we can do aggregates by month.
+# thought this would be more useful. Leaving it here just in case.
+#months <- c(rep(1, 31), rep(2, 28), rep(3, 31), rep(4, 30), rep(5, 31), rep(6, 30), rep(7, 31), rep(8, 31), rep(9, 30), rep(10, 31), rep(11, 30), rep(12, 31))
+
+# for a given index and associated dataset, return a daily summary across all years
+get_summary_by_day <- function(i, y) {
+  num.years <- dim(y)[2]  
+  cities <- c("Phoenix", "Denver", "Las Vegas", "Albuquerque", "Tucson", "Salt Lake City", "Los Angeles", "San Francisco", "San Diego")
+
+  city <- 
+    y[,,i] %>% 
+    as_tibble() %>% 
+    mutate(year = factor(row_number())) %>% 
+    pivot_longer(starts_with("V"), names_to = "day", values_to = "temperature") %>% 
+    mutate(
+      day = str_remove(day, "V") %>% as.integer(),
+      city = cities[i],
+      city.id = factor(i)
+    )
+  
+  city.stats <-
+    city %>% 
+    group_by(day) %>% 
+    summarise(
+      avg = mean(temperature, na.rm = TRUE), 
+      q.temp = quantile(temperature, c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975), na.rm = TRUE), 
+      q = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975), 
+      sd = sd(temperature, na.rm = TRUE), 
+      ucl = avg + sd * 2, 
+      lcl = avg - sd * 2
+    ) %>% 
+    pivot_wider(names_from = "q", values_from = "q.temp")
+  
+  city.summary <- city %>% inner_join(city.stats, by = "day")
+  
+  return(city.summary)
+}
+
+
+# get the number of days per "run" of values after filtering for only consecutive values
+get_days_per_run <- function(data) {
+  x <- 
+    data %>% 
+      filter(cons) %>% 
+      group_by(year, city, city.id, run) %>% 
+      tally()
+  return (x)
+}
+
+# Get the total number of runs per year per city. e.g. the number of heatwaves per year per city.
+get_runs_per_year <- function(data) {
+  x <- 
+    get_days_per_run(data) %>% 
+    group_by(year, city, city.id) %>% 
+    tally()
+  
+  return (x)
+}
+
+unionJagsOutput <- function(jags_data) {
+  data <- NULL
+  for(chain in 1:length(jags_data)) {
+    new.data <- 
+      jags_data[[chain]] %>% 
+        as_tibble() %>% 
+        mutate(chain = factor(chain), row_num = row_number()) %>%
+        pivot_longer(-c(chain, row_num), names_to = "col", values_to = "value")
+    
+    if(is.null(data)) {
+      data <- new.data
+    } else {
+      data <- union_all(data, new.data)
+    }
+  }
+  return (data)
+}
+```
+
+# Introduction
+
+In this analysis, daily temperatures are analyzed to determine the number of heat waves per year in Phoenix, Denver, Las Vegas, Albuquerque, Tucson, Salt Lake City, Los Angeles, San Francisco, and San Diego.
+
+Frich et al define a heatwave as period where the daily high temperature exceeds the average maximum high temperature by more than 9 degrees for at least 5 days. [@2002ClRes].
+
+In an attempt to form a definition for a heatwave that equally applied to all biomes of the US, Robinson a heatwave as a combination of relative humidity and air temperature; however, relative humidity is not present in the dataset so the starting definition provided by the NWS as "the exceedence of a fixed percentile of all observed values." [@Robinson] In our case, we will assume air temperature values that exceed an overall 95th percentile for at least 2 consecutive days to be considered a heatwave. It is interesting to note that both of these definitions allow for heatwaves to occur during periods outside of annual peak temperature.
+
+The primarily interest is to determine a model that can predict the number of heatwaves that occur in a given city and year. Let $Y_{ij}$ represent the number of heatwaves for the ith year and the jth city. Since this is a count model the likelihood function is $Y_{ij} \sim Poisson(N\lambda)$
+
+**Model 1** 
+
+$$\lambda_{ij} \sim Gamma(Y_{i - 1,j}, N)$$ 
+
+where $N = 365$ and $Y_{1j} \sim InvGamma(100, 100)$
+
+**Model 2**
+
+A Poisson Regression model with Number of Heatwave Days as a covariate in a linear model.
+
+$$log(\lambda_{ij}) = \beta_{0j} + \beta_{1j} X_{ij}$$ 
+
+where $\beta_{0j}, \beta_{1j} \sim N(0, 1000)$
+
+**Model 3**
+
+A Poisson Regression model with Number of Heatwave Days, some dependence on the previous value, and accounting for potential within-city variance.
+
+$$log(\lambda_{ij}) = \beta_{0j} + \beta_{1j} X_{ij} + \rho Y_{i - 1,j} + \alpha_j$$
+
+where $\alpha_j, beta_{0j}, \beta_{1j} \sim N(0, 1000)$ and $\rho \sim beta(1,1)$
+ 
+# Data
+
+```{r, fig.height=4}
+# heatwave is considered when the daily max temperature is greater than 9 degrees above average.
+runs_by_def1 <- function(data) {
+  x <- 
+    data %>% 
+    filter(temperature > (avg + 9)) %>% 
+    mutate(
+      cons = is.consecutive(day),
+      run = c(0, cumsum(cons[-1L] != cons[-length(cons)]))
+    )
+  return (x)
+}
+
+# heatwave is considered when a temperature exceeds a percentile.
+# In this case, 95% was chosen.
+runs_by_def2 <- function(data){
+  city.stats <-
+    data %>% 
+    select(year, day, city, city.id, temperature) %>% 
+    group_by(city) %>% 
+    summarise(
+      q.temp = quantile(temperature, c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975), na.rm = TRUE), 
+      q = c(0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975)
+    ) %>% 
+    pivot_wider(names_from = "q", values_from = "q.temp")
+  x <- 
+    data %>%
+      select(-starts_with("0")) %>% 
+      inner_join(city.stats, by = "city") %>% 
+      filter(temperature > `0.95`) %>% 
+      mutate(
+        cons = is.consecutive(day),
+        run = c(0, cumsum(cons[-1L] != cons[-length(cons)]))
+      )
+  return (x)
+}
+
+num.cities <- dim(y)[3]
+
+city.summary <- 
+  lapply(1:num.cities, get_summary_by_day, y) %>% 
+    reduce(union_all)
+
+cities.def1 <- runs_by_def1(city.summary)
+cities.def2 <- runs_by_def2(city.summary)
+
+cnt.days.per.run.def1 <- 
+  get_days_per_run(cities.def1) %>% 
+  # only considered a heatwave when at least 5 days have passed
+  filter(n >= 5) %>%
+  group_by(year, city) %>% 
+  tally(n) %>% 
+  mutate(definition = factor(1))
+
+cnt.days.per.run.def2 <- 
+  get_days_per_run(cities.def2) %>% 
+  group_by(year, city) %>% 
+  tally(n) %>% 
+  mutate(definition = factor(2))
+
+cnt.days.per.run.all <- cnt.days.per.run.def1 %>% union_all(cnt.days.per.run.def2)
+
+cnt.runs.per.year.def1 <- 
+  get_days_per_run(cities.def1) %>% 
+  filter(n >= 5) %>% 
+  group_by(year, city, city.id) %>% 
+  tally()
+cnt.runs.per.year.def2 <- get_runs_per_year(cities.def2)
+
+cnt.runs.per.year.all <- 
+  cnt.runs.per.year.def1 %>% 
+    mutate(definition = factor(1)) %>% 
+    union_all(
+      cnt.runs.per.year.def2 %>% mutate(definition = factor(2))
+    )
+
+cnt.days.per.run.all %>% 
+  rename(Definition = definition) %>%
+  ggplot(aes(x = as.integer(year), y = n, color = Definition)) + 
+  geom_line() + 
+  facet_wrap(~city, ncol = 3) +
+  labs(x = "Year", y = "Heatwave Days", title = "Heatwave Days per City by Definition")
+
+cnt.runs.per.year.all %>% 
+  rename(Definition = definition) %>% 
+  ggplot(aes(x = year %>% as.integer, y = n, color = Definition)) + 
+    geom_line() + 
+    facet_wrap(~city, ncol = 3) +
+    labs(x = "Year", y = "Heatwave Count", title = "Heatwaves per City by Definition")
+
+heatwaves.cnt <-
+  cnt.runs.per.year.all %>% 
+    rename(heatwaves = n) %>% 
+    inner_join(cnt.days.per.run.all, by = c("year", "city", "definition")) %>% 
+    rename(heatwave.days = n)
+
+```
+
+```{r}
+# Settings (automatically calculates the number of iterations needed based on inputs)
+nBurn <- 15000
+nChains <- 3
+nSave <- 4000
+nThin <- 10
+nIter <- ceiling((nSave*nThin)/nChains)
+N <- 41
+p <- 9
+params <- c("lambda")
+
+
+format_jags_inputs <- function(data) {
+  Y <- 
+    data %>% 
+      ungroup() %>% 
+      select(heatwaves, city.id, year) %>% 
+      arrange(year, as.integer(city.id)) %>% 
+      pivot_wider(names_from = "city.id", values_from = "heatwaves", names_prefix = "city.") %>% 
+      select(-year) %>% 
+      as.matrix()
+
+  n <- dim(Y)[1]
+
+  X <- data %>% 
+    ungroup() %>% 
+    select(heatwave.days, city.id, year) %>% 
+    arrange(year, as.integer(city.id)) %>% 
+    pivot_wider(names_from = "city.id", values_from = "heatwave.days", names_prefix = "city.") %>% 
+    select(-year) %>% 
+    as.matrix()
+  
+  k <- dim(y)[3]
+  N <- 365
+  ls <- list(Y=Y, X=X, n=n, k=k, N=N)
+  
+  return(ls)
+}
+
+execute_jags <- function(model_string, ...) {
+  kwargs <- list(...)
+  data <- kwargs$data
+  nChains <- kwargs$nChains
+  params <- kwargs$params
+  nIter <- kwargs$nIter
+  nBurn <- kwargs$nBurn
+  
+  model <- jags.model(textConnection(model_string),data=data,n.chains=nChains, quiet = TRUE)
+  update(model,burn=nBurn, progress.bar="none")
+  model.out <- coda.samples(model, variable.names=params, thin=nThin, n.iter=nIter, progress.bar = "none")
+  model.data <- unionJagsOutput(model.out)
+  
+  ls <- list(model = model, out = model.out, data = model.data)
+  return(ls)
+}
+
+plot_lambda <- function(data, i) {
+ plot <- data %>% 
+  filter(str_detect(col, "lambda\\[(10|20|30|40),\\d+\\]")) %>% 
+    ggplot(aes(x = row_num, y = value, color = chain)) + 
+      geom_line() + 
+      facet_wrap(~col, ncol = 4, scales = "free", dir = "v")  +
+      labs(x = "Iteration", y = "Posterior Value", title = paste0(c("Sample Trace Plots:", i), collapse = " "))
+  return (plot)
+}
+
+model_selection_diags <- function(jags_model, jags_model_output, N, p, nIter) {
+  
+  ess <- effectiveSize(jags_model_output)
+  sum <- summary(jags_model_output)$stat
+  post_mn <- matrix(sum[,1],N,p)
+  post_sd <- matrix(sum[,2],N,p)
+  
+  # Compute DIC
+  dic <- dic.samples(jags_model, n.iter=nIter, progress.bar="none")
+  
+  # Compute WAIC
+  # Assumes there is a variable called "like" in the output
+  waic.out <- coda.samples(jags_model, variable.names=c("like"), n.iter=nIter, progress.bar="none")
+  waic <-
+    unionJagsOutput(waic.out) %>% 
+    group_by(col) %>% 
+    summarise(
+      fbar = mean(value), 
+      P = sum(var(log(value))), 
+      waic = -2 * sum(log(fbar)) + 2 * P) %>% 
+    ungroup %>% 
+    summarise(waic = sum(waic), P = sum(P), fbar = sum(fbar))
+  
+  res <- waic %>% 
+    mutate(
+      dic.mean.dev = sum(dic$deviance), 
+      dic.penalty = sum(dic$penalty), 
+      dic.penalized.dev = dic.mean.dev + dic.penalty
+    )
+  
+  res.ls <- list(stats = res, ess = ess, post_mean = post_mn, post_sd = post_sd)
+  
+  return(res.ls)
+}
+
+```
+
+
+```{r, fig.height=6}
+# Model 1
+
+Y1 <- heatwaves.cnt %>% filter(definition == 1)
+data <- format_jags_inputs(Y1)
+
+model_string <- "model{
+  # Likelihood
+  for(i in 2:n){
+    for(j in 1:k) {
+      Y[i, j] ~ dpois(lambda[i, j] * N)
+      lambda[i, j] ~ dgamma(Y[i - 1, j], N)
+    }
+  }
+
+  for(j in 1:k){
+    Y[1, j] ~ dpois(lambda[1, j] * N)
+    lambda[1, j] ~ dgamma(0.01, 0.01)
+  }
+
+  # WAIC Calculations
+  for(i in 1:n){
+    for(j in 1:k){
+      like[i, j] <- dpois(Y[i, j], lambda[i, j] * N)
+    }
+  }
+}"
+
+
+# Execute Jags function
+model1.def1 <- execute_jags(
+  model_string, 
+  data = data, 
+  nChains = nChains, 
+  params = params, 
+  nIter = nIter, 
+  nBurn = nBurn
+)
+
+# compute model selection diagnostics
+model1.def1.diags <- model_selection_diags(model1.def1$model, model1.def1$out, N, p, nIter)
+
+Y1 <- heatwaves.cnt %>% filter(definition == 2)
+data <- format_jags_inputs(Y1)
+
+model1.def2 <- execute_jags(
+  model_string, 
+  data = data, 
+  nChains = nChains, 
+  params = params, 
+  nIter = nIter, 
+  nBurn = nBurn
+)
+
+# compute model selection diagnostics
+model1.def2.diags <- model_selection_diags(model1.def2$model, model1.def2$out, N, p, nIter)
+```
+
+
+```{r, fig.height=6}
+
+# Model 2
+
+model_string <- "model{
+  # Likelihood
+  for(i in 1:n){
+    for(j in 1:k) {
+      Y[i, j] ~ dpois(lambda[i, j] * N)
+      log(lambda[i, j]) <- beta[1, j] + beta[2, j] * X[i, j]
+    }
+  }
+
+  # Priors
+  for(j in 1:k){
+    beta[1, j] ~ dnorm(0,0.001)
+    beta[2, j] ~ dnorm(0,0.001)
+  }
+
+  # WAIC Calculations
+  for(i in 1:n){
+    for(j in 1:k){
+      like[i, j] <- dpois(Y[i, j], lambda[i, j] * N)
+    }
+  }
+}"
+
+Y2 <- heatwaves.cnt %>% filter(definition == 1)
+data <- format_jags_inputs(Y2)
+data$X <- data$X %>% replace_na(mean(data$X, na.rm = TRUE))
+
+model2.def1 <- execute_jags(
+  model_string, 
+  data = data, 
+  nChains = nChains, 
+  params = params, 
+  nIter = nIter, 
+  nBurn = nBurn
+)
+
+# compute model selection diagnostics
+model2.def1.diags <- model_selection_diags(model2.def1$model, model2.def1$out, N, p, nIter)
+
+# Second Definition
+Y2b <- heatwaves.cnt %>% filter(definition == 2)
+data <- format_jags_inputs(Y2b)
+
+# replace null values with mean.
+# could do a smarter imputation but will come back to this if time.
+data$X <- data$X %>% replace_na(mean(data$X, na.rm = TRUE))
+
+model2.def2 <- execute_jags(
+  model_string, 
+  data = data, 
+  nChains = nChains, 
+  params = params, 
+  nIter = nIter, 
+  nBurn = nBurn
+)
+
+# compute model selection diagnostics
+model2.def2.diags <- model_selection_diags(model2.def2$model, model2.def2$out, N, p, nIter)
+```
+
+
+```{r, fig.height=6}
+# Model 3
+
+model_string <- "model{
+  # Likelihood
+  for(i in 2:n){
+    for(j in 1:k) {
+      Y[i, j] ~ dpois(lambda[i, j])
+      log(lambda[i, j]) <- beta[1, j] + beta[2, j] * X[i, j] + rho * Y[i - 1, j] + alpha[j]
+    }
+  }
+  
+  for(j in 1:k) {
+    Y[1, j] ~ dpois(lambda[1, j] * N)
+    log(lambda[1, j]) <- beta[1, j] + beta[2, j] * X[1, j] + alpha[j]
+  }
+  
+  # Priors
+  rho ~ dbeta(1,1)
+  for(j in 1:k){
+    beta[1, j] ~ dnorm(0,0.001)
+    beta[2, j] ~ dnorm(0,0.001)
+    alpha[j] ~ dnorm(0, 0.001)
+  }
+  
+  # WAIC Calculations
+  for(i in 1:n){
+    for(j in 1:k){
+      like[i, j] <- dpois(Y[i, j], lambda[i, j])
+    }
+  }
+}"
+
+Y3 <- heatwaves.cnt %>% filter(definition == 1)
+data <- format_jags_inputs(Y3)
+data$X <- data$X %>% replace_na(mean(data$X, na.rm = TRUE))
+
+model3.def1 <- execute_jags(
+  model_string, 
+  data = data, 
+  nChains = nChains, 
+  params = params, 
+  nIter = nIter, 
+  nBurn = nBurn
+)
+
+# compute model selection diagnostics
+model3.def1.diags <- model_selection_diags(model3.def1$model, model3.def1$out, N, p, nIter)
+
+# Second Definition
+Y3b <- heatwaves.cnt %>% filter(definition == 2)
+data <- format_jags_inputs(Y3b)
+
+# replace null values with mean.
+# could do a smarter imputation but will come back to this if time.
+data$X <- data$X %>% replace_na(mean(data$X, na.rm = TRUE))
+
+model3.def2 <- execute_jags(
+  model_string, 
+  data = data, 
+  nChains = nChains, 
+  params = params, 
+  nIter = nIter, 
+  nBurn = nBurn
+)
+
+# compute model selection diagnostics
+model3.def2.diags <- model_selection_diags(model3.def2$model, model3.def2$out, N, p, nIter)
+```
+
+# Model Comparisons
+
+```{r}
+all.diags <- list(
+  model1.def1.diags$stats %>% mutate(name = "model1", definition = 1),
+  model1.def2.diags$stats %>% mutate(name = "model1", definition = 2),
+  model2.def1.diags$stats %>% mutate(name = "model2", definition = 1),
+  model2.def2.diags$stats %>% mutate(name = "model2", definition = 2),
+  model3.def1.diags$stats %>% mutate(name = "model3", definition = 1),
+  model3.def2.diags$stats %>% mutate(name = "model3", definition = 2)
+  ) %>% reduce(union_all)
+
+all.diags %>% 
+  select(Model = name, Definition = definition, DIC = dic.penalized.dev, WAIC = waic) %>%
+  arrange(Definition, DIC) %>% 
+  kable(
+    digits = 3,
+    booktabs = TRUE,
+    caption = "Information Criteria for Models"
+  ) %>% 
+  kable_styling(latex_options = c("striped", "hold_position"))
+```
+
+Model 2 has the lowest and WAIC and DIC so that will be used going forward. Missing values for heatwave days were imputed with the historical mean.
+
+# Convergence
+
+```{r}
+plot_geweke <- function(jags.model.out){
+  g.out <- geweke.diag(jags.model.out)
+
+  geweke.data <- NULL
+  for(chain in 1:nChains){
+    new.data <- g.out[[chain]]$z %>% 
+      as.data.frame() %>% 
+      rownames_to_column(var = "col") %>% 
+      rename(value = ".") %>% 
+      mutate(
+        chain = factor(chain)
+      )
+    
+    if(is.null(geweke.data)) {
+      geweke.data <- new.data  
+    } else {
+      geweke.data <- union_all(geweke.data, new.data)
+    }
+  }
+  
+  geweke.data <- 
+    geweke.data %>%
+      mutate(
+        col = str_replace_all(col, "(\\[|,)", "_") %>% str_remove("\\]"),
+        sim_row = str_split(col, "_", simplify = TRUE)[,2],
+        group = str_split(col, "_", simplify = TRUE)[,3]
+      )
+  
+  plot <- geweke.data %>% 
+    ggplot(aes(x = value, fill = chain)) + 
+      geom_histogram() + 
+      facet_wrap(~group) +
+      geom_vline(xintercept = -2, linetype = "dashed") +
+      geom_vline(xintercept = 2, linetype = "dashed") +
+      scale_color_discrete(name = "Chain") +
+      labs(x = "Geweke Statistic", y = "Density", title = "Geweke Distribution per City", caption = "Histograms highlighting the convergence of the chains using the Geweke Statistic. It is ideal to be between the dotted lines.")
+  return (plot)
+}
+
+plot_gelman <- function(model.out, ...){
+  
+  gelman.out <- gelman.diag(model.out, ...)
+  p <- gelman.out$psrf %>% 
+    as.data.frame() %>% 
+    rownames_to_column(var = "col") %>% 
+    as_tibble() %>% 
+    summarise_at(c("Point est.", "Upper C.I."), list(quantile)) %>% 
+    mutate(
+      quantile = c("min", "0.25", "0.5", "0.75", "max")
+    ) %>% 
+    select(quantile, "Point est.", "Upper C.I.") %>% 
+        kable(
+          caption = "Gelman-Rubin Statistic Quantiles to measure convergence of chains",
+          booktabs = TRUE
+        ) %>% 
+        kable_styling(latex_options = c("striped", "hold_position"))
+  return (p)
+}
+
+```
+
+
+## Definition 1
+
+```{r}
+plot_gelman(model2.def1$out, multivariate = FALSE)
+```
+
+```{r, fig.height=3}
+#model2.def1$data %>% plot_lambda("Lambda Definition 1")
+plot_geweke(model2.def1$out)
+
+#model2.def1.diags$ess %>% 
+  #as.data.frame() %>% 
+  #rename(value = ".") %>% 
+  #mutate(Definition = 1) %>% 
+  #union_all(
+  #  model2.def2.diags$ess %>% 
+   #   as.data.frame() %>% 
+  #    rename(value = ".") %>% 
+  #    mutate(Definition = 2)
+  #) %>% 
+  #ggplot(aes(color = factor(Definition), y = value)) + 
+  #geom_boxplot()
+```
+
+The Gelman-Rubin Statistics are close to 1 which indicates convergence. Supporting this, most values of the Geweke statistic fall between (-2, 2) with maybe Tucson being the least likely to converge.
+
+## Definition 2
+
+```{r}
+plot_gelman(model2.def2$out, multivariate = FALSE)
+```
+
+```{r, fig.height=3}
+#model2.def2$data %>% plot_lambda("Lambda Definition 2")
+plot_geweke(model2.def2$out)
+```
+
+Similar to Definition 1, the Gelman-Rubin statistics are close to 1 which indicate convergence. Most values of the Geweke statistic fall within the acceptable range as well.
+
+# Analysis
+
+```{r, fig.height=4}
+model2.def1.diags.mean <- model2.def1.diags$post_mean %>% as.data.frame()
+colnames(model2.def1.diags.mean) <- city_names
+
+model2.def1.diags.mean <- 
+  model2.def1.diags.mean %>% 
+    mutate(year = row_number()) %>% 
+    pivot_longer(-year, names_to = "City", values_to = "post.mean")
+
+model2.def1.diags.sd <- model2.def1.diags$post_sd %>% as.data.frame()
+colnames(model2.def1.diags.sd) <- city_names
+
+model2.def1.diags.sd <- model2.def1.diags.sd %>% 
+  mutate(year = row_number()) %>% 
+  pivot_longer(-year, names_to = "City", values_to = "post.sd")
+
+model2.def1.diags.mean %>% 
+  inner_join(model2.def1.diags.sd, by = c("year", "City")) %>% 
+  ggplot(aes(x = as.integer(year))) +
+    geom_ribbon(aes(ymin = post.mean - post.sd * 2, ymax = post.mean + post.sd * 2), fill = "grey70") +
+    geom_line(aes(y = post.mean)) +
+    facet_wrap(~City) +
+    labs(x = "Year", y = "Posterior Mean", title = "Definition 1: Predicted Posterior Mean")
+
+
+
+model2.def2.diags.mean <- model2.def2.diags$post_mean %>% as.data.frame()
+colnames(model2.def2.diags.mean) <- city_names
+
+model2.def2.diags.mean <- model2.def2.diags.mean %>% 
+  mutate(year = row_number()) %>% 
+  pivot_longer(-year, names_to = "City", values_to = "post.mean")
+
+model2.def2.diags.sd <- model2.def2.diags$post_sd %>% as.data.frame()
+colnames(model2.def2.diags.sd) <- city_names
+
+model2.def2.diags.sd <- model2.def2.diags.sd %>% 
+  mutate(year = row_number()) %>% 
+  pivot_longer(-year, names_to = "City", values_to = "post.sd")
+
+model2.def2.diags.mean %>% 
+  inner_join(model2.def2.diags.sd, by = c("year", "City")) %>% 
+  ggplot(aes(x = as.integer(year))) +
+    geom_ribbon(aes(ymin = post.mean - post.sd * 2, ymax = post.mean + post.sd * 2), fill = "grey70") +
+    geom_line(aes(y = post.mean)) +
+    facet_wrap(~City) + 
+    labs(x = "Year", y = "Posterior Mean", title = "Definition 2: Predicted Posterior Mean")
+
+# this function prints out a lot of extra garbage.
+# This hides the output so we dont have to see it while still setting the variable
+dummy <- capture.output(
+  kpss.tmp <- 
+    model2.def1.diags.mean %>% 
+    mutate(Definition = factor(1)) %>% 
+    union_all(
+      model2.def2.diags.mean %>% 
+        mutate(Definition = factor(2))
+    ) %>% 
+    group_by(City, Definition) %>% 
+    summarise(kpss = kpss.test(post.mean))
+)
+
+kpss.tmp$kpss[,2:3] %>% 
+  as.data.frame() %>% 
+  rownames_to_column(var = "type") %>% 
+  filter(str_detect(type, "type.2")) %>% 
+  bind_cols(kpss.tmp %>% select(City, Definition) %>% unique()) %>% 
+  rename(p.value = V2, kpss = V1) %>% 
+  select(-type) %>% 
+  pivot_wider(names_from = Definition, values_from = c("kpss", "p.value")) %>% 
+  select(City, kpss_1, p.value_1, kpss_2, p.value_2) %>% 
+  kable(
+    booktabs = TRUE,
+    col.names = c("City", "kpss", "p.value", "kpss", "p.value")
+  ) %>% 
+  kable_styling(latex_options = c("hold_position", "striped")) %>% 
+  add_header_above(c(" " = 1, "Definition 1" = 2, "Definition 2" = 2))
+```
+
+The KPSS test is used to test the stationarity of a univariate time series by testing for the presence of a unit root. The null hypothesis is a that a unit root exists and therefore the time series is non-stationary. The test returns diagnostics run against three different models: No Drift No Trend, Drift No Trend, and Drift with Trend. The model used in the diagnostic should be chosen based on the data. The data appears to have a non-zero mean and no trend so those respective diagnostics are used.
+
+There is moderate evidence that the posterior means for Denver and Albuquerque are non-stationary under Definition 1 and there is moderate evidence that the posterior means for Tucson are non-stationary under Definition 2. There is not enough evidence for other cities to indicate that they are non-stationary. The and Albuquerque Denver graph for the posterior means supports this claim as it looks like it isn't straight across; however, the posterior means for Tucson appear stationary. The swings in Albuquerque for Definition 2 would also indicate some non-stationarity but the KPSS test doesn't show any indication that this is the case. This should be looked into more.
+
+# Final Thoughts
+
+The analysis indicates that heatwave counts per year are generally constant as time goes on which bodes well for those living in the American West. Continuous monitoring should be ensured as Climate Change threatens to disrupt this. Further improvements can be made by gathering other covariates such as humidity which also plays a large role in determining whether a heatwave has occurred.
+
