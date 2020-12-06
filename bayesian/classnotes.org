@@ -2527,3 +2527,272 @@ $$
 If p is near 0 or 1, the model does not fit.
 
 This is repeated for several d to give a comprehension for model fit.
+* Hierarchical Models & Closing Thoughts (2020/11/12)
+** Hierarchical Models
+provides a framework for building complex and high-dimensional models from simple and low-dimensional building blocks.
+
+Works well since MCMC is conducive to Hierarchical Models.
+
+Items to cover:
+1. Building Hierarchical Models through Layers.
+2. DAGS
+
+*** Layers
+
+1. Data Layer: $[Y | \theta, \alpha]$ is the likelihood for observed data Y
+   given the model parameters.
+2. Process Layer: $[\theta, \alpha]$ model for the parameters $\theta$ that
+   define the latest data generating process.
+3. Prior: $[\alpha]$ prior for the hyper-parameters.
+
+**** Example
+
+*Data Layer*
+
+Let
+- $S_t$: number susceptible at time /t/
+- $I_t$: Infected individuals at time /t/
+- $Y_T$: number of observed cases at time /t/
+
+Data Layer models our ability to measure $I_t$. $Y_T | I_T \sim Bin(I_t, \rho)$.
+
+Assume no false positives and false negative probability, $\rho$.
+
+What do I need to know to figure out $I_t$?
+
+*Process Layer*
+
+Reed-Frost Model
+
+$I_{t + 1} \sim Bin (S_t, 1 - (1 - q)^{I_t})$
+
+$S_{t + 1} = S_t - I_{t + 1}$
+
+*Prior Layer*
+
+\begin{equation}
+\begin{split}
+I_1 \sim & Poisson(\lambda)\\
+S_1 \sim & Poisson(\lambda_2)\\
+\rho, \alpha \sim & Beta(a, b)
+\end{split}
+\end{equation}
+
+
+When to stop adding models? It can go down a dangerous rabbit hole.
+
+*Rule of Thumb*: Be careful assigning priors to parameters in layers without
+ replication (aka multiple observations).
+
+*** DAGS
+Graphical representation of a hierarchical model. Sometimes referred to as a
+Bayesian Network.
+
+Each observation and parameter is a node.
+
+$X \to Y$: Y depends on X.
+
+**** Misc
+Building a model this way always has a valid joint distribution. ex: $f(x, y, z)
+= f(x) f(y | x) f(z | x, y)$ is a valid DAG.
+
+Adhoc constructions may not give valid distributions.
+
+#+caption: Bayesian Model DAG
+#+attr_latex: scale=0.75
+#+label: fig:bdag
+[[./resources/bdag.jpeg]]
+
+
+How does Data from $Y_3$ affect $Y_2$? It doesn't because it's a DAG.
+
+MCMC is efficient even when the number of parameters is large. This is because only connected nodes need to be updated.
+
+*** Random Slopes Model
+
+$Y_{ij} \sim N(\gamma_{0i} + \gamma_{1i} X_i, \sigma^2)$ where i: subject and j: observation.
+
+$Y_i \sim N(\vec \beta, \Sigma)$
+
+#+caption: Random Slopes Model DAG
+#+attr_latex: scale=0.75
+#+label: fig:label
+[[./resources/bdag2.jpg]]
+
+#+begin_quote
+Aside: What are good prior hyperparameters for an Inverse Wishart? It is a subject of much debate. It is thought that choosing R to be an identity matrix is a good idea.  Or choosing K = p + 1 which leads to infinitesimal spread. There isn't generally a *good* rule of thumb.
+#+end_quote
+
+*** Missing Data Models
+
+$Y_i \sim N(\beta_0 + \Sigma \beta_i X_i, \sigma^2)$
+
+
+**** Missing Responses
+
+- Prediction Problem. Can use model to fill in the gaps. What do you think Y might be?
+- Obtain samples from PPD of $Y_i$
+- for each MCMC iteration, we draw $Y_i \sim N(\beta_0 + \Sigma \beta_i X_i, \sigma^2)$. This accounts for random error and uncertainty in the model.
+- If only responses are missing, can we delete them for estimation? No need unless there are patterns in the responses that might be missing. For example, missing temperature data when trying to ascertain whether a heatwave has occurred.
+
+**** Missing Covariates
+- Simplest approach is imputation, but doesn't account for uncertainty.
+- MCMC can handle this as well.
+
+The main idea is to treat the missing values as unknown parameters. Unknown parameters need priors so missing $X_i = (X_{i1}, ..., X_{ip})^T$ must have priors $X_i \sim N(...)$
+
+If priors are way off, then bad results will be returned.
+If specified correctly, lead to inference of $\beta$'s in the model.
+
+*Assumptions about Missing Data*
+- Missing Status is independent of Y and X
+- Covariates are Gaussian
+
+There are ways to relax both assumptions but it becomes complicated.
+
+#+begin_quote
+If Data are not Missing At Random (MAR), the Bayesian Model will likely give bad results.
+#+end_quote
+
+**** Hierarchical LR Model with Missing Data
+
+$Y_i | X_i, \beta, \sigma^2 \sim N(X_i^T \beta, \sigma^2)$
+
+$X_i | \mu, \Sigma \sim N(\mu, \Sigma)$
+
+$P(\beta) \propto 1$
+
+$\sigma^2 \sim InvGamma(0.01, 0.01)$
+
+*** Closing Thoughts
+
+**** Calibrated Bayes
+- Mix of Frequentist and Bayesian Approaches
+- Maybe we want a Type 1 error control or 80% Power.
+
+Bayesian is strong for influence under an assumed model, but relatively weak for development and assessment of models. Vice versa for frequentist approaches.
+
+Frequentist approaches for model development and Bayesian methods for inference under a model are ideal in principle. Applied statisticians should be Bayesian in principle.
+
+**** Bayesian Decision Theory
+- Need to determine the "best" Bayes method.
+
+Should we take posterior mode, median, or mean?
+
+Need a scoring system.
+
+Let $l(\hat \theta, \theta)$ be a loss function.
+
+$l(\hat \theta, \theta) = (\hat \theta - \theta)^2$: Squared Loss function (L2 norm?)
+
+$l(\hat \theta, \theta) = |\hat \theta - \theta|$: Absolute Loss function (L1 Norm?)
+
+Summary of the posterior that minimizes the expected (posterior) loss is Bayes Rule. However, Hypothesis testing requires a more complicated loss function.
+
+**** Bayes Rule for Squared-error loss
+
+Loss: $l(\hat \theta, \theta) = (\hat \theta - \theta)^2$
+
+$\bar \theta = E(\theta | Y)$: Posterior Mean of $\theta$
+
+*Expected Loss*
+
+\begin{equation}
+\begin{split}
+E_{\theta | Y} [l(\hat \theta, \theta)] = & E [(\theta \hat - \theta)^2]\\
+= & E [(\hat \theta - \bar \theta + \bar \theta - \theta)]\\
+= & E [(\theta - \bar \theta)^2 + 2 (\hat \theta - \bar \theta)(\bar \theta - \hat \theta) + (\bar \theta - \hat \theta)^2]\\
+= & E [(\theta - \bar \theta)^2] + 2 (\bar \theta - \hat \theta) E[(\hat \theta - \bar \theta)] + (\bar \theta - \hat \theta)^2\\
+= & Var(\theta | Y) + (\bar \theta - \hat \theta)^2
+\end{split}
+\end{equation}
+
+What value of $\hat \theta$ minimizes $E [l(\theta, \hat \theta)]$?
+
+$\therefore \hat \theta = \bar \theta$ minimizes the expected loss, so _posterior mean_ is Bayes Rules
+
+**** Bayes Rule for Hypothesis Testing
+
+Let $\theta = 0$ if $H_0$ is true. Fail to reject the null hypothesis
+Let $\theta = 1$ if $H_A$ is true. Reject the null hypothesis.
+
+$P_0$: Posterior probability of $H_0$. $P(\theta = 0 | Y)$.
+
+$1 - P_0$: Posterior Probability of $H_A$. $P(\theta = 1 | Y)$
+
+$$
+l(\theta, \hat \theta) = \begin{cases}
+\lambda_1, & \text{Type 1 Error}, \hat \theta = 1, \theta = 0\\
+\lambda_2, & \text{Type 2 Error}, \hat \theta = 0, \theta = 1
+\end{cases}
+$$
+
+If $\hat \theta = 1$, expected loss function is $P_0 \lambda_1$
+If $\hat \theta = 0$, expected loss function is $(1 - P_0) \lambda_2$
+
+$$
+P_0 \lambda_1 < (1 - P_0) \lambda_2 \equiv P_0 < \frac{\lambda_2}{\lambda_1 + \lambda_2}
+$$
+
+**** Bias Variance Tradeoff
+
+$Y_i \sim N(\mu, \sigma^2)$
+
+Estimator 1: $\hat \mu_1 = \bar Y$
+
+Estimator 2: $\hat \mu_2 = c \bar Y$ where $c = \frac{n}{n + m}$
+
+$\hat \mu_2$ is the posterior mean under prior $\mu \sim N(0, \frac{\sigma^2}{m})$.
+
+Compute the Bias, Variance, MSE of each estimator (MSE = bias^2 + Var).
+
+Which is preferred?
+
+*Bias*
+
+\begin{equation}
+\begin{split}
+E(\mu_1 - \mu) = & E(\bar Y) - \mu\\
+= & E(\frac{1}{n} \sum_{1}^{n} Y_i) - \mu\\
+= & \frac{1}{n} E(\sum_{1}^{n} Y_i) - \mu\\
+= & \frac{1}{n} n \mu - \mu = 0
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+E(\mu_2 - \mu) = c E(\bar Y) - \mu = c\mu - \mu = \mu (c - 1)
+\end{split}
+\end{equation}
+
+As m increases, c becomes less than 1 and will shrink the variance, but more bias will be introduced.
+
+#+begin_quote
+In a Bayesian Hypothesis test, $\lambda_1, \lambda_2$ can be set to control Type 1 error.
+#+end_quote
+
+Bayesian estimators have smaller SE because the prior adds information to the model.
+Bayesian estimators are biased if prior is not centered on the truth. With a weak prior, the outcomes between a Frequentist approach and a Bayesian Approach are similar.
+
+
+**** Bayesian CLT
+
+*Assumption*
+- Usual MLE conditions on the likelihood.
+- Prior doesn't depend on n and puts non-zero prob on the true value $\theta_0$.
+
+Then
+
+$$
+P(\theta | Y) \to N(\theta_0, I(\theta_0)^{-1})
+$$
+
+Bayes methods asymptotically unbiased.
+
+Bayes and MLE equivalent with Large Samples but interpretations are different.
+
+Bayes CLT useful for initial values and tuning.
+
+For each regression coefficient, you should have 10x the number of records. When the model is sparse, BLR has much smaller MSE than OLS.
+
+
