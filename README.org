@@ -11,6 +11,9 @@ reference as there are some helpful snippets in here.
 - Applied Regression Analysis
 - Time Series Analysis
 - Generalized Linear Models
+- Optimization Theory
+- Monte Carlo Simulations
+- Bayesian Statistics
 
 ** References
 - [[http://pages.cs.wisc.edu/~tdw/files/cookbook-en.pdf][Probability & Statistics Cookbook]]
