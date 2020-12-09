@@ -1,0 +1,13 @@
+* Optimization Theory
+
+** Course Description
+
+Demand for people who are skilled in Machine Learning is rising sharply. This course will cover mathematical concepts and algorithms that can deal with some of the challenges posed by Machine Intelligence and Pattern Recognition. The course may be of interest to all those students dreaming of becoming a multi-millionaire by starting the next Google or if you simply want to get a job at Google, Facebook, one of the hundreds of startups in Silicon Valley, Boston, or Houston. We will pay particular attention to recent development in the mathematics of Machine Learning, especially during the period from 2008 to 2016.
+
+** Course Goals
+- Define the Separating Hyperplane Theorem
+- Understand the significance and challenges associated with Sparse Representation
+- Understand Gradient Descent
+- Learn algorithms for image classification such as Iterative Hard Thresholding
+- Learn how Lagrangian Multipliers are relevant in Optimization problems
+- Understand the Geometric Lemma

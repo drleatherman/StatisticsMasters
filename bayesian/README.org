@@ -1,0 +1,10 @@
+* Bayesian Statistics
+
+** Course Description
+Comparison of Bayesian and frequentist methods,  conditional probability, Bayes theorem, conjugate distributions, computational methods, hands-on Bayesian data analysis using appropriate software, interpretation and presentation of analysis results. Students will learn to use software packages including JAGS. The free software program R will be utilized for data analysis.
+
+** Course Goals  
+- Summarize the relative strengths of Bayesian and frequentist methods.
+- Derive the posterior distribution for one-parameter models with conjugate priors.
+- Use Markov Chain Monte Carlo (MCMC) via JAGS to simulate from the posterior.
+- Effectively summarize a posterior distribution using tables and graphics.•Compare models using cross-validation and goodness-of-fit diagnostics

@@ -1,0 +1,11 @@
+* Monte Carlo Simulations
+
+** Course Description
+
+Monte Carlo methods are computational algorithms to obtain numerical results based on repeated random sampling. This course will introduce the students to basic concepts of Monte Carlo methods/simulations, with focus on applications in financial risk management and actuarial science. Monte Carlo and Quasi Monte Carlo techniques are computational sampling methods which track the behavior of the underlying securities in an option or portfolio and deter-mine the derivative’s value by taking the expected value of the discounted payoffs at maturity.
+
+
+** Course Goals
+TODO: flesh this out.
+- Learn basics of Monte Carlo Simulations and brownian motion
+ 
