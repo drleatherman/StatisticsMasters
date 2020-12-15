@@ -1,8 +1,10 @@
 # Applied Statistics *9/24/2018*
+
 Paired T-Test looks for Mean difference 
-Two Sample T-Test looks for Differenc in Means (slightly different)
+Two Sample T-Test looks for Difference in Means (slightly different)
 
 Pooled Standard Deviation weights standard deviations for two populations. This is based on the fact that the distribution is a combined chi-squared distribution.
+
 ```r
 # gives the probability based on a t-statistic and a degrees of freedom.
 pt(t, df)
@@ -35,7 +37,8 @@ As long as sample sizes and standard deviations are the same, then t procedures 
 
 H-naught: Data are normally distributed
 H-alt: Data are not normally distributed
-The shapiro test gives a p-value which indicates whether or not we should reject the null hypthosis. It is the equivalent of having the check engine light come on. If you have a very large sample and the data is slightly off of Normality, then the Shapiro-Wilk test will be way off.
+
+The shapiro test gives a p-value which indicates whether or not we should reject the null hypothesis. It is the equivalent of having the check engine light come on. If you have a very large sample and the data is slightly off of Normality, then the Shapiro-Wilk test will be way off.
 
 ```R
 shapiro.test(value)
@@ -72,15 +75,18 @@ Two Independent Samples0
   - Treat it as a hypergeometric distribution when determining the p-value
   - should not use the asymptotic technique when there are a lot of ties. Technically, it should be used when there are no ties
   - attach the dataframe first. Acts strange without it
-  - Assumptions: Two populations have the same shape. Equal standard deviations. Independence of subjects within and between group
-  - Robust to assumptions?: for and and 2 above - still valid but tests a different null hypothesis (null: two populations are identical)
+  - Assumptions: 
+    1. Two populations have the same shape. 
+    2. Equal standard deviations. 
+    3. Independence of subjects within and between group
+  - Robust to assumptions?: for 1 and 2 above - still valid but tests a different null hypothesis (null: two populations are identical)
   - Resistant to outliers?: Resistant
 - Test statistic: Sum of Ranks
 * Levene's Test
   - Test for equal population standard deviations
-  - Some say you shouldn't use Levene's test to choose between two-sample t-test and Welcha's t-test.
+  - Some say you shouldn't use Levene's test to choose between two-sample t-test and Welch's t-test.
   - "Check engine" test similar to Shapiro-Wilk test
-  - Checking to see how observerations deviate from the median? "absolute deviation from the median" not commonly used in statistics
+  - Checking to see how observations deviate from the median? "absolute deviation from the median" not commonly used in statistics
   - failing to reject doesn't tell you anything about the standard deviation
   ** How is this different than ANOVA? **
 * Welch's t-test
@@ -102,13 +108,13 @@ Two Independent Samples0
   - Null Hypothesis: Differences are symmmetric about 0
   - Test statistic: Sum of the ranks of positive differences
 
-  1. Using abs val of differeneces, order from smallest to largest
+  1. Using abs val of differences, order from smallest to largest
   2. Drop zeros
   3. Rank abs values from smallest to largest. Ties are averaged.
   3. sum ranks where differences are positive
-    - Under null we expect the test stiastic to be about n(n+1)/4
+    - Under null we expect the test statistic to be about n(n+1)/4
 
-The power of a test is the probability that we will reject the null if the null is false. Typically we fix the significant level (alpa) and do what we can to maximize the power.
+The power of a test is the probability that we will reject the null if the null is false. Typically we fix the significant level (alpha) and do what we can to maximize the power.
 
 Using fewer assumptions often come with a decrease in power. 
 

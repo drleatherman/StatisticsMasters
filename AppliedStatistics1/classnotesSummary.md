@@ -22,7 +22,7 @@
 
 **Individual Error Rate**: the probability of incorrectly rejecting the null hypothesis in a single test, alpha.
 
-**Familywise (or experimentwise) error rate**: the probability of incorrectly rejecting at least one null hypothesis in a family of tests. General strategy is to reduce individual alphas so that when conducting familywise tests, the overall alpha will be 0.05.
+**Family-wise (or experiment-wise) error rate**: the probability of incorrectly rejecting at least one null hypothesis in a family of tests. General strategy is to reduce individual alphas so that when conducting family-wise tests, the overall alpha will be 0.05.
 
 
 # **Tests**
@@ -70,7 +70,7 @@ Null: difference in pop means is zero
 
 ### Randomization Test
 * Used for experiments to randomize the subjects since experiments are **not** random samples
-* Usually sample averages but could be variance, skewness (kurtosis), or an induced fixed additive change in response
+* Usually sample averages but could be variance, skewn (kurtosis), or an induced fixed additive change in response
 
 Null: no difference between treatments 
 
@@ -84,7 +84,7 @@ Null: no difference between treatments
 Hope to see that the variance between the groups is significantly different than variance within the groups.
 Comparing different sources of variation.
 
-### 1-way ANOVA
+### One-way ANOVA
 
 Common starting point for multiple group analysis but rarely directly answers the question of interest. If we know at least one will be different, then One Way ANOVA is not necessary.
 
@@ -114,11 +114,11 @@ Square Root of MSE: Pooled Std Dev.
   * Residuals by group
   * Res. against fitted means
   * Res. Against other vars (like time)
-  * Summary statistics. Boxplots and Residual points are helpful in understanding whether or not the data is normal.
+  * Summary statistics. Box-plots and Residual points are helpful in understanding whether or not the data is normal.
 5. Test for Assumptions based on Residuals
 
 #### Multiple Comparisons
-* Control the familywise error rate and confidence level when running multiple tests
+* Control the family-wise error rate and confidence level when running multiple tests
 
 When number of Tests Increase 
   * increase p-value (adjusted p-values) OR decrease significance level
@@ -129,7 +129,7 @@ When comparing two groups that are comprised of multiple groups, ensure Coeffeci
 SE_multComp = pool.stdev * sqrt(sum(C_i^2/n_i)) where i is the group
 
 
-##### Familywise comparisons
+##### Family-Wise comparisons
 
 Always 
   * figure out your comparisons prior to collecting data
@@ -149,7 +149,7 @@ Always
 * Best when examining for linear combos that give the smallest p-value and not doing pairwise comparisons
 
 **Bonferroni**: alpha = .05 / k * 2 where k is the number of comparisons
-* guarantees familywise error rate is at most 5%
+* guarantees family-wise error rate is at most 5%
 
 ### Regression ANOVA
 
@@ -290,7 +290,7 @@ SE_pred = sigma_hat * sqrt(1 + (1 / n) + ((x0 - xbar)^2 / (n - 1) * var(X)))
 
 **Least Squares Lines**: Lines that give the least possible sum of squared residuals = MVUE (Minimum Variance Unbiased Estimator) of line
 
-**Consistent Estimator**: lim n-> inf (var(theata) = 0)
+**Consistent Estimator**: lim n-> inf (var(theta) = 0)
 
 **R-squared**: Measures the proportion of variation in the response that is explained by the regression model for the mean. Between 0 (implies slope = 0) and 1 (perfect fit)
 
@@ -298,9 +298,9 @@ SE_pred = sigma_hat * sqrt(1 + (1 / n) + ((x0 - xbar)^2 / (n - 1) * var(X)))
 
 
 ### Assumptions
-* Normal subpopulation distribution of each value of X
+* Normal sub-population distribution of each value of X
 * Means fall on a straight line - linear relationship
-* Each subpopulation has the same standard deviation
+* Each sub-population has the same standard deviation
 * Independent observations
 
 ### Inference
@@ -309,7 +309,7 @@ SE_pred = sigma_hat * sqrt(1 + (1 / n) + ((x0 - xbar)^2 / (n - 1) * var(X)))
 2. Inference about mean response at a given value of X
   * Uncertainty comes from sampling error in both params
 3. Prediction of a new response at a given value of X
-  * Uncertainty comes from sampling error in both params and variability in subpopulations
+  * Uncertainty comes from sampling error in both params and variability in sub-populations
 
 ### Procedure
 1. Plot response against explanatory - create a scatterplot

@@ -83,7 +83,7 @@ and be willing to make adjustments as you go
 
 **Repeated Measure**: A special kind of multivariate response where the same variable is measured several times on each sampling or experimental unit. Unlike Replicates which are multiple experimental at each combo of treatments
 
-**Longitudinal Studies**: Response measured on each unit at multiple times. Units randomized to treatmeents at start
+**Longitudinal Studies**: Response measured on each unit at multiple times. Units randomized to treatments at start
 
 **Crossover Experiments**: Response measure on each unit after each treatment
 
@@ -92,18 +92,19 @@ and be willing to make adjustments as you go
 
 Definition: A single response as a linear function of a single explanatory variable
 
-$\mu${Y | X} = $\beta_0$ + $\beta_1$X
+$\mu_{Y | X} = \beta_0 + \beta_1 X$
 
 ## Multiple Linear Regression (MLR)
 
-Definition: A single response as a linear function of many explanatory variables (plus some assumptions)
+**Definition**: A single response as a linear function of many explanatory variables (plus some assumptions)
 
-An understanding of MLR can be extended to other model types
-    - Mixed/Hierarchical Models - $\beta$'s aren't fixed numbers but have distributions 
-    - Quantile Regression - modeling for a quantile (0-1) instead of a mean
-    - Generalized Linear Models (GLM) - Possion, Logistic Regression: subpopulations aren't normal. Instead a parameter of their distribution is modeled (i.e. Lambda in a Poisson Distribution)
-    - Lasso and Ridge Regression - estimate $\beta$'s in a way that penalizes them for being big
-    - Generalized Additive Models - non-linear left hand side of the equation plus penalization. Smooths response along locations
+An understanding of MLR can be extended to other model types:
+
+    - Mixed/Hierarchical Models:  $\beta$'s aren't fixed numbers but have distributions 
+    - Quantile Regression:  modeling for a quantile (0-1) instead of a mean
+    - Generalized Linear Models (GLM) e.g. Poisson, Logistic Regression: subpopulations aren't normal. Instead a parameter of their distribution is modeled (i.e. Lambda in a Poisson Distribution)
+    - Lasso and Ridge Regression: estimate $\beta$'s in a way that penalizes them for being big
+    - Generalized Additive Models: non-linear left hand side of the equation plus penalization. Smooths response along locations
 
 ### Coefficients
 
@@ -157,10 +158,12 @@ Occam's Razor: Sometimes the simplest explanation is the best.
 ### Transformations
 
 **Given**: 
+
 1. Scatterplot Funnels **and** observations are positive. 
 2. Data is right-skewed **and** observations are positive.
 
 **When**: 
+
 1. Residuals are graphed
 2. Summary Scatterplots are graphed
 
@@ -176,14 +179,16 @@ Occam's Razor: Sometimes the simplest explanation is the best.
 3. Observations are independent
 
 $H_0$: $\beta_1$ = 0 (Reduced Model)
+
 $H_A$: $\beta_1$ != 0
 
 How different is the Full model from the reduced model? Most F-tests in class are some form of an Extra Sum of Squares which compares a Full and Reduced model.
 
 Extra Sum of Squares = ESS = $SS_R$ - $SS_F$
+
 p = # of params
 
-F-Statistic = (ESS / p) / $\hat{sigma}^2_F$
+F-Statistic = (ESS / p) / $\hat{\sigma}^2_F$
 
 ### Other Statistics
 
@@ -193,9 +198,11 @@ Proportion of variance in the response explained by explanatory variables. Addin
 
 Adjusted R^2 increases as additional variables explain more variance than expected by chance. It may penalize you for adding in a bad field.
 
-R^2 = 1 - RSS / TotalSS
+$R^2$ = 1 - RSS / TotalSS
+
 p = # of estimated parameters
-Adj R^2 = 1 - ((RSS/n) - p) / (TotalSS/n - 1)
+
+Adj $R^2$ = 1 - ((RSS/n) - p) / (TotalSS/n - 1)
 
 ### Indicators
 
@@ -208,6 +215,7 @@ In $\beta_0$ + $\beta_1$X, $\beta_1$ is the difference between X = 1 and X = 0. 
 With K categories, you need K - 1 indicator variables. The category without an indicator variable **becomes** the baseline category.
 
 **Variable Notation**
+
 - Indicator = CAPITALIZED
 - Continuous = CamelCase
 
@@ -215,7 +223,7 @@ A regression with a single indicator variable is a **Two-Sample T-Test**.
 
 ### Outliers and Influencers
 
-An observation is said to be influential if the fitted model depends unduly on its value. For example, removing it changes the estimate of parameters greatly, changes conclusions, or changes which terms are indluded in the model. Least squares estimators are not robust to outliers. Identify outliers early on so you don't end up tailoring a model to fit a few unusual observations.
+An observation is said to be influential if the fitted model depends unduly on its value. For example, removing it changes the estimate of parameters greatly, changes conclusions, or changes which terms are included in the model. Least squares estimators are not robust to outliers. Identify outliers early on so you don't end up tailoring a model to fit a few unusual observations.
 
 **Note**: Outliers tend to be influential but not always.
 
@@ -223,8 +231,8 @@ An observation is said to be influential if the fitted model depends unduly on i
 
 Measures the distance of the observation from the average explanatory values (after taking correlation in account). Leverage values are the diagonal values of the Hat Matrix
 
-* High leverage = unusual combination of explanatory values = possibility to be influential
-* Typically on the extreme of X's for SLR - indicates a case occupies a position in the X-space that is not densely populated
+- High leverage = unusual combination of explanatory values = possibility to be influential
+- Typically on the extreme of X's for SLR - indicates a case occupies a position in the X-space that is not densely populated
 
 Considered possibility to be influential if
 
@@ -237,19 +245,17 @@ where
 
 Residual divided by its expected variation with the expected variation being a mix of MSE and leverage.
 
-* High Studentized Residual = observation far from the fitted line
+- High Studentized Residual = observation far from the fitted line
 
-Considered potential outlier if 
-- abs(studres_i) > 2 (some people say 3 per the empirical rule)
+Considered potential outlier if $abs(studres_i) > 2$ (some people say 3 per the empirical rule)
 
 #### Cook's Distance $D_i$
 
 Effect on estimated parameters when the observation is dropped out. In other words, the effect on the regression model when the ith case is moved.
 
-* High Cook's distance = influential on parameter estimates = changes regression estimates
+- High Cook's distance = influential on parameter estimates = changes regression estimates
 
-Considered influential if 
-- D_i > 1
+Considered influential if $D_i > 1$
 
 #### Partial Residuals
 
@@ -257,7 +263,7 @@ Sometimes you want to look at the relationship between an explanatory variable a
 
 Residual = Obs - $\hat{mu}$
 
-Partial = Obs - (rest of parameters. i.e b_0 + b_1 * explanatoryVar)
+Partial = Obs - (rest of parameters. i.e $b_0 + b_1 * explanatoryVar$)
 
 
 ## Two-Way ANOVA
@@ -267,6 +273,7 @@ Partial = Obs - (rest of parameters. i.e b_0 + b_1 * explanatoryVar)
 - 1 grouping variable with many levels
 
 $H_0$: All means are the same (Reduced Model)
+
 $H_A$: At least one mean is different (Full Model)
 
 #### Example
@@ -320,8 +327,9 @@ HSD.test(lm.add.log, "Sign", console=T)
 ```
 
 
-Type 1 SS: Sequential SS (variables enter the model in order listed)
-Type 3 SS: Marginal SS (What happens if variable in question is the last variable entering the model)
+**Type 1 SS**: Sequential SS (variables enter the model in order listed)
+
+**Type 3 SS**: Marginal SS (What happens if variable in question is the last variable entering the model)
 
 If the design is balanced, both are the same.
 
@@ -351,6 +359,7 @@ If the design is balanced, both are the same.
 - Treat numerical factors as continuous, not categorical
 
 Without replicates we rely on our model being adequate & using the residuals to estimate variance
+
 - The deviation from each observation is used to estimate the variance of a group
 - If saturated model is fitted, there are no degrees of freedom left for estimation (its considered a perfect fit) and thus it is overfit
 
@@ -361,30 +370,34 @@ Process of taking a large number of explanatory variables and selecting only a f
 Strategy: find a subset of good models, then restrict attention to those that follow good practice.
 
 Concepts
-* There are different approaches
-* Compare models with model selection criteria
+
+- There are different approaches
+- Compare models with model selection criteria
     - AIC
     - BIC
-* Generally a few good models are considered, not just the "best model"
+- Generally a few good models are considered, not just the "best model"
 
 Problems
-* Can't trust inference after variable selection
+
+- Can't trust inference after variable selection
     - Why? Because we only include significant variables
-* Model selection criteria are subject to variability
+- Model selection criteria are subject to variability
 
 Legitimate uses
-* Adjust for a large set of explanatory variables
+
+- Adjust for a large set of explanatory variables
     - Large # of variables to account for but not of direct interest. Do variable selection on just these variables
-* Prediction
+- Prediction
     - Want a simple model purely to predict mean response. Do not care about interpreting results
 
-Illegitimates Uses
-* Fishing for explanations
+Illegitimate Uses
+
+- Fishing for explanations
     - Which variables are important? Variable selection will not uncover some "true" model. The best model in one sample wont often be the best in another
-* Interpretation of included variables is dangerous
+- Interpretation of included variables is dangerous
     - Inclusion depends on what other variables are being considered (particularly if they are correlated)
 
-### Stepwise Methods
+### Step-wise Methods
 
 Add or Remove one variable at a time. Only looks at a subset of all possible models.
 
@@ -405,26 +418,28 @@ If different, we want to balance smaller RSS with fewer parameters
 ### Common model selection criteria
 
 **Guiding Principles**
-* Models shouldn't include quadratic terms if they don't include the linear one
-* Models shouldn't include interaction terms if they don't include the main effects
-* Lowest number of parameters for Mallow C_p and lowest BIC ideal
-* AIC/BIC contain some measure of variation in the model which assigns a penalty to worthless variables
+
+- Models shouldn't include quadratic terms if they don't include the linear one
+- Models shouldn't include interaction terms if they don't include the main effects
+- Lowest number of parameters for Mallow C_p and lowest BIC ideal
+- AIC/BIC contain some measure of variation in the model which assigns a penalty to worthless variables
 
 #### Mallows' C_p stat
 
-$C_p$ = (RSS / Var_full) - n + 2p
+$C_p = \frac{RSS}{Var_{full}} - n + 2p$
 
-if $C_p$ < P, then model potentially will have no problems with bias as long as the full model has none.
+if $C_p < P$, then model potentially will have no problems with bias as long as the full model has none.
 
 #### Bayesian Information Criterion (BIC)
 
-BIC = n * log(RSS / n) + log(n) * (p + 1)
-* smaller the value, the better the fit (includes negative value. we want larger negative values)
-* R's BIC function uses a different formula
+BIC = $n log(\frac{RSS}{n}) + log(n) (p + 1)$
+
+- smaller the value, the better the fit (includes negative value. we want larger negative values)
+- R's BIC function uses a different formula
 
 #### Akaike Information Criterion (AIC)
 
-AIC = n * log(RSS / n) + 2 * (p + 1)
+$AIC = n log(\frac{RSS}{n}) + 2 (p + 1)$
 
 * smaller the better
 * R's AIC function also uses a different formula
@@ -437,8 +452,10 @@ Multiple predictors that are highly correlated with each other. Tends to inflate
 When including quadratic terms in a model, center the quadratic terms to remove correlation with linear terms.
 
 #### Centering a variable
-- Polynomial - s^2 => (s - mean(s))^2
-- Interaction - a*s => (a - mean(a))(s - mean(s))
+
+Polynomial: $s^2 \to (s - mean(s))^2$
+
+Interaction:  $as \to (a - mean(a))(s - mean(s))$
 
 
 ## Time Series Analysis
@@ -452,28 +469,31 @@ Often when measurements are made at a adjacent points, there is a correlation
 Can adjust for skewness by centering
 Run: Number of consecutive observations above or below the mean. Easier to visualize graphically
 
-Positive Serial Correlation
-* an observation on one side of the mean tends to be followed by another observation on the same side of the mean
-* makes actual SE much larger
+**Positive Serial Correlation**
 
+- an observation on one side of the mean tends to be followed by another observation on the same side of the mean
+- makes actual SE much larger
 Negative serial correlation:
-* an observation on one side of the mean tends to be followed by another observation on the opposide side of the mean
+- an observation on one side of the mean tends to be followed by another observation on the opposite side of the mean
 
 **Two Solutions**
+
 1. Adjust SE to be more appropriate
 2. Filter variables to remove correlation
 
 For both, you need to estimate the extent of the correlation (and make an assumption about its structure)
 
 More advanced methods explicitly model the correlation
-* Time series analysis
-* Longitudinal data (Panel data in economics)
+
+- Time series analysis
+- Longitudinal data (Panel data in economics)
 
 Adjusted SE on the sample average where r1 is the first serial correlation coeffcient. Appropriate under the autoregressive model of order 1, denoted as AR(1)
-* series is measured at equally spaced times
-* let v be the long run series mean, then mean{Y_t - v | past history} =...
 
-$SE_{\bar{y}}$ = sqrt((1 + r1)/(1 - r1)) * s / sqrt(n)
+- series is measured at equally spaced times
+- let v be the long run series mean, then mean{Y_t - v | past history} =...
+
+$SE_{\bar{y}} = \sqrt{\frac{1 + r1}{1 - r1}} * \frac{s}{\sqrt n}$
 
 ** Used for two-sample T's or ANOVA where we need to account for serial correlation
 
@@ -494,31 +514,29 @@ Is AR(1) Model adequate? - Primary tool is the PACF (Partial Autocorrelation fun
 Z = r1 * sqrt(n)
 
 If there is no serial correlation, Z has a normal distr.
-* only appropriate when n > 100
+
+*only appropriate when n > 100*
 
 ##### Runs Test
 * Count how many runs there are and compare to how many we would expect by chance alone with no serial correlation
 * Simple non-parametric test
 
-## Multivarite Analysis
+## Multivariate Analysis
 
 Instead of a single value, the outcome (or response) is a vector of values.
 
-A Repeated Measure is a special kind of multivariate response where the same variable is measured several times on each sampling or experimental unit. This is different from a replcates which are multiple responses measured at each experimental unit.
+A Repeated Measure is a special kind of multivariate response where the same variable is measured several times on each sampling or experimental unit. This is different from a replicates which are multiple responses measured at each experimental unit.
 
 ### Strategies
 
 1. Single univariate analysis on a summary of the multivariate response
-* average, min, max, slope, etc
-
+- average, min, max, slope, etc
 2. Separate univariate analyses on several summaries
-* only if uncorrelated and don't need to adjust for making many comparisons (i.e. Bonferroni)
-
+- only if uncorrelated and don't need to adjust for making many comparisons (i.e. Bonferroni)
 3. Multivariate analysis on several summaries
-* Hotelling's T^2 - multivariate T-Test. mean vector of $\mu_1$ == mean vector of $\mu_2$
-
+- Hotelling's T^2 - multivariate T-Test. mean vector of $\mu_1$ == mean vector of $\mu_2$
 4. Treat subject (units) as a factor
-* If multiple measurements on one individual are independent (i.e. chimpanzee & signs study)
+- If multiple measurements on one individual are independent (i.e. chimpanzee & signs study)
 
 ### Hotelling's T^2
 
@@ -529,15 +547,14 @@ For correlated response variables, the confidence region may be an ellipse which
 Hotelling's T^2 Adjustment adjusts the univariate confidence intervals to conservatively approximate the ellipse
 Hotelling's T^2 statistic provides a joint test for both parameters at once
 
-T^2 = (t_1^2 + t_2^2 - 2 * r * t_1 * t_2 ) / 1 - r^2
+$T^2 = (t_1^2 + t_2^2 - 2 * r * t_1 * t_2 ) / 1 - r^2$
 
-where r is the sample correlation between the two responses, and t_n is the sample t-statistic
+where r is the sample correlation between the two responses, and $t_n$ is the sample t-statistic
 
 
-T^2 can be transformed into an F distribution
+$T^2$ can be transformed into an F distribution
 
-F = ((n_1 + n_2 - 3) / (2 * (n_1 + n_2 - 2))) * T^2
-- 2 and n_1 + n_2 - 3 DF
+$F = (\frac{n_1 + n_2 - 3}{2 * (n_1 + n_2 - 2)} T^2 - 2$ and $n_1 + n_2 - 3$ DF
 
 $H_0$: the difference in means between all group comparisons is 0
 
@@ -548,7 +565,7 @@ Per typical C.I.
 
 estimate +- multiplier * SE
 
-multiplier = sqrt((2 * (n - 1) / (n - 2)) * qf(.95, 2, n- 2)
+multiplier = $\sqrt{2 \frac{n - 1}{n - 2}} \times qf(.95, 2, n- 2)$
 
 ### Box's M-Test
 
