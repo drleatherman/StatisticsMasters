@@ -2,102 +2,6 @@
 #+AUTHOR:    Dustin Leatherman
 #+EMAIL:     rahlord1391@gmail.com
 
-* Topics
-
-- Multivariate Analysis
-  - Reduction Methods
-    - Principle Component Analysis (PCA)
-      - Goal
-      - Usage
-      - Assumptions
-      - Determining Coefficients
-      - Properties
-      - Retaining Components
-      - Interpretation
-    - Canonical Correlation Analysis
-      - Goal
-      - Usage
-      - Assumptions
-      - Interpretation
-  - Discriminant Function Analysis
-    - Goal
-    - Usage
-    - Assumptions
-    - Determining Coefficients
-    - Tests of Significance
-  - Classification Analysis
-    - Assumptions
-    - Usage
-    - Error Rates
-      - Estimation
-    - Nearest Neighbor Classification Rule (KNN)
-  - Cluster Analysis
-    - Goal
-    - Usage
-    - Assumptions
-    - Types
-      - Hierarchical
-        - Linkage Methods
-        - Standardization
-      - Partitioning
-        - K-means Clustering
-        - Wards method
-        - K-Medoids
-      - Model-based
-  - Multi-Dimensional Scaling
-    - Classical MD Scaling
-      - Goal
-  - Correspondence Analysis
-    - Interpretation
-- Odds & Odds Ratio
-  - properties
-  - Sampling Distribution of the Log-estimated Odds Ratio
-- 2 X 2 Counts
-  - Tests of Homogeneity
-  - Tests of Independence
-  - Sampling Schemes
-- Chi-squared Test
-  - Mantel-Haenszel
-  - R x C
-- Fisher's Exact Test
-  - Mantel-Haenszel Excess
-    - Assumptions
-- Generalized Linear Models
-  - Types
-- Logistic Regression
-  - Maximum Likelihood Estimation (MLE)
-    - Properties
-  - Likelihood Ratio Test / Drop-in-Deviance Test
-  - Probit Regression
-  - Model Assessment
-  - Binomial Responses
-    - Model Assessment
-    - Extra Binomial Variation (Over dispersion)
-      - Determining existence
-      - Estimating $\psi$
-  - Multilevel Categorical Responses
-    - Ordinal Categorical Responses
-- Log-Linear Models (Poisson Regression)
-  - Characteristics
-  - Interpretation
-  - Model Assessment
-  - Extra Poisson Variation (Over dispersion)
-    - Checking for Over dispersion
-- Negative Binomial Regression
-- Experiment Design
-  - Studies
-    - Prospective
-    - Retrospective
-    - Matched Case-Control studies
-  - Research Design Tool Kit
-    - Improving Confidence Intervals
-    - Choosing a Sample Size
-      - Studies comparing 2 proportions
-  - Designing a Study
-  - Factorial Design
-    - 2\^2
-    - 2\^3
-    - 2\^k
 
 * Multivariate Analysis
 ** Reduction Methods
@@ -182,8 +86,10 @@ interrelated.
 
 *** Canonical Correlation Analysis
 
-Start with two sets of variables: 1. A set of response variables - y1,
-y2, ..., yq 2. A set of explanatory variables - x1, x2, ..., xq
+Start with two sets of variables:
+
+1. A set of response variables: $y_1, y_2, ..., y_q$
+2. A set of explanatory variables: $x_1, x_2, ..., x_p$
 
 **** Goal
 
@@ -195,7 +101,7 @@ $$
    V = \sum_{i = 1}^p b_i x_i
 $$
 
-Find coefficients $a_1, a2_, ..., a_q$ and $b_1, b_2, ..., b_q$ that maximize the
+Find coefficients $a_1, a_2, ..., a_p$ and $b_1, b_2, ..., b_q$ that maximize the
 correlation between U and V.
 
 These are called canonical variates which are essentially linear
@@ -244,14 +150,14 @@ prediction from the canonical analysis,
 
 Low p-values indicate significance of a correlation. In an example with
 4 canonical correlations:
-- CV_1: $H_0: \rho_1 = \rho_2 = \rho_3 = \rho_4 = 0
-- CV_2: $H_0: \rho_2 = \rho_3 = \rho_4 = 0$
-- CV_3: $H_0: \rho_3 = \rho_4 = 0$
-- CV_4: $H_0: \rho_4 = 0$
+- $CV_1: H_0: \rho_1 = \rho_2 = \rho_3 = \rho_4 = 0$
+- $CV_2: H_0: \rho_2 = \rho_3 = \rho_4 = 0$
+- $CV_3: H_0: \rho_3 = \rho_4 = 0$
+- $CV_4: H_0: \rho_4 = 0$
 
-**** Discriminant Function Analysis (DFA)
+*** Discriminant Function Analysis (DFA)
 
-***** Goal
+**** Goal
 
 Classify a subject or unit into two or more groups based on info
 collected on independent variables. Groups *must* be clearly defined.
@@ -259,7 +165,7 @@ collected on independent variables. Groups *must* be clearly defined.
 How likely is a subject in ${group}_j$ based on the basis of a set of
 quantitative variables?
 
-***** Usage
+**** Usage
 
 Come up with a single set of coefficients to apply to all groups *then*
 Construct linear combinations of these variables and use them to
@@ -270,36 +176,94 @@ Distribution between groups?
 - Yes: parametric methods (linear or quadratic DFA )
 - No: non-parametric method
 
-***** Assumptions
+**** Assumptions
 - Equal Spread
 - Some Assume Normality
 
-***** Determining Coefficients
-- Maximize separation between two groups *Mahalanobi's distance*
+**** Determining Coefficients
+
+*Transform Vectors to Scalars*
+
+For $j = 1, ..., n_1$:
+
+\begin{equation}
+\begin{split}
+z_{1j} = & a^T y_{1j}\\
+= & a_1 y_{1j1} + a_2 y_{1j2} + ... + a_p y_{1jp}
+\end{split}
+\end{equation}
+
+For $j = 1, ..., n_2$:
+
+\begin{equation}
+\begin{split}
+z_{2j} = & a^T y_{2j}\\
+= & a_1 y_{2j1} + a_2 y_{2j2} + ... + a_p y_{2jp}
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+\bar z_1 = & \frac{\sum_{j = 1}^{n_1} z_{1j}}{n_1} = a^T \bar y_1\\
+= & \sum_{i = 1}^{p} a_i \bar y_{1i}\\
+\bar z_2 = & \frac{\sum_{j = 1}^{n_2} z_{2j}}{n_2} = a^T \bar y_2\\
+= & \sum_{i = 1}^{p} a_i \bar y_{2i}\\
+\end{split}
+\end{equation}
+
+
+$$
+s_z^2 = a^T S_{pl} a
+$$
+
+$S_{pl} = \frac{1}{n_1 + n_2 - 2} [(n_1 - 1)S_1 +(n_2 - 1)S_2]$ (pooled variance)
+
+*Maximize separation between two groups using Mahalanobi's distance*
+
+$$
+\frac{(\bar z_1 - \bar z_2)^2}{s_z^2} = \frac{[a^T (\bar y_1 - \bar y_2)]^2}{a^T S_{pl} a}
+$$
+
+Note that $a \propto S_{pl}^{-1} (\bar y_1 - \bar y_2)$
+
+
+Thus,
 
 $$
 D^2 = \frac{(\bar{z_1} - \bar{z_2})^2} {s^2_z} = (\bar{y_1} - \bar{y_2})^TS_{pl}^{-1}(\bar{y_1} - \bar{y_2}) 
 $$
 
+
+
 Multi-dimensional generalization of measuring how many std devs away
 from a point is the mean (or centroid) of the distribution (Like a
 Z-score).
 
-Scalings from LDF are not the same as
+
+In a multivariate setting, $S$ is the covariance matrix.
+
+If $S$ is the identity matrix, Mahalanobis distance reduces to /euclidean distance/. If $S$ is diagonal, then the distance measure is called the /Standardized Euclidean Distance/:
+
+$$
+D(x,y)^2 = \sum_{i = 1}^{n} \frac{(x_i - y_i)^2}{s_i^2}
+$$
+
+where $s_i$ is the standard deviation between X and Y in the sample set.
+
+Scalings from Linear Discriminant Functions (LDF) are not the same as
 $A^T = S_{pl}^{-1}(\bar{y_1} - \bar{y_2})$
 
-**** K Groups
+*** K Groups
 
-***** Goal
+**** Goal
 
 Find a vector $A$ that maximizes separation between
 $[\bar{z_1},\bar{z_k}]$
 
-***** Usage
+**** Usage
 
 *How?*
-- Replace $(\bar{y_1} - \bar{y_2})^T$ with the $H$ matrix from
-MANOVA
+- Replace $(\bar{y_1} - \bar{y_2})^T$ with the $H$ matrix from MANOVA
 - Replace $S_{pl}$ with $E$ matrix
 
 H indicates spread between groups E indicates spread within each group
@@ -333,7 +297,10 @@ R:
 - Find the eigenvector b of the matrix $(U^{-1})^THU^{-1}$
 - $a = U^{-1}b$ is an eigenvector of $E^{-1}H$
 
-**** Tests of Significance
+  #+begin_quote
+Cholesky decomposition: Decomposition of a matrix into a LL^* where L is a Lower Triangular Matrix and L^* is the conjugate transpose of L. $A = LL^*$
+  #+end_quote
+*** Tests of Significance
 
 - Two Group Case
   - Use Hotellings $T^2$ to test $H_0: a = 0$
@@ -504,8 +471,7 @@ criterion in general.
 
 *Pros*
 - Accepts a dissimilarity matrix as well as raw data matrix
-- Generates silhouttes for K-clusters so don't need to decide K ahead of
-time
+- Generates silhouttes for K-clusters so don't need to decide K ahead of time
 
 *Cons*
 - Computationally infeasible for n > 5000.
@@ -666,7 +632,7 @@ Used for Tests of *homogeneity*
 
 *** Hypergeometric Probability Distribution
 
-If interest is stricly focused on the odds ratio, analysis may be
+If interest is strictly focused on the odds ratio, analysis may be
 conducted conditionally on the row and column totals
 
 *Both row and column totals are fixed*
@@ -694,8 +660,8 @@ If $H_0$ is true, then the chi-square test approximates $\chi^2$ with df
 
 ** Chi-Squared Test of Independence in an R X C Table
 
-When H0 is true, sampling distribution of $\chi^2$ has an approximate
-$\chi^2$ distribution with (r - 1) X (c - 1) df where r is the number of
+When $H_0$ is true, sampling distribution of $\chi^2$ has an approximate
+$\chi^2$ distribution with $(r - 1)(c - 1)$ df where r is the number of
 rows and c is number of columns.
 
 *** Limitations
@@ -718,7 +684,13 @@ sample value
 
 $M^2 = (n - 1)r^2$
 
-$H_0: \rho = 1$ $H_A: \rho \neq 1$
+\begin{equation}
+\begin{split}
+H_0: & \rho = 1\\
+H_A: & \rho \neq 1
+\end{split}
+\end{equation}
+
 
 Sampling Distribution of $M^2 \approx \chi^2$ with df = 1 under $H_0$
 
@@ -741,9 +713,8 @@ odds, or independence
 Excess of $n_{11} = n_{11} - \frac{R_1 C_1}{T}$
 
 Under $H_0$:
-
-- E(Excess) = 0
-- Var(Excess) = $\frac{R_1 R_2 C_1 C_2}{TT(T - 1)}$
+    - E(Excess) = 0
+    - Var(Excess) = $\frac{R_1 R_2 C_1 C_2}{TT(T - 1)}$
 
 For a 2 x 2 table of counts, excess is an approximation of Fisher's
 Exact Test.
@@ -811,7 +782,7 @@ odds of success = $\pi$
 
 * Logistic Regression
 
-*Logistic Function*: Inverse of the Logit function
+*Expit Function*: Inverse of the Logit function
 
 $$
     \pi = \frac{e^{\eta}}{1 + e^{\eta}}
@@ -872,14 +843,14 @@ Analogous to Extra Sum of Squares F-Test in Linear Regression. Compares
 a full model to a reduced model. When $H_0$ is true, the reduced model
 is the correct model.
 
-$LRT \approx \chi^2(\nu)$ where $\nu$ = diff(num\_param\_full,
-num\_param\_reduced). With GLMs, a quantity called Deviance is used.
+$LRT \approx \chi^2(\nu)$ where $\nu$ = diff(num_param_full,
+num_param_reduced). With GLMs, a quantity called Deviance is used.
 
 LMAX = Maximum Likelihood Function
 
 Deviance = Sum of Squared Residuals = $-2  log(LMAX)$
 
-$LRT = 2 log(LM$AX_full}) - 2 log(LMAX_{reduced}) = Deviance_{full} - Deviance_{reduced}$$
+$$LRT = 2 log(LMAX_{full}) - 2 log(LMAX_{reduced}) = Deviance_{full} - Deviance_{reduced}$$
 
 To test significance of single term, DinD test between full model and full model minus a single term. This is not the same as Wald's test
 for a single coefficient. If the two give different results, DinD has a
@@ -898,7 +869,9 @@ more reliable p-value.
 
 *AIC / BIC*
 
-$AIC = deviance + log(n)p BIC = deviance + 2p$
+$AIC = deviance + log(n)p$
+
+$BIC = deviance + 2p$
 
 ** Probit Regression
 
@@ -906,6 +879,10 @@ Any cumulative distribution function $F(\pi)$ has characteristics
 similar to the logit function. Typically, $F(\pi)$ is chosen to be the
 inverse of the Normal CDF. As long as $\pi:[0.2,0.8]$, it is similar to
 logistic regression.
+
+#+begin_quote
+It is up to personal preference whether to use A Probit or Logit link.
+#+end_quote
 
 ** Binomial Responses
 
@@ -923,15 +900,16 @@ $Y_i \approx Bin(m_i, \pi_i)$
 *** Examining Residuals
 
 *Deviance Residual*: sum of all n squared deviance residuals = deviance
-statistic. This measures discrepency in the likelihood function to the
+statistic. This measures discrepancy in the likelihood function to the
 fit of the model at each observation.
+
 
 *Pearson Residual*: Observed Binomial Response variable minus estimated
 mean, divided by estimated std dev. (like Z Score). Roughly mean = 0 and
 var = 1.
 
 With at least 5 trials in any binomial response, then any residual
-greater than 2 in magnitude may be a possible outlier. No discernable
+greater than 2 in magnitude may be a possible outlier. No discernible
 pattern indicates the error terms are normal
 
 *** Extra Binomial Variation (Over dispersion)
@@ -947,7 +925,7 @@ small p-values, narrow C.I., and mistaken interpretations.
 The *quasi-likelihood approach* assumes a relationship between mean and
 Var(Y) rather than a specific probability distribution for Y. The
 variance formula is multiplied by an estimated constant $\psi$.
-$\psi \gt 1$ indicates overdispersion.
+$\psi > 1$ indicates overdispersion.
 
 It does not affect regression coefficients but it affects standard
 errors.
@@ -978,7 +956,7 @@ Multicategory logit models simultaneously use all pairs of categories by
 specifying the odds of outcome in one category instead of another.
 
 $$
-    \log(\frac{\pi_a}{\pi_b}) = \log(\frac{\frac{\pi_a}{\pi_J}}{\frac{\pi_b}{\pi_J}}) = \log(\frac{\pi_a}{\pi_J}) - \log(\frac{\pi_b}{\pi_J}) \newline
+    \log \left( \frac{\pi_a}{\pi_b} \right) = \log \left( \frac{\frac{\pi_a}{\pi_J}}{\frac{\pi_b}{\pi_J}} \right) = \log \left( \frac{\pi_a}{\pi_J} \right) - \log \left( \frac{\pi_b}{\pi_J} \right) \newline
     = (\beta_{0a} + \beta_{1a}x) - (\beta_{0b} + \beta_{1b}x) \newline
     = (\beta_{0a} - \beta_{0b}) + (\beta_{1a} - \beta_{1b})x
 $$
@@ -991,9 +969,9 @@ that a value $Y$ falls below a category $J$. It looks like a binary
 logistic regression model.
 
 $$
-    logit[Pr{Y \leq j}] \newline 
-    = \log[\frac{Pr{Y \leq j}}{1 - Pr(Y \leq j)}] \newline 
-    = \log[\frac{\sum_{i = 1}^j \pi_i}{\sum_{l = j + 1}^J\pi_l}] \newline
+    logit \left[ Pr{Y \leq j} \right] \newline 
+    = \log \left[ \frac{Pr{Y \leq j}}{1 - Pr(Y \leq j)} \right] \newline 
+    = \log \left[ \frac{\sum_{i = 1}^j \pi_i}{\sum_{l = j + 1}^J\pi_l} \right ] \newline
     = \beta_{0j} + \beta_1x
 $$
 
@@ -1029,14 +1007,15 @@ logistic regression where $e^{\beta_1}$ gives the odds ratio.
   - Pearson Residual
 - Deviance GoF
 
-If Poisson means are at least 5 (large):
 
- - Distribution of both residuals are approximately Standard Normal
- - If > 5% of residuals exceed 2 in magnitude or if one or two greatly exceed 2, there are problems in the fit
+*If Poisson means are at least 5 (large)*:
 
-If Poisson means < 5 (small):
++ Distribution of both residuals are approximately Standard Normal
++ If > 5% of residuals exceed 2 in magnitude or if one or two greatly exceed 2, there are problems in the fit
 
- - Neither set of residuals follows a normal distribution well thus comparison to standard normal provides a
+*If Poisson means < 5 (small)*:
+
++ Neither set of residuals follows a normal distribution well thus comparison to standard normal provides a
 poor lack of fit
 
 *Deviance GoF Test*: informal assessment of the adequacy of a fitted
@@ -1115,11 +1094,11 @@ variable X and analyzes the XY association.
 Analysis uses *Conditional Likelihood Logistic Regression*. Each subject
 has their own probability distribution.
 $$
-    \log(\frac{\pi_{i1}}{1 - \pi_{i1}}) = \beta_{0i} + \beta_1
+    \log \left( \frac{\pi_{i1}}{1 - \pi_{i1}} \right) = \beta_{0i} + \beta_1
 $$
 
 $$
-    \log(\frac{\pi_{i2}}{1 - \pi_{i2}}) = \beta_{0i}
+    \log \left( \frac{\pi_{i2}}{1 - \pi_{i2}} \right) = \beta_{0i}
 $$
 
 $\beta_{0i}$ allows probabilities to vary among subjects. It can be
@@ -1137,15 +1116,12 @@ interest while the others are controlled covariates.
 
 - Subjects do not know which treatment is being received.
 
-This eliminates the possibility that the end comparison measures
-expectations rather than results
+This eliminates the possibility that the end comparison measures expectations rather than results
 
 *** Blocking
 
-- Arrange units into homogeneous subgroups in which treatments
-are randomly assigned to units in each block
-- Strives to improve precision, control for confounding variables, and expand scope of
-inference about treatment differences
+- Arrange units into homogeneous subgroups in which treatments are randomly assigned to units in each block
+- Strives to improve precision, control for confounding variables, and expand scope of inference about treatment differences
 
 *** Stratification
 
@@ -1161,8 +1137,7 @@ inference about treatment differences
 *** Randomization
 
 - Random Procedure to assign experimental units to different treatment groups
-- Controls for factors not explicitly controlled for in the design or the
-  analysis
+- Controls for factors not explicitly controlled for in the design or the analysis
 - Permits Causal inferences
 - provides a probability model for drawing inferences
 
@@ -1188,14 +1163,13 @@ $$
 $$
 
 -  qt reduced with replication or $\alpha$
--  $s_p$ reduced by blocking, including covariates, or improving
-   measurement technology
+-  $s_p$ reduced by blocking, including covariates, or improving measurement technology
 -  square root term can be reduced by replication or balance
 
 *** Choosing a Sample Size
 
 $$
-    n = 4 \frac{[qt(1 - \alpha/2, n - k)]^2 s_\epsilon^2}{({Practically Significant Difference})^2} (\sum_{i = 1}^k C_i^2)
+    n = 4 \frac{[qt(1 - \alpha/2, n - k)]^2 s_\epsilon^2}{({Practically Significant Difference})^2} \left(\sum_{i = 1}^k C_i^2 \right)
 $$
 
 where $C_k$ is the kth coefficient in a linear combination of means $g$.
