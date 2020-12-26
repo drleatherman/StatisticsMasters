@@ -43,8 +43,8 @@ This occurs when the observed variance is larger than the assumed (theoretical) 
 Exponentiated coefficients are multiplicative analgous to odds ratios but called
 /incidence rate ratios/.
 
-For example, if $e^b = 2$, then rate doubles for each unit change in x. If $e^b
-= 0.5$, then rate halves. If $e^b = 5$ and x decreases, then $\frac{1}{5} = 0.2$
+For example, if $e^b = 2$, then rate doubles for each unit change in b. If $e^b
+= 0.5$, then rate halves. If $e^b = 5$ and b decreases, then $\frac{1}{5} = 0.2$
 
 *** Examples
 - Number of people in line in front of you at the grocery store
@@ -137,9 +137,9 @@ f(y : \theta) = & s(y) t(\theta) e^{a(y) b(\theta)}\\
 
 | Distribution | Natural Parameter          | c                                                       | d                          |
 |--------------+----------------------------+---------------------------------------------------------+----------------------------|
-| Poisson      | log $\theta$               | $- \theta$                                              | $- log y!$                 |
+| Poisson      | log $\theta$               | $- \theta$                                              | $- log(y!)$                |
 | Normal       | $\frac{\mu}{\sigma^2}$     | $\frac{- \mu^2}{2 \sigma^2} - 0.5 log (2 \pi \sigma^2)$ | $- \frac{y^2}{2 \sigma^2}$ |
-| Binomial     | $log(\frac{\pi}{1 - \pi})$ | $n log (1 - \pi)$                                       | $log (n choose y)$         |
+| Binomial     | $log(\frac{\pi}{1 - \pi})$ | $n log (1 - \pi)$                                       | $log (n \choose y)$        |
 
 
 ** Properties
@@ -202,7 +202,7 @@ num of parameters estimating.
 
 \begin{equation}
 \begin{split}
-H_0: & logit(\pi) \alpha + \beta_1 x_1 + ... + \beta_k x_k \ \text{k + 1 parameters}\\
+H_0: & logit(\pi) \alpha + \beta_1 x_1 + ... + \beta_k x_k \ \text{(k + 1 parameters)}\\
 H_A: & \text{Saturated Model (J parameters)}
 \end{split}
 \end{equation}
@@ -344,10 +344,10 @@ Multiple observations for one treatment level *or* the same subject.
 
 *** Examples
 
-| Level 3 | Level 2   | Level 1                                          |
-|---------+-----------+--------------------------------------------------|
-|         | School    | [Student 1, Student 2, Student 3]                |
-|         | Child     | [MeasurementTime 1, MeasurementTime 2]           |
-|         | Rat       | [Treatment A (Region 1), Treatment A (Region 2)] |
-| School  | Classroom | [Student 1, Student 2, ...]                      |
-| School  | Student   | [Score Grade 1, Score Grade 2, ...]              |
+| Level 3 | Level 2   | Level 1                                        |
+|---------+-----------+------------------------------------------------|
+|         | School    | Student 1, Student 2, Student 3                |
+|         | Child     | MeasurementTime 1, MeasurementTime 2           |
+|         | Rat       | Treatment A (Region 1), Treatment A (Region 2) |
+| School  | Classroom | Student 1, Student 2, ...                      |
+| School  | Student   | Score Grade 1, Score Grade 2, ...              |
