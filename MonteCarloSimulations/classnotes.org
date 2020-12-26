@@ -79,7 +79,7 @@ cov(x_1, x_2) = \ & cov(z_1, \sigma_{12} z_1 \pm z_2 \sqrt{1 - \sigma_{12}^2})\\
 \end{split}
 \end{equation}
 
-if $\sigma_{12} \new 0$, x,y are *not* independent
+if $\sigma_{12} \neq 0$, x,y are *not* independent
 
 if $\sigma_{12} = 0$,
     - $x_1 = z_1$
@@ -288,9 +288,13 @@ $$
 
 \begin{equation}
 \begin{split}
-MSE_{MC1} = Var(\hat \mu_{MC1}) + 0 = \frac{Var(Y)}{N} = n^{1} Var(Y) \propto n^{-1} = O(n^{-1})
+MSE_{MC1} = & Var(\hat \mu_{MC1}) + 0\\
+= & \frac{Var(Y)}{N}\\
+= & n^{1} Var(Y) \propto n^{-1}\\
+= & O(n^{-1})
 \end{split}
 \end{equation}
+
 **** Second Estimator - Standard Normal R.V.
 
 $$
@@ -358,7 +362,8 @@ $$
 
 $MSE = Bias^2 + Var(\hat \mu) = 0 + O(n^{-3})$
 
-* European Call/Put Options & Brownian Motion (2020/04/16)
+* European Call/Put Options (2020/04/16)
+** Brownian Motion 
 ** Options
 
 *Call Option*: Contract that gives the buyer of the option the right to buy an
@@ -382,17 +387,18 @@ Strike price: $50
 Expiration: 3 Months
 
 *Three month*
+
 1. Stock Market Price = $100
    pay $4, then can buy for $50 when its 100
 
-   |---------------------------------------|
+   \|---------------------------------------\|
    50                                     100
 
    The buyer executes. The return is 100 - 50 - 4 = $46 dollars
 
 2. Stock market price is $20
 
-   |---------------------------------------|
+   \|---------------------------------------\|
   50                                       20
 
   The buyer does *not* execute. Buyer loses $4.
@@ -401,14 +407,14 @@ Expiration: 3 Months
 
 1. Stock Price is $100
 
-   |---------------------------------------|
+   \|---------------------------------------\|
    50                                     100
 
    The buyer does *not* execute because selling for $50 is a loss. Loses $4.
 
 2. Stock price is $20
 
-   |--------------------------------------|
+  \|--------------------------------------\|
    50                                     20
 
    The buyer executes. The return is 50 - 20 - 4 = $26
@@ -484,7 +490,8 @@ Put-call parity: Fair European call price - fair European put price = $S(0) - k
 
    Estimated error = $\pm \frac{2.58 \hat \sigma}{\sqrt{n}}$ where $\hat \sigma$
    is the sample standard deviation of the discounted payoffs.
-* Linear Congruential Generators & Inverse Distributions (2020/04/23)
+* Linear Congruential Generators (2020/04/23)
+** and Inverse Distributions
 ** Linear Congruential Generators
 
 Random numbers aren't truly random.
@@ -564,8 +571,17 @@ random numbers.
 
 The numbers should fill the d-dim hypercube.
 
-_Spectral Tests_: Quantitative measure of how well the points $(x_i, x_{i + 1},
-..., x_{i + d - 1})$ fill $[0,1]^d$. This test, $l(0, M, d)$ is the largest
+_Spectral Tests_
+
+Quantitative measure of how well the points
+
+
+
+$(x_i, x_{i + 1},
+..., x_{i + d - 1})$ fill $[0,1]^d$.
+
+
+This test, $l(0, M, d)$ is the largest
 possible distance between planes covering the points.
 
 
@@ -579,7 +595,7 @@ $Z_i = (X_{(i - 1)d + 1}, ..., X_{id}), \ i = 1, ..., k = \frac{n}{d}$
 
 $Z_i \sim iid [0,1]^d$
 
-W = \# of Bins with more than one point. (collisions)
+W = # of Bins with more than one point. (collisions)
 
 Break the cube $[0,1]^d$ into *l* non overlapping Bins
 
@@ -612,7 +628,8 @@ P(X < x) = & P(F(Y) < X)\\
 = & x
 \end{split}
 \end{equation}
-* Geometric Brownian Motion Explanation (2020/04/30)
+
+* GBM Explanation (2020/04/30)
 
 Geometric + Random term to model that the price is always increasing.
 
@@ -675,8 +692,9 @@ Cancels out the term in $E[S(t)]$
 ** Fair European Put Price
 
 E[discounted payoff at time T]
+
 \begin{equation}
-  \begin{split}
+\begin{split}
    & E[max(K - S(T, X), 0) e^{-rT}]\\
 = & \int_{-\infty}^{\infty} max(K - S(T, X), 0) e^{-rT} dx\\
 = & \int_{-\infty}^{\infty} max(K - S(T, X), 0) e^{-rT} f(x) dx\\
@@ -685,8 +703,8 @@ E[discounted payoff at time T]
 = & \int_{-\infty}^{X_{hi}} K e^{-rT} f(x) dx - \int_{-\infty}^{X_{hi}} S(0)exp((r - \sigma^2/2)T + \sigma \sqrt{T} X - rT) f(x) dx\\
 = & k exp(-rT) \Phi (X_{hi}) - S(0) \int_{-\infty}^{X_{hi}} exp(r - \sigma^2/2)T + \sigma \sqrt T X - \frac{1}{\sqrt{2 \pi}} exp(-x^2/2)\\
 = & k e^{-rT} \Phi (X_{hi}) - S(0) \int_{-\infty}^{X_{hi}} \frac{1}{\sqrt{2 \pi}} exp(-\sigma^2 T/2 + \sigma \sqrt T X - X^2/2)\\
-= & k e^{-rT} \Phi (X_{hi}) - S(0) \Phi (X_{hi} - \sigma \sqrt T)\\
-  \end{split}
+= & k e^{-rT} \Phi (X_{hi}) - S(0) \Phi (X_{hi} - \sigma \sqrt T)
+\end{split}
 \end{equation}
 
 
@@ -695,6 +713,7 @@ $K - S(0) exp((r - \sigma^2/2)T + \sigma \sqrt{T} X) \leq 0$
 
 X_hi
 $X \geq \frac{ln(k/S(0)) - (r - \sigma^2/2)T}{\sigma \sqrt T}$
+
 * Random Number Generation pt 2 (2020/05/07)
 
 ** Acceptance-Rejection Method
@@ -728,17 +747,18 @@ $Z_1, ..., Z_n$ iid with PDF $f_Z$
 _Goal_: Want to simulate a random sample from Z with known PDF $f_Z (y)$
 
 *What we know*
-1. We can simulate random samples $Y_1, ..., Y_n$ from $f_Y (y)$. $f_Y (y)$ is
-   known and has the same support as Z. The support being the domain of a R.V
-   where the pdf is non-zero. For example, values using the Beta distr. PDF is between 0 and 1,
-   so is $U[0,1]$
-2. We can simulate random samples from a Uniform Distribution $W_1, ..., W_n
-   \sim U[0,1]$
+
+We can simulate random samples $Y_1, ..., Y_n$ from $f_Y (y)$ since $f_Y (y)$ is known and has the same support as Z. The support being the domain of a R.V where the pdf is non-zero. For example, values using the Beta distr. PDF is between 0 and 1, so is $U[0,1]$
+
+We can simulate random samples from a Uniform Distribution:
+
+
+
+$W_1, ..., W_n \sim U[0,1]$
 
 #+CAPTION: Acceptance-Rejection method using two distributions
-#+ATTR_LaTeX: :width 10.6cm :height 7cm\textwidth
-#+LABEL: fig:acceptreject
-
+#+ATTR_LaTeX: :width 10.6cm :height 7cm
+#+LABEL: fig:three
 [[./resources/acceptreject.jpg]]
 
 
@@ -910,9 +930,9 @@ Sometimes instead of a scalar, we want to generate random functions, $B$.
 *** Linear Interpolation
 
 #+CAPTION: Linear Interpolation
-#+ATTR_LaTeX: :width 10.6cm :height 7cm\textwidth
-#+LABEL: fig:second
+#+ATTR_LaTeX: :width 10.6cm :height 7cm
 [[./resources/linear_interpolation.jpg]]
+
 
 *** Generating Brownian Sample Paths
 
@@ -925,7 +945,7 @@ $$
 to generate sample paths of brownian motion.
 
 1. Generate $d$ standard normal random numbers $X_1, ..., X_d$
-2. Brownian motion at time $\frac{kT}{d}, \ k = 1,2,...,d$
+2. Brownian motion at time $\frac{kT}{d}, k = 1,2,...,d$
 
 __Relationship between Brownian Motion and Geometric Brownian Motion_
 
@@ -974,7 +994,7 @@ S(t) = & S(0) exp(r - \sigma^2/2)t + \sigma B(t) = S(0) exp(r - \sigma^2/2)t + \
 More generically,
 
 $$
-S(\frac{kt}{d}) = & S(0) exp(r - \sigma^2/2) \frac{kt}{d} + \sigma
+S(\frac{kt}{d}) =  S(0) exp(r - \sigma^2/2) \frac{kt}{d} + \sigma
 \sqrt{\frac{t}{d}} \sum_{1}^{k} X_i\\
 $$
 
