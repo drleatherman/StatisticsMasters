@@ -8,37 +8,40 @@
 
 
  *Applications*
- - get deterministic results
- - Approximate High Dimension Integration
+   - get deterministic results
+   - Approximate High Dimension Integration
 
 ** Review
 
+#+begin_quote
 Note that since every class has a review period for the first lecture, the notes
 documented here represent points that were either stressed or that I found
 particularly interesting
+#+end_quote
+
 *** Distributions by Question
 
-*Binomial*
-- How /many/ basketball free throws do you make out of a given number of attempts?
-- How /many/ people prefer the iPhone to other smart phones?
+**** Binomial
+    - How /many/ basketball free throws do you make out of a given number of attempts?
+    - How /many/ people prefer the iPhone to other smart phones?
 
-*Poisson*
-- How /many/ taxis pass by your corner in a given time?
-- How /many/ servers crash in a given time?
+**** Poisson
+    - How /many/ taxis pass by your corner in a given time?
+    - How /many/ servers crash in a given time?
 
-*Gamma Distribution*
-- How /long/ does it take for the next /several/ taxis to pass by your corner?
-- How /long/ does it take for the next /several/ servers to crash in a given time?
+**** Gamma Distribution
+    - How /long/ does it take for the next /several/ taxis to pass by your corner?
+    - How /long/ does it take for the next /several/ servers to crash in a given time?
 
-*Gaussian*
-- How /far/ does a stock price move in a given period of time?
-- Describe averages
+**** Gaussian
+     - How /far/ does a stock price move in a given period of time?
+     - Describe averages
 
 **** Gamma
 
 Time it takes for the next several taxis to pass by.
 
-$T ~ Gamma(\alpha, \beta)$
+$T \sim Gamma(\alpha, \beta)$
 
 $\beta$: Average waiting between taxis
 
@@ -51,9 +54,7 @@ thought this was an intuitive way to describe it.
 
 *** Independence
 
-If $Y_1 \sim N, Y_2 \sim N$, they are Bivariate Normal
-
-If $\sigma_{12} = 0$, $Y_1, Y_2$ are independent since $\sigma_{12} = cov(Y_1,
+If $Y_1 \sim N, Y_2 \sim N$, they are Bivariate Normal. If $\sigma_{12} = 0$, $Y_1, Y_2$ are independent since $\sigma_{12} = cov(Y_1,
 Y_2) = 0$.
 
 **** Proof
@@ -130,8 +131,11 @@ V(\bar{Y}) = & \frac{\sigma^2}{n} + \frac{2n(n - 1)}{n^2} cov(Y_i, Y_j)\\
 ** Example: Interest Rate
 
 k = number of times per year interest is compounded
+
 $r_k$ = interest rate per year compounded k times per year
+
 $r_1$ = annualized percentage rate (APR)
+
 $r$ = interest rate per year compounded continuously
 
 \begin{equation}
@@ -158,7 +162,9 @@ Assume the following:
 How to estimate the value of $\pi$?
 
 Area of square: 1
+
 $r = 0.5$
+
 Area of a circle: $\pi r^2 = \frac{\pi}{4}$
 
 $\hat \pi = 4 \times \frac{\text{\# of darts in circle}}{\text{\# of darts in square}}$
@@ -168,6 +174,7 @@ $\hat \pi = 4 \times \frac{\text{\# of darts in circle}}{\text{\# of darts in sq
 $D_{ij} \sim U(5, ..., 35), i = 1,...,n, j = 1,...,d$
 
 j: day
+
 i: random variable
 
 profit: $P_{ij} = min(D_{ij}, O) R - OW$
@@ -290,7 +297,7 @@ $$
 \begin{split}
 MSE_{MC1} = & Var(\hat \mu_{MC1}) + 0\\
 = & \frac{Var(Y)}{N}\\
-= & n^{1} Var(Y) \propto n^{-1}\\
+= & n^{-1} Var(Y) \propto n^{-1}\\
 = & O(n^{-1})
 \end{split}
 \end{equation}
@@ -362,8 +369,7 @@ $$
 
 $MSE = Bias^2 + Var(\hat \mu) = 0 + O(n^{-3})$
 
-* European Call/Put Options (2020/04/16)
-** Brownian Motion 
+* European Call/Put Options and Brownian Motion (2020/04/16)
 ** Options
 
 *Call Option*: Contract that gives the buyer of the option the right to buy an
@@ -422,17 +428,20 @@ Expiration: 3 Months
 *** European Options
 
 t = time in years
+
 S(t) = the price of the asset at time t
+
 T = time to expiry (maturity) of the contract
+
 K = strike price (the price decided at t = 0)
+
 r = risk-neutral interest rate
 
 *Discounted Euro Call payoff*: $max(S(T) - K, 0)e^{-rT}$
 
 *Discounted Euro Put payoff*: $max(K - S(T), 0)e^{-rT}$
 
-We only need to model $S(T)$ not $S(.)$. The fair call/put option prices are
-$\mu = E(Y)$, where Y is the discounted call/put payoff.
+We only need to model $S(T)$ not $S(.)$. The fair call/put option prices are $\mu = E(Y)$, where Y is the discounted call/put payoff.
 
 ** Geometric Brownian Motion
 
@@ -490,8 +499,7 @@ Put-call parity: Fair European call price - fair European put price = $S(0) - k
 
    Estimated error = $\pm \frac{2.58 \hat \sigma}{\sqrt{n}}$ where $\hat \sigma$
    is the sample standard deviation of the discounted payoffs.
-* Linear Congruential Generators (2020/04/23)
-** and Inverse Distributions
+* Linear Congruential Generators and Inverse Distributions (2020/04/23) 
 ** Linear Congruential Generators
 
 Random numbers aren't truly random.
